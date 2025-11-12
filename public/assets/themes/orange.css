@@ -1,0 +1,87 @@
+.theme-orange {
+    &:root {
+        --radius: 0.65rem;
+        --background: oklch(0.99 0.003 85);
+        --foreground: oklch(0.2 0.015 50);
+        --card: oklch(1 0 0);
+        --card-foreground: oklch(0.2 0.015 50);
+        --popover: oklch(1 0 0);
+        --popover-foreground: oklch(0.2 0.015 50);
+
+        /* Burnt Orange yang sophisticated - warm tapi tidak terlalu terang */
+        --primary: oklch(0.65 0.14 45);
+        --primary-foreground: oklch(0.99 0.003 85);
+
+        --secondary: oklch(0.96 0.012 55);
+        --secondary-foreground: oklch(0.28 0.02 45);
+
+        --muted: oklch(0.96 0.008 60);
+        --muted-foreground: oklch(0.48 0.03 48);
+
+        --accent: oklch(0.95 0.012 55);
+        --accent-foreground: oklch(0.28 0.02 45);
+
+        --destructive: oklch(0.57 0.2 30);
+        --border: oklch(0.92 0.008 65);
+        --input: oklch(0.92 0.008 65);
+        --ring: oklch(0.65 0.14 45);
+
+        /* Chart dengan gradasi terracotta yang refined */
+        --chart-1: oklch(0.75 0.13 50);
+        --chart-2: oklch(0.65 0.14 45);
+        --chart-3: oklch(0.55 0.15 42);
+        --chart-4: oklch(0.45 0.13 40);
+        --chart-5: oklch(0.38 0.11 38);
+
+        /* Sidebar dengan warm neutral */
+        --sidebar: oklch(0.98 0.006 75);
+        --sidebar-foreground: oklch(0.2 0.015 50);
+        --sidebar-primary: oklch(0.65 0.14 45);
+        --sidebar-primary-foreground: oklch(0.99 0.003 85);
+        --sidebar-accent: oklch(0.95 0.012 60);
+        --sidebar-accent-foreground: oklch(0.28 0.02 45);
+        --sidebar-border: oklch(0.92 0.008 65);
+        --sidebar-ring: oklch(0.65 0.14 45);
+    }
+
+    &.dark {
+        --background: oklch(0.15 0.018 42);
+        --foreground: oklch(0.96 0.006 75);
+        --card: oklch(0.19 0.022 44);
+        --card-foreground: oklch(0.96 0.006 75);
+        --popover: oklch(0.19 0.022 44);
+        --popover-foreground: oklch(0.96 0.006 75);
+
+        /* Soft Orange untuk dark mode - lebih warm dan lembut */
+        --primary: oklch(0.7 0.15 48);
+        --primary-foreground: oklch(0.1 0.02 42);
+
+        --secondary: oklch(0.26 0.022 46);
+        --secondary-foreground: oklch(0.96 0.006 75);
+        --muted: oklch(0.26 0.022 46);
+        --muted-foreground: oklch(0.62 0.035 52);
+        --accent: oklch(0.26 0.022 46);
+        --accent-foreground: oklch(0.96 0.006 75);
+        --destructive: oklch(0.6 0.18 28);
+        --border: oklch(0.28 0.022 48);
+        --input: oklch(0.28 0.022 48);
+        --ring: oklch(0.7 0.15 48);
+
+        /* Chart dengan warmth yang balanced */
+        --chart-1: oklch(0.76 0.13 53);
+        --chart-2: oklch(0.66 0.15 48);
+        --chart-3: oklch(0.56 0.16 45);
+        --chart-4: oklch(0.46 0.14 42);
+        --chart-5: oklch(0.38 0.12 40);
+
+        /* Sidebar dark yang warm dan cozy */
+        --sidebar: oklch(0.17 0.02 43);
+        --sidebar-foreground: oklch(0.96 0.006 75);
+        --sidebar-primary: oklch(0.7 0.15 48);
+        --sidebar-primary-foreground: oklch(0.1 0.02 42);
+        --sidebar-accent: oklch(0.26 0.022 46);
+        --sidebar-accent-foreground: oklch(0.96 0.006 75);
+        --sidebar-border: oklch(0.28 0.022 48);
+        --sidebar-ring: oklch(0.7 0.15 48);
+    }
+}

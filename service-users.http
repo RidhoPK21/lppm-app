@@ -1,0 +1,167 @@
+## file: service-users.http
+
+## Global Variables
+@baseUrl = {{serviceUsersBaseUrl}}
+@authUsername = {{serviceUsersAuthUsername}}
+@authPassword = {{serviceUsersAuthPassword}}
+
+## Auth
+## ---------------------------------
+
+# @name PostRegisterWithCIS
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+    "username": "{{authUsername}}",
+    "password": "{{authPassword}}"
+}
+###
+
+# @name PostLogin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+    "system_id": "1234",
+    "platform": "VSCode http",
+    "info": "-",
+    "username": "{{authUsername}}",
+    "password": "{{authPassword}}"
+}
+###
+
+@authToken = {{PostLogin.response.body.data.token}}
+
+# @name GetLoginInfo
+GET {{baseUrl}}/auth/login/info
+Authorization: Bearer {{authToken}}
+###
+
+## [Auth Token harus Terverifikasi]
+# @name GetLoginInfoAll
+GET {{baseUrl}}/auth/login/info/all
+Authorization: Bearer {{authToken}}
+###
+
+# @name PostLogout
+POST {{baseUrl}}/auth/logout
+Authorization: Bearer {{authToken}}
+###
+
+## [Auth Token harus Terverifikasi]
+# @name PostLogoutAll
+POST {{baseUrl}}/auth/logout/all
+Authorization: Bearer {{authToken}}
+###
+
+@loginTokenId = {{GetLoginInfo.response.body.data.login_info.id}}
+
+## [Auth Token harus Terverifikasi]
+# @name PostLogoutByTokenId
+POST {{baseUrl}}/auth/logout/{{loginTokenId}}
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+###
+
+# @name PostTotpSetup
+POST {{baseUrl}}/auth/totp/setup
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+###
+
+# @name PostTotpVerify
+POST {{baseUrl}}/auth/totp/verify
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+    "code": "111222"
+}
+###
+
+## Roles
+## ---------------------------------
+# @name GetRoles
+GET {{baseUrl}}/roles
+Authorization: Bearer {{authToken}}
+###
+
+## Users
+## ---------------------------------
+# @name GetUsers
+GET {{baseUrl}}/users
+Authorization: Bearer {{authToken}}
+###
+
+@userId = {{GetUsers.response.body.data.users[0].id}}
+
+# @name GetUsersOnline
+GET {{baseUrl}}/users/online
+Authorization: Bearer {{authToken}}
+###
+
+# @name GetMe
+GET {{baseUrl}}/users/me
+Authorization: Bearer {{authToken}}
+###
+
+# @name PutMePhoto
+PUT {{baseUrl}}/users/me/photo
+Authorization: Bearer {{authToken}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="title"
+
+My Profile Photo
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="photo"; filename="photo.png"
+Content-Type: image/png
+
+< photo.png
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+###
+
+# @name postReqUsersByIds
+POST {{baseUrl}}/users/request
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+    "user_ids": "8357fda6-67f7-4a99-8f01-9847d6920596,39c4e639-e119-4da8-969b-868d35022fe2"
+}
+###
+
+# @name PostReqUsersByUsernames
+POST {{baseUrl}}/users/request-by-usernames
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+    "usernames": "abdullah.ubaid,ifs23005"
+}
+###
+
+@newPassword = New-Secret-Password
+
+# @name PutMePassword
+PUT {{baseUrl}}/users/me/password
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+    "password": "{{newPassword}}",
+    "old_password": "{{authPassword}}"
+}
+###
+
+# @name GetUserById
+GET {{baseUrl}}/users/{{userId}}
+Authorization: Bearer {{authToken}}
+###
+
+# @name GetUserByUsername
+GET {{baseUrl}}/users/username/{{authUsername}}
+Authorization: Bearer {{authToken}}
+###
