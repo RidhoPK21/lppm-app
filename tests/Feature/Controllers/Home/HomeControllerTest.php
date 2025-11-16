@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Unit\Http\Controllers\App\Home;
+namespace Tests\Feature\Controllers\Home;
 
 use App\Helper\ToolsHelper;
 use App\Http\Controllers\App\Home\HomeController;

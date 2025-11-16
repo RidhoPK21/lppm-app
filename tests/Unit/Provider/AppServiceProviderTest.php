@@ -2,7 +2,6 @@
 
 namespace Tests\Unit\Provider;
 
-use App\Helper\ToolsHelper;
 use App\Providers\AppServiceProvider;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Client\Request;

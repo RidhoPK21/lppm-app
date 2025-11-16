@@ -1,8 +1,7 @@
 <?php
 
-namespace Tests\Unit\Http\Controllers\App\HakAkses;
+namespace Tests\Feature\Controllers\HakAkses;
 
-use App\Helper\ConstHelper;
 use App\Helper\ToolsHelper;
 use App\Http\Api\UserApi;
 use App\Http\Controllers\App\HakAkses\HakAksesController;
