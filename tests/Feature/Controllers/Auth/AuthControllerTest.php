@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Unit\Http\Controllers\Auth;
+namespace Tests\Feature\Controllers\Auth;
 
 use App\Helper\ApiHelper;
 use App\Helper\ToolsHelper;

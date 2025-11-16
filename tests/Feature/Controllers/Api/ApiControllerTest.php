@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Unit\Http\Controllers\Api;
+namespace Tests\Feature\Controllers\Api;
 
 use App\Http\Api\UserApi;
 use App\Http\Controllers\Api\ApiController;
