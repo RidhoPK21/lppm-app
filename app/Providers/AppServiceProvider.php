@@ -27,8 +27,8 @@ class AppServiceProvider extends ServiceProvider
         }
 
         RateLimiter::for('req-limit', function ($request) {
-            return Limit::perMinutes(5, 200)  // 200 requests per 5 minutes
-                ->by($request->user()?->id ?: $request->ip())
+            return Limit::perMinutes(5, 300)  // 300 requests per 5 minutes
+                ->by($request->ip())
                 ->response(function ($request, array $headers) {
                     return response()->json([
                         'status' => 'error',

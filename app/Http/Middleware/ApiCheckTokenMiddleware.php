@@ -21,7 +21,7 @@ class ApiCheckTokenMiddleware
         if (empty($authToken)) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Unauthorized access, token is missing',
+                'message' => 'Akses ditolak, token tidak disediakan',
             ], 403);
         }
 
@@ -30,19 +30,16 @@ class ApiCheckTokenMiddleware
         if (! isset($response->data->user)) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Unauthorized access, token is invalid',
+                'message' => 'Akses ditolak, token tidak valid',
             ], 403);
         }
 
-        // Menambahkan properti auth sebagai object
-        $request->auth = $response->data->user;
+        // Dapatkan hak akses user
+        $auth = $response->data->user;
+        $akses = HakAksesModel::where('user_id', $auth->id)->first();
+        $auth->akses = isset($akses->akses) ? explode(',', $akses->akses) : [];
 
-        // Ambil akses user
-        /** @var HakAksesModel|null $akses */
-        $akses = HakAksesModel::where('user_id', $request->auth->id ?? 0)->first();
-
-        // Pastikan $request->auth->akses selalu array
-        $request->auth->akses = $akses ? explode(',', $akses->akses ?? '') : [];
+        $request->attributes->set('auth', $auth);
 
         return $next($request);
     }

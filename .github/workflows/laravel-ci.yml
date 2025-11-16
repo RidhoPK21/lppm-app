@@ -2,9 +2,9 @@ name: Laravel CI
 
 on:
   pull_request:
-    branches: [ main, master ] # tetap hanya untuk PR ke main/master
+    branches: [main, master] # tetap hanya untuk PR ke main/master
   push:
-    branches: '*' # jalan untuk semua branch
+    branches: ["*"] # jalan untuk semua branch
 
 jobs:
   laravel-ci:
@@ -23,8 +23,17 @@ jobs:
           coverage: xdebug
           tools: composer:v2
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+
       - name: Install Composer dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Install NPM dependencies
+        run: npm ci
 
       # ⚙️ Setup Laravel environment
       - name: Ensure .env exists and APP_KEY is set
@@ -40,9 +49,21 @@ jobs:
       - name: Run Pint (test)
         run: vendor/bin/pint --test
 
-      # 🕵️ Audit keamanan dependency
+      # 🧹 Jalankan Eslint untuk (auto-fix code style)
+      - name: Run ESLint (auto fix)
+        run: npx eslint . --fix
+
+      # 🔍 Run ESLint untuk JavaScript/TypeScript
+      - name: Run ESLint (test)
+        run: npx eslint . --format table
+
+      # 🕵️ Audit keamanan dependency Laravel
       - name: Composer Audit
         run: composer audit --no-interaction
+
+      # 🕵️ Audit keamanan dependency NodeJS
+      - name: NPM Audit
+        run: npm audit --audit-level=moderate
 
       # 🧠 Analisis statis dengan PHPStan
       - name: Run PHPStan

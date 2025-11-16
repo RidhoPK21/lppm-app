@@ -7,9 +7,9 @@ use App\Http\Api\UserApi;
 use App\Http\Middleware\ApiCheckTokenMiddleware;
 use App\Models\HakAksesModel;
 use Illuminate\Http\Request;
-use Mockery;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
+use Mockery;
 
 class ApiCheckTokenMiddlewareTest extends TestCase
 {
@@ -28,7 +28,9 @@ class ApiCheckTokenMiddlewareTest extends TestCase
     #[Test]
     public function middleware_melanjutkan_ke_next_jika_token_valid_dan_user_ada()
     {
-        // Mock UserApi response dengan user data
+        // =====================================
+        // Arrange (Persiapan)
+        // =====================================
         $userData = (object) [
             'id' => ToolsHelper::generateId(),
             'name' => 'Test User',
@@ -36,7 +38,7 @@ class ApiCheckTokenMiddlewareTest extends TestCase
             'roles' => ['read', 'write', 'delete'],
         ];
 
-        $userApiMock = Mockery::mock('alias:'.UserApi::class);
+        $userApiMock = Mockery::mock('alias:' . UserApi::class);
         $userApiMock
             ->shouldReceive('getMe')
             ->with('valid-token')
@@ -46,8 +48,7 @@ class ApiCheckTokenMiddlewareTest extends TestCase
                 ],
             ]);
 
-        // Mock HakAksesModel
-        $hakAksesMock = Mockery::mock('alias:'.HakAksesModel::class);
+        $hakAksesMock = Mockery::mock('alias:' . HakAksesModel::class);
         $hakAksesMock
             ->shouldReceive('where')
             ->with('user_id', $userData->id)
@@ -58,15 +59,21 @@ class ApiCheckTokenMiddlewareTest extends TestCase
             ->once()
             ->andReturn((object) ['roles' => $userData->roles]);
 
-        // Create request dengan bearer token
         $request = Request::create('/api/protected', 'GET');
         $request->headers->set('Authorization', 'Bearer valid-token');
 
         $middleware = new ApiCheckTokenMiddleware;
+
+        // =====================================
+        // Act (Aksi)
+        // =====================================
         $response = $middleware->handle($request, function ($req) {
             return response()->json(['status' => 'success'], 200);
         });
 
+        // =====================================
+        // Assert (Verifikasi)
+        // =====================================
         $this->assertEquals(200, $response->getStatusCode());
         $this->assertEquals('success', json_decode($response->getContent())->status);
     }
@@ -74,41 +81,59 @@ class ApiCheckTokenMiddlewareTest extends TestCase
     #[Test]
     public function middleware_mengembalikan_error_403_jika_token_tidak_ada()
     {
-        // Create request TANPA bearer token
+        // =====================================
+        // Arrange (Persiapan)
+        // =====================================
         $request = Request::create('/api/protected', 'GET');
-
         $middleware = new ApiCheckTokenMiddleware;
+
+        // =====================================
+        // Act (Aksi)
+        // =====================================
         $response = $middleware->handle($request, function () {});
 
+        // =====================================
+        // Assert (Verifikasi)
+        // =====================================
         $this->assertEquals(403, $response->getStatusCode());
 
         $responseData = json_decode($response->getContent(), true);
         $this->assertEquals('error', $responseData['status']);
-        $this->assertEquals('Unauthorized access, token is missing', $responseData['message']);
+        $this->assertEquals('Akses ditolak, token tidak disediakan', $responseData['message']);
     }
 
     #[Test]
     public function middleware_mengembalikan_error_403_jika_token_kosong()
     {
-        // Create request dengan bearer token kosong
+        // =====================================
+        // Arrange (Persiapan)
+        // =====================================
         $request = Request::create('/api/protected', 'GET');
         $request->headers->set('Authorization', 'Bearer ');
-
         $middleware = new ApiCheckTokenMiddleware;
+
+        // =====================================
+        // Act (Aksi)
+        // =====================================
         $response = $middleware->handle($request, function () {});
 
+        // =====================================
+        // Assert (Verifikasi)
+        // =====================================
         $this->assertEquals(403, $response->getStatusCode());
 
         $responseData = json_decode($response->getContent(), true);
         $this->assertEquals('error', $responseData['status']);
-        $this->assertEquals('Unauthorized access, token is missing', $responseData['message']);
+        $this->assertEquals('Akses ditolak, token tidak disediakan', $responseData['message']);
     }
 
     #[Test]
     public function middleware_mengembalikan_error_403_jika_user_tidak_ditemukan()
     {
-        // Mock UserApi response tanpa user data
-        $userApiMock = Mockery::mock('alias:'.UserApi::class);
+        // =====================================
+        // Arrange (Persiapan)
+        // =====================================
+        $userApiMock = Mockery::mock('alias:' . UserApi::class);
         $userApiMock
             ->shouldReceive('getMe')
             ->with('invalid-token')
@@ -118,25 +143,32 @@ class ApiCheckTokenMiddlewareTest extends TestCase
                 ],
             ]);
 
-        // Create request dengan invalid token
         $request = Request::create('/api/protected', 'GET');
         $request->headers->set('Authorization', 'Bearer invalid-token');
-
         $middleware = new ApiCheckTokenMiddleware;
+
+        // =====================================
+        // Act (Aksi)
+        // =====================================
         $response = $middleware->handle($request, function () {});
 
+        // =====================================
+        // Assert (Verifikasi)
+        // =====================================
         $this->assertEquals(403, $response->getStatusCode());
 
         $responseData = json_decode($response->getContent(), true);
         $this->assertEquals('error', $responseData['status']);
-        $this->assertEquals('Unauthorized access, token is invalid', $responseData['message']);
+        $this->assertEquals('Akses ditolak, token tidak valid', $responseData['message']);
     }
 
     #[Test]
     public function middleware_mengembalikan_error_403_jika_response_tidak_memiliki_data()
     {
-        // Mock UserApi response tanpa data property
-        $userApiMock = Mockery::mock('alias:'.UserApi::class);
+        // =====================================
+        // Arrange (Persiapan)
+        // =====================================
+        $userApiMock = Mockery::mock('alias:' . UserApi::class);
         $userApiMock
             ->shouldReceive('getMe')
             ->with('invalid-token')
@@ -144,17 +176,22 @@ class ApiCheckTokenMiddlewareTest extends TestCase
                 // Tidak ada property 'data'
             ]);
 
-        // Create request dengan invalid token
         $request = Request::create('/api/protected', 'GET');
         $request->headers->set('Authorization', 'Bearer invalid-token');
-
         $middleware = new ApiCheckTokenMiddleware;
+
+        // =====================================
+        // Act (Aksi)
+        // =====================================
         $response = $middleware->handle($request, function () {});
 
+        // =====================================
+        // Assert (Verifikasi)
+        // =====================================
         $this->assertEquals(403, $response->getStatusCode());
 
         $responseData = json_decode($response->getContent(), true);
         $this->assertEquals('error', $responseData['status']);
-        $this->assertEquals('Unauthorized access, token is invalid', $responseData['message']);
+        $this->assertEquals('Akses ditolak, token tidak valid', $responseData['message']);
     }
 }

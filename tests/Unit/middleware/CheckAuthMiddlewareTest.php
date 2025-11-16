@@ -7,9 +7,9 @@ use App\Http\Api\UserApi;
 use App\Http\Middleware\CheckAuthMiddleware;
 use App\Models\HakAksesModel;
 use Illuminate\Http\Request;
-use Mockery;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
+use Mockery;
 
 class CheckAuthMiddlewareTest extends TestCase
 {
@@ -46,7 +46,7 @@ class CheckAuthMiddlewareTest extends TestCase
         ToolsHelper::setAuthToken('invalid-token');
 
         // Mock UserApi mengembalikan response tanpa user data
-        $userApiMock = Mockery::mock('alias:'.UserApi::class);
+        $userApiMock = Mockery::mock('alias:' . UserApi::class);
         $userApiMock
             ->shouldReceive('getMe')
             ->with('invalid-token')
@@ -77,7 +77,7 @@ class CheckAuthMiddlewareTest extends TestCase
         ToolsHelper::setAuthToken('valid-token');
 
         // Mock UserApi
-        $userApiMock = Mockery::mock('alias:'.UserApi::class);
+        $userApiMock = Mockery::mock('alias:' . UserApi::class);
         $userApiMock
             ->shouldReceive('getMe')
             ->with('valid-token')
@@ -88,7 +88,7 @@ class CheckAuthMiddlewareTest extends TestCase
             ]);
 
         // Mock HakAksesModel
-        $hakAksesMock = Mockery::mock('alias:'.HakAksesModel::class);
+        $hakAksesMock = Mockery::mock('alias:' . HakAksesModel::class);
         $hakAksesMock
             ->shouldReceive('where')
             ->with('user_id', $userData->id)
@@ -106,7 +106,8 @@ class CheckAuthMiddlewareTest extends TestCase
         // Jalankan handle()
         $response = $middleware->handle($request, function ($req) {
             // Assertion
-            $this->assertEquals(['view', 'edit'], $req->auth->akses);
+            $auth = $req->attributes->get('auth');
+            $this->assertEquals(['view', 'edit'], $auth->akses);
 
             return response('Success', 200);
         });
@@ -125,7 +126,7 @@ class CheckAuthMiddlewareTest extends TestCase
         ToolsHelper::setAuthToken('valid-token');
 
         // Mock UserApi
-        $userApiMock = Mockery::mock('alias:'.UserApi::class);
+        $userApiMock = Mockery::mock('alias:' . UserApi::class);
         $userApiMock
             ->shouldReceive('getMe')
             ->with('valid-token')
@@ -136,7 +137,7 @@ class CheckAuthMiddlewareTest extends TestCase
             ]);
 
         // Mock HakAksesModel
-        $hakAksesMock = Mockery::mock('alias:'.HakAksesModel::class);
+        $hakAksesMock = Mockery::mock('alias:' . HakAksesModel::class);
         $hakAksesMock
             ->shouldReceive('where')
             ->with('user_id', $userData->id)
@@ -151,7 +152,8 @@ class CheckAuthMiddlewareTest extends TestCase
         $middleware = new CheckAuthMiddleware;
 
         $response = $middleware->handle($request, function ($req) {
-            $this->assertEquals([], $req->auth->akses);
+            $auth = $req->attributes->get('auth');
+            $this->assertEquals([], $auth->akses);
 
             return response('Success', 200);
         });

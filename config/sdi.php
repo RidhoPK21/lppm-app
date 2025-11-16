@@ -2,7 +2,7 @@
 
 return [
     // Version
-    'version' => '2025.11.09',
+    'version' => '2025.11.11',
     // API
     'api_users_url' => env('API_USERS_URL', ''),
     // SSO

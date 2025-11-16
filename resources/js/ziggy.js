@@ -1,0 +1,5 @@
+const Ziggy = {"url":"http:\/\/localhost:8000","port":8000,"defaults":{},"routes":{"api.fetch-users":{"uri":"api\/fetch-users","methods":["POST"]},"sso.callback":{"uri":"sso\/callback","methods":["GET","HEAD"]},"auth.login":{"uri":"auth\/login","methods":["GET","HEAD"]},"auth.login-check":{"uri":"auth\/login-check","methods":["POST"]},"auth.login-post":{"uri":"auth\/login-post","methods":["POST"]},"auth.logout":{"uri":"auth\/logout","methods":["GET","HEAD"]},"auth.totp":{"uri":"auth\/totp","methods":["GET","HEAD"]},"auth.totp-post":{"uri":"auth\/totp-post","methods":["POST"]},"home":{"uri":"\/","methods":["GET","HEAD"]},"hak-akses":{"uri":"hak-akses","methods":["GET","HEAD"]},"hak-akses.change-post":{"uri":"hak-akses\/change","methods":["POST"]},"hak-akses.delete-post":{"uri":"hak-akses\/delete","methods":["POST"]},"hak-akses.delete-selected-post":{"uri":"hak-akses\/delete-selected","methods":["POST"]},"storage.local":{"uri":"storage\/{path}","methods":["GET","HEAD"],"wheres":{"path":".*"},"parameters":["path"]}}};
+if (typeof window !== 'undefined' && typeof window.Ziggy !== 'undefined') {
+  Object.assign(Ziggy.routes, window.Ziggy.routes);
+}
+export { Ziggy };

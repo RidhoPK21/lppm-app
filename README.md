@@ -2,80 +2,136 @@
 
 ## Logs
 
-### [26-10-2025] 
+### [16-11-2025]
 
-- [Abdullah Ubaid] Inisialisasi proyek
+-   [Abdullah Ubaid] Inisialisasi proyek
 
-## Syntax
-
-### Membuat Model
-
-Command: `php artisan make:model ExampleModel`
-
-### Membuat Livewire
-
-Command: `php artisan make:livewire Example/ExampleLivewire`
+## Quality Checks
 
 ### Composer Audit
-composer audit adalah perintah Composer yang digunakan untuk memeriksa keamanan paket PHP yang terinstal di proyek.
 
-Command: `composer audit`
+Composer Audit adalah perintah Composer yang digunakan untuk memeriksa keamanan paket PHP yang terinstal di proyek.
 
-### Static Code Analisis
+```bash
+composer audit
+```
 
-Membuatuhkan file: phpstan.neon
-```neon
+### NPM Audit
+
+NPM Audit adalah perintah NPM yang digunakan untuk memeriksa keamanan paket NodeJS yang terinstal di proyek.
+
+```bash
+npm audit --audit-level=moderate
+```
+
+### Laravel Pint
+
+Laravel pint untuk memeriksa dan memperbaiki format kode PHP secara otomatis.
+
+#### Install Laravel Pint
+
+```bash
+composer require laravel/pint --dev
+```
+
+#### Melakukan perbaikan format kode PHP
+
+```bash
+vendor/bin/pint
+```
+
+### Eslint
+
+ESLint adalah tools analisis kode statis untuk JavaScript dan TypeScript yang berfungsi mendeteksi error, menjaga konsistensi style, dan menerapkan best practices dalam penulisan kode
+
+```bash
+npx eslint . --format table
+```
+
+#### Melakukan pengecekan format kode PHP
+
+```bash
+vendor/bin/pint --test
+```
+
+### Larastan
+
+Larastan adalah static code analysis tool yang menganalisis kode PHP Laravel tanpa harus menjalankannya.
+
+#### Membuatuhkan file: phpstan.neon
+
+```bash
 includes:
     - ./vendor/larastan/larastan/extension.neon
 
 parameters:
-    level: 5       # level 0 (ringan) sampai 8 (strict)
+    level: 8 # Level 1 - 8 (unstrict - strict)
     paths:
         - app
         - routes
 ```
 
-command install: `composer require --dev larastan/larastan`
+#### Install Larastan
 
-command run: `vendor/bin/phpstan analyse`
+```bash
+composer require --dev larastan/larastan
+```
 
-### Melakukan Pengujian Coverage
+#### Melakukan Analisis dengan Larastan
 
-Command: `php artisan test --coverage`
+```bash
+vendor/bin/phpstan analyse
+```
+
+### Testing Coverage
+
+Testing Coverage untuk melakukan pengujian yang mencakup semua kemungkinan pada kode program yang dibuat guna mengurangi kemungkinan bug yang akan tejadi pada saat sudah di production.
+
+#### Melakukan Pengujian dengan Coverage
+
+```bash
+php artisan test --coverage
+```
 
 ### Melakukan Pengujian Spesifik
 
-commands:
 ```bash
-php artisan test tests/Unit/Middleware/CheckAuthMiddlewareTest.php
-
-php artisan test tests/Feature/Livewire/HakAkses/HakAksesLivewireTest.php
-php artisan test tests/Feature/Livewire/Beranda/BerandaLivewireTest.php
+# php artisan test PATH_FILE_TEST
 php artisan test tests/Feature/Livewire/Auth/LoginLivewireTest.php
 
+php artisan test tests/Unit/Middleware/HandleInertiaRequestsTest.php
 
-php artisan test tests/Unit/Provider/AppServiceProviderTest.php
+php artisan test tests/Feature/Controllers/Home/HomeControllerTest.php
+
+php artisan test tests/Feature/Controllers/Auth/AuthControllerTest.php
+
+php artisan test tests/Feature/Controllers/HakAkses/HakAksesControllerTest.php
 ```
 
-### Membersihkan Semua Cache Laravel
-Commands:
+## Catatan Syntax
+
 ```bash
-php artisan optimize:clear
-composer dump-autoload
+# 🎯 TYPE DEFINITIONS (TypeScript Support)
+npm i --save-dev @types/react
+
+# 🎨 UI COMPONENTS (shadcn/ui)
+npx shadcn@latest add checkbox
+npx shadcn@latest add tabs
+
+# 🔗 LARAVEL ZIGGY (Route Helper)
+php artisan ziggy:generate resources/js/ziggy.js
+
+# 🔧 ESLINT & CODE QUALITY
+
+# Core ESLint dan plugins
+npm install -D eslint-plugin-react eslint-plugin-react-hooks eslint-plugin-unused-imports @eslint/js globals
+
+# Babel parser dan preset
+npm install -D @babel/eslint-parser
+npm install -D @babel/preset-react
+
+# Formatter dan additional plugins
+npm install -D eslint-formatter-table
+npm install eslint-plugin-react-hooks --save-dev
+npm install --save-dev @eslint/js eslint-plugin-react eslint-plugin-react-hooks
 ```
-
-### Memformat Kode PHP Secara Otomatis
-
-Command install: `composer require laravel/pint --dev`
-
-command run: `vendor/bin/pint`
-
-command test: `vendor/bin/pint --test`
-
-### Menjalnkan Github Action di Local
-
-Command install: `choco install act-cli`
-
-Command install container (butuh docker): `docker pull catthehacker/ubuntu:full-latest`
-
-Command run: `act`
