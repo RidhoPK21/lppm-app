@@ -6,56 +6,90 @@ use Illuminate\Support\Str;
 
 class ToolsHelper
 {
-    // Menyimpan auth token ke session
+    /**
+     * Menyimpan authentication token ke session storage
+     *
+     * @param  string  $authToken  Token autentikasi yang akan disimpan
+     * @return void
+     *
+     * @example
+     * ToolsHelper::setAuthToken('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...');
+     *
+     * @see self::getAuthToken()
+     */
     public static function setAuthToken($authToken)
     {
         session(['auth_token' => $authToken]);
     }
 
-    // Mendapatkan auth token dari session
+    /**
+     * Mendapatkan authentication token dari session storage
+     *
+     * @return string Authentication token atau string kosong jika tidak ada
+     *
+     * @example
+     * $token = ToolsHelper::getAuthToken();
+     * // Returns: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' atau ''
+     *
+     * @see self::setAuthToken()
+     */
     public static function getAuthToken()
     {
         return session('auth_token', '');
     }
 
-    // Menghasilkan UUID sebagai ID unik
+    /**
+     * Menghasilkan UUID (Universally Unique Identifier) versi 4 sebagai ID unik
+     *
+     * @return string UUID string dalam format: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
+     *
+     * @example
+     * $id = ToolsHelper::generateId();
+     * // Returns: 'f47ac10b-58cc-4372-a567-0e02b2c3d479'
+     *
+     * @uses \Illuminate\Support\Str::uuid()
+     */
     public static function generateId()
     {
         return Str::uuid()->toString();
     }
 
-    // Mengonversi angka desimal (1-10) ke angka Romawi
-    public static function desimalToRomawi($desimal)
+    /**
+     * Memeriksa apakah role/user memiliki akses berdasarkan allowed roles
+     *
+     * @param string $role Role yang akan diperiksa
+     * @param string|string[] $allowedRoles Role atau array roles yang diizinkan
+     * @return bool True jika role ada dalam allowed roles, false jika tidak
+     */
+    public static function checkRoles($role, $allowedRoles)
     {
-        $romawi = [
-            1 => 'I',
-            2 => 'II',
-            3 => 'III',
-            4 => 'IV',
-            5 => 'V',
-            6 => 'VI',
-            7 => 'VII',
-            8 => 'VIII',
-            9 => 'IX',
-            10 => 'X',
-        ];
-
-        return $romawi[$desimal] ?? '';
+        return is_array($allowedRoles)
+            ? in_array($role, $allowedRoles)
+            : $role === $allowedRoles;
     }
 
-    // Memeriksa apakah $roles ada dalam $allowedRoles (bisa array atau string)
-    public static function checkRoles($roles, $allowedRoles)
-    {
-        if (is_array($allowedRoles)) {
-            return in_array($roles, $allowedRoles);
-        } elseif (is_string($allowedRoles)) {
-            return $roles === $allowedRoles;
-        }
-
-        return false;
-    }
-
-    // Menghasilkan array kolom Excel dari $start hingga $end (misal: A hingga D menghasilkan [A, B, C, D])
+    /**
+     * Menghasilkan range kolom Excel dari start hingga end
+     *
+     * Mendukung increment hingga multiple letters (A → Z → AA → AB → ...)
+     *
+     * @param  string  $start  Kolom awal (contoh: 'A')
+     * @param  string  $end  Kolom akhir (contoh: 'D')
+     * @return string[] Array berisi urutan kolom Excel
+     *
+     * @example
+     * // Basic range
+     * $columns = ToolsHelper::excelColumnRange('A', 'D');
+     * // Returns: ['A', 'B', 'C', 'D']
+     * @example
+     * // Multiple letters
+     * $columns = ToolsHelper::excelColumnRange('Z', 'AC');
+     * // Returns: ['Z', 'AA', 'AB', 'AC']
+     * @example
+     * // Single column
+     * $columns = ToolsHelper::excelColumnRange('B', 'B');
+     * // Returns: ['B']
+     */
     public static function excelColumnRange($start, $end)
     {
         $columns = [];
@@ -82,7 +116,7 @@ class ToolsHelper
     public static function getValueExcel($worksheet, $colIndex, $rowIndex)
     {
         $columnLetter = is_int($colIndex) ? \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colIndex) : $colIndex;
-        $cellAddress = $columnLetter.$rowIndex;
+        $cellAddress = $columnLetter . $rowIndex;
         $cell = $worksheet->getCell($cellAddress);
 
         return trim((string) $cell->getValue());  // Mengambil nilai RAW
@@ -99,7 +133,7 @@ class ToolsHelper
     public static function getFormattedValueExcel($worksheet, $colIndex, $rowIndex)
     {
         $columnLetter = is_int($colIndex) ? \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colIndex) : $colIndex;
-        $cellAddress = $columnLetter.$rowIndex;
+        $cellAddress = $columnLetter . $rowIndex;
         $cell = $worksheet->getCell($cellAddress);
 
         return trim((string) $cell->getFormattedValue());  // Mengambil nilai yang sudah diformat

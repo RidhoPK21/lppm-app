@@ -13,15 +13,16 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
-    ->withMiddleware(function (Middleware $middleware) {
+    ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'check.auth' => \App\Http\Middleware\CheckAuthMiddleware::class,
             'api.check.auth' => \App\Http\Middleware\ApiCheckTokenMiddleware::class,
+            'check.auth' => \App\Http\Middleware\CheckAuthMiddleware::class,
+            'handle.inertia' => \App\Http\Middleware\HandleInertiaRequests::class,
         ]);
 
         $middleware->trustProxies(at: '*');
     })
-    ->withExceptions(function (Exceptions $exceptions) {
+    ->withExceptions(function (Exceptions $exceptions): void {
         // Khusus api buat json
         $exceptions->renderable(function (Throwable $e, $request) {
             if ($request->is('api/*')) {
