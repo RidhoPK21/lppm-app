@@ -7,9 +7,9 @@ use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
+use Mockery;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
-use Mockery;
 
 class AppServiceProviderTest extends TestCase
 {
@@ -36,7 +36,7 @@ class AppServiceProviderTest extends TestCase
             ->once()
             ->with('https');
 
-        app()->detectEnvironment(fn() => 'remote');
+        app()->detectEnvironment(fn () => 'remote');
 
         $provider = new AppServiceProvider(app());
 
@@ -57,7 +57,7 @@ class AppServiceProviderTest extends TestCase
         // =====================================
         // Arrange (Persiapan)
         // =====================================
-        app()->detectEnvironment(fn() => 'local');
+        app()->detectEnvironment(fn () => 'local');
         config(['sdi.force_https' => true]);
 
         URL::shouldReceive('forceScheme')
@@ -83,7 +83,7 @@ class AppServiceProviderTest extends TestCase
         // =====================================
         // Arrange (Persiapan)
         // =====================================
-        app()->detectEnvironment(fn() => 'local');
+        app()->detectEnvironment(fn () => 'local');
         config(['sdi.force_https' => false]);
 
         URL::shouldReceive('forceScheme')->never();

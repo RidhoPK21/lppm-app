@@ -57,8 +57,8 @@ class ToolsHelper
     /**
      * Memeriksa apakah role/user memiliki akses berdasarkan allowed roles
      *
-     * @param string $role Role yang akan diperiksa
-     * @param string|string[] $allowedRoles Role atau array roles yang diizinkan
+     * @param  string  $role  Role yang akan diperiksa
+     * @param  string|string[]  $allowedRoles  Role atau array roles yang diizinkan
      * @return bool True jika role ada dalam allowed roles, false jika tidak
      */
     public static function checkRoles($role, $allowedRoles)
@@ -116,7 +116,7 @@ class ToolsHelper
     public static function getValueExcel($worksheet, $colIndex, $rowIndex)
     {
         $columnLetter = is_int($colIndex) ? \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colIndex) : $colIndex;
-        $cellAddress = $columnLetter . $rowIndex;
+        $cellAddress = $columnLetter.$rowIndex;
         $cell = $worksheet->getCell($cellAddress);
 
         return trim((string) $cell->getValue());  // Mengambil nilai RAW
@@ -133,7 +133,7 @@ class ToolsHelper
     public static function getFormattedValueExcel($worksheet, $colIndex, $rowIndex)
     {
         $columnLetter = is_int($colIndex) ? \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colIndex) : $colIndex;
-        $cellAddress = $columnLetter . $rowIndex;
+        $cellAddress = $columnLetter.$rowIndex;
         $cell = $worksheet->getCell($cellAddress);
 
         return trim((string) $cell->getFormattedValue());  // Mengambil nilai yang sudah diformat

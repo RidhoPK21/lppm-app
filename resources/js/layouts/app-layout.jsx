@@ -47,6 +47,11 @@ export default function AppLayout({ children }) {
                     url: route("home"),
                     icon: Icon.IconHome,
                 },
+                {
+                    title: "Todo",
+                    url: route("todo"),
+                    icon: Icon.IconChecklist,
+                },
             ],
         },
         {

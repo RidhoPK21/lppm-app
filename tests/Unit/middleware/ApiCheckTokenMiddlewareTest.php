@@ -7,9 +7,9 @@ use App\Http\Api\UserApi;
 use App\Http\Middleware\ApiCheckTokenMiddleware;
 use App\Models\HakAksesModel;
 use Illuminate\Http\Request;
+use Mockery;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
-use Mockery;
 
 class ApiCheckTokenMiddlewareTest extends TestCase
 {
@@ -38,7 +38,7 @@ class ApiCheckTokenMiddlewareTest extends TestCase
             'roles' => ['read', 'write', 'delete'],
         ];
 
-        $userApiMock = Mockery::mock('alias:' . UserApi::class);
+        $userApiMock = Mockery::mock('alias:'.UserApi::class);
         $userApiMock
             ->shouldReceive('getMe')
             ->with('valid-token')
@@ -48,7 +48,7 @@ class ApiCheckTokenMiddlewareTest extends TestCase
                 ],
             ]);
 
-        $hakAksesMock = Mockery::mock('alias:' . HakAksesModel::class);
+        $hakAksesMock = Mockery::mock('alias:'.HakAksesModel::class);
         $hakAksesMock
             ->shouldReceive('where')
             ->with('user_id', $userData->id)
@@ -133,7 +133,7 @@ class ApiCheckTokenMiddlewareTest extends TestCase
         // =====================================
         // Arrange (Persiapan)
         // =====================================
-        $userApiMock = Mockery::mock('alias:' . UserApi::class);
+        $userApiMock = Mockery::mock('alias:'.UserApi::class);
         $userApiMock
             ->shouldReceive('getMe')
             ->with('invalid-token')
@@ -168,7 +168,7 @@ class ApiCheckTokenMiddlewareTest extends TestCase
         // =====================================
         // Arrange (Persiapan)
         // =====================================
-        $userApiMock = Mockery::mock('alias:' . UserApi::class);
+        $userApiMock = Mockery::mock('alias:'.UserApi::class);
         $userApiMock
             ->shouldReceive('getMe')
             ->with('invalid-token')

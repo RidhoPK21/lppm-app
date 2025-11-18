@@ -9,9 +9,9 @@ use App\Http\Controllers\Auth\AuthController;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Mockery;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
-use Mockery;
 
 class AuthControllerTest extends TestCase
 {
@@ -52,7 +52,7 @@ class AuthControllerTest extends TestCase
             ->with('auth/login-page', ['urlLoginSSO' => $expectedUrl])
             ->andReturn($mockResponse);
 
-        $controller = new AuthController();
+        $controller = new AuthController;
 
         // =====================================
         // Act (Aksi)
@@ -73,7 +73,7 @@ class AuthControllerTest extends TestCase
         // =====================================
         $authToken = 'valid-token-123';
 
-        $userApiMock = Mockery::mock('alias:' . UserApi::class);
+        $userApiMock = Mockery::mock('alias:'.UserApi::class);
         $userApiMock
             ->shouldReceive('getLoginInfo')
             ->with($authToken)
@@ -86,7 +86,7 @@ class AuthControllerTest extends TestCase
 
         $request = new Request(['authToken' => $authToken]);
 
-        $controller = new AuthController();
+        $controller = new AuthController;
 
         // =====================================
         // Act (Aksi)
@@ -108,7 +108,7 @@ class AuthControllerTest extends TestCase
         // =====================================
         $authToken = 'invalid-token';
 
-        $userApiMock = Mockery::mock('alias:' . UserApi::class);
+        $userApiMock = Mockery::mock('alias:'.UserApi::class);
         $userApiMock
             ->shouldReceive('getLoginInfo')
             ->with($authToken)
@@ -116,7 +116,7 @@ class AuthControllerTest extends TestCase
 
         $request = new Request(['authToken' => $authToken]);
 
-        $controller = new AuthController();
+        $controller = new AuthController;
 
         // =====================================
         // Act (Aksi)
@@ -136,21 +136,21 @@ class AuthControllerTest extends TestCase
         // =====================================
         // Arrange (Persiapan)
         // =====================================
-        $userApiMock = Mockery::mock('alias:' . UserApi::class);
+        $userApiMock = Mockery::mock('alias:'.UserApi::class);
         $userApiMock
             ->shouldReceive('postLogin')
             ->andReturn((object) [
-                'data' => (object) ['token' => 'login-token-123']
+                'data' => (object) ['token' => 'login-token-123'],
             ]);
 
         $request = new Request([
             'username' => 'testuser',
             'password' => 'password123',
             'systemId' => 'TestSystem',
-            'info' => 'TestInfo'
+            'info' => 'TestInfo',
         ]);
 
-        $controller = new AuthController();
+        $controller = new AuthController;
 
         // =====================================
         // Act (Aksi)
@@ -170,21 +170,21 @@ class AuthControllerTest extends TestCase
         // =====================================
         // Arrange (Persiapan)
         // =====================================
-        $userApiMock = Mockery::mock('alias:' . UserApi::class);
+        $userApiMock = Mockery::mock('alias:'.UserApi::class);
         $userApiMock
             ->shouldReceive('postLogin')
             ->andReturn((object) [
                 'data' => (object) [
                     // Tidak ada property token
-                ]
+                ],
             ]);
 
         $request = new Request([
             'username' => 'testuser',
-            'password' => 'password123'
+            'password' => 'password123',
         ]);
 
-        $controller = new AuthController();
+        $controller = new AuthController;
 
         // =====================================
         // Act (Aksi)
@@ -210,17 +210,17 @@ class AuthControllerTest extends TestCase
         // =====================================
         // Arrange (Persiapan)
         // =====================================
-        $userApiMock = Mockery::mock('alias:' . UserApi::class);
+        $userApiMock = Mockery::mock('alias:'.UserApi::class);
         $userApiMock
             ->shouldReceive('postLogin')
             ->andReturn(null);  // Response null
 
         $request = new Request([
             'username' => 'testuser',
-            'password' => 'password123'
+            'password' => 'password123',
         ]);
 
-        $controller = new AuthController();
+        $controller = new AuthController;
 
         // =====================================
         // Act (Aksi)
@@ -242,7 +242,7 @@ class AuthControllerTest extends TestCase
         // =====================================
         $authToken = 'valid-token-123';
 
-        $userApiMock = Mockery::mock('alias:' . UserApi::class);
+        $userApiMock = Mockery::mock('alias:'.UserApi::class);
         $userApiMock
             ->shouldReceive('getLoginInfo')
             ->with($authToken)
@@ -254,7 +254,7 @@ class AuthControllerTest extends TestCase
             ->andReturn((object) ['status' => 'error']);  // GetMe gagal
 
         $request = new Request(['authToken' => $authToken]);
-        $controller = new AuthController();
+        $controller = new AuthController;
 
         // =====================================
         // Act (Aksi)
@@ -276,7 +276,7 @@ class AuthControllerTest extends TestCase
         // =====================================
         $authToken = 'valid-token-456';
 
-        $userApiMock = Mockery::mock('alias:' . UserApi::class);
+        $userApiMock = Mockery::mock('alias:'.UserApi::class);
         $userApiMock
             ->shouldReceive('getLoginInfo')
             ->with($authToken)
@@ -288,7 +288,7 @@ class AuthControllerTest extends TestCase
             ->andReturn(null);  // GetMe return null
 
         $request = new Request(['authToken' => $authToken]);
-        $controller = new AuthController();
+        $controller = new AuthController;
 
         // =====================================
         // Act (Aksi)
@@ -316,7 +316,7 @@ class AuthControllerTest extends TestCase
             ->with('auth/logout-page')
             ->andReturn($mockResponse);
 
-        $controller = new AuthController();
+        $controller = new AuthController;
 
         // =====================================
         // Act (Aksi)
@@ -338,7 +338,7 @@ class AuthControllerTest extends TestCase
         // =====================================
         ToolsHelper::setAuthToken('');
 
-        $controller = new AuthController();
+        $controller = new AuthController;
 
         // =====================================
         // Act (Aksi)
@@ -361,7 +361,7 @@ class AuthControllerTest extends TestCase
         $authToken = 'totp-token-123';
         ToolsHelper::setAuthToken($authToken);
 
-        $userApiMock = Mockery::mock('alias:' . UserApi::class);
+        $userApiMock = Mockery::mock('alias:'.UserApi::class);
         $userApiMock
             ->shouldReceive('postTotpVerify')
             ->with($authToken, '123456')
@@ -369,7 +369,7 @@ class AuthControllerTest extends TestCase
 
         $request = new Request(['kodeOTP' => '123456']);
 
-        $controller = new AuthController();
+        $controller = new AuthController;
 
         // =====================================
         // Act (Aksi)
@@ -392,13 +392,13 @@ class AuthControllerTest extends TestCase
         $authToken = 'invalid-token';
         ToolsHelper::setAuthToken($authToken);
 
-        $userApiMock = Mockery::mock('alias:' . UserApi::class);
+        $userApiMock = Mockery::mock('alias:'.UserApi::class);
         $userApiMock
             ->shouldReceive('getLoginInfo')
             ->with($authToken)
             ->andReturn((object) ['status' => 'error']);  // Login info gagal
 
-        $controller = new AuthController();
+        $controller = new AuthController;
 
         // =====================================
         // Act (Aksi)
@@ -422,7 +422,7 @@ class AuthControllerTest extends TestCase
         $authToken = 'valid-token';
         ToolsHelper::setAuthToken($authToken);
 
-        $userApiMock = Mockery::mock('alias:' . UserApi::class);
+        $userApiMock = Mockery::mock('alias:'.UserApi::class);
         $userApiMock
             ->shouldReceive('getLoginInfo')
             ->with($authToken)
@@ -432,7 +432,7 @@ class AuthControllerTest extends TestCase
             ->with($authToken)
             ->andReturn((object) ['status' => 'success']);  // GetMe sukses
 
-        $controller = new AuthController();
+        $controller = new AuthController;
 
         // =====================================
         // Act (Aksi)
@@ -455,7 +455,7 @@ class AuthControllerTest extends TestCase
         $authToken = 'valid-token-totp';
         ToolsHelper::setAuthToken($authToken);
 
-        $userApiMock = Mockery::mock('alias:' . UserApi::class);
+        $userApiMock = Mockery::mock('alias:'.UserApi::class);
         $userApiMock
             ->shouldReceive('getLoginInfo')
             ->with($authToken)
@@ -469,18 +469,18 @@ class AuthControllerTest extends TestCase
             ->with($authToken)
             ->andReturn((object) [
                 'status' => 'success',
-                'data' => (object) ['qrCode' => 'qrcode-data']
+                'data' => (object) ['qrCode' => 'qrcode-data'],
             ]);
 
         $mockResponse = Mockery::mock(Response::class);
         Inertia::shouldReceive('render')
             ->with('auth/totp-page', [
                 'authToken' => $authToken,
-                'qrCode' => 'qrcode-data'
+                'qrCode' => 'qrcode-data',
             ])
             ->andReturn($mockResponse);
 
-        $controller = new AuthController();
+        $controller = new AuthController;
 
         // =====================================
         // Act (Aksi)
@@ -502,7 +502,7 @@ class AuthControllerTest extends TestCase
         ToolsHelper::setAuthToken('');  // Token kosong
 
         $request = new Request(['kodeOTP' => '123456']);
-        $controller = new AuthController();
+        $controller = new AuthController;
 
         // =====================================
         // Act (Aksi)
@@ -525,14 +525,14 @@ class AuthControllerTest extends TestCase
         $authToken = 'valid-token';
         ToolsHelper::setAuthToken($authToken);
 
-        $userApiMock = Mockery::mock('alias:' . UserApi::class);
+        $userApiMock = Mockery::mock('alias:'.UserApi::class);
         $userApiMock
             ->shouldReceive('postTotpVerify')
             ->with($authToken, '123456')
             ->andReturn((object) ['status' => 'error']);  // Verifikasi gagal
 
         $request = new Request(['kodeOTP' => '123456']);
-        $controller = new AuthController();
+        $controller = new AuthController;
 
         // =====================================
         // Act (Aksi)
@@ -558,8 +558,8 @@ class AuthControllerTest extends TestCase
         // =====================================
         // Arrange (Persiapan)
         // =====================================
-        $request = new Request();  // Tidak ada parameter code
-        $controller = new AuthController();
+        $request = new Request;  // Tidak ada parameter code
+        $controller = new AuthController;
 
         // =====================================
         // Act (Aksi)
@@ -586,7 +586,7 @@ class AuthControllerTest extends TestCase
         config(['sdi.sso_client_id' => 'test-client']);
         config(['sdi.sso_client_secret' => 'test-secret']);
 
-        $apiHelperMock = Mockery::mock('alias:' . ApiHelper::class);
+        $apiHelperMock = Mockery::mock('alias:'.ApiHelper::class);
         $apiHelperMock
             ->shouldReceive('sendRequest')
             ->with(
@@ -595,7 +595,7 @@ class AuthControllerTest extends TestCase
                 [
                     'client_id' => 'test-client',
                     'client_secret' => 'test-secret',
-                    'code' => 'auth-code-123'
+                    'code' => 'auth-code-123',
                 ]
             )
             ->andReturn((object) [
@@ -603,7 +603,7 @@ class AuthControllerTest extends TestCase
             ]);
 
         $request = new Request(['code' => 'auth-code-123']);
-        $controller = new AuthController();
+        $controller = new AuthController;
 
         // =====================================
         // Act (Aksi)
@@ -630,7 +630,7 @@ class AuthControllerTest extends TestCase
         config(['sdi.sso_client_id' => 'test-client']);
         config(['sdi.sso_client_secret' => 'test-secret']);
 
-        $apiHelperMock = Mockery::mock('alias:' . ApiHelper::class);
+        $apiHelperMock = Mockery::mock('alias:'.ApiHelper::class);
         $apiHelperMock
             ->shouldReceive('sendRequest')
             ->with(
@@ -639,14 +639,14 @@ class AuthControllerTest extends TestCase
                 [
                     'client_id' => 'test-client',
                     'client_secret' => 'test-secret',
-                    'code' => 'auth-code-123'
+                    'code' => 'auth-code-123',
                 ]
             )
             ->andReturn((object) ['access_token' => 'sso-token-123']);
 
         $request = new Request(['code' => 'auth-code-123']);
 
-        $controller = new AuthController();
+        $controller = new AuthController;
 
         // =====================================
         // Act (Aksi)

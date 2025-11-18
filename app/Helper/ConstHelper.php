@@ -32,4 +32,6 @@ class ConstHelper
 
         return $roles;
     }
+
+    const OPTION_ROWS_PER_PAGE = [3, 5, 10, 25, 50, 100];
 }

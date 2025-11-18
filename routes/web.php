@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\App\HakAkses\HakAksesController;
 use App\Http\Controllers\App\Home\HomeController;
+use App\Http\Controllers\App\Todo\TodoController;
 use App\Http\Controllers\Auth\AuthController;
 use Illuminate\Support\Facades\Route;
 
@@ -36,6 +37,13 @@ Route::middleware(['throttle:req-limit', 'handle.inertia'])->group(function () {
             Route::post('/change', [HakAksesController::class, 'postChange'])->name('hak-akses.change-post');
             Route::post('/delete', [HakAksesController::class, 'postDelete'])->name('hak-akses.delete-post');
             Route::post('/delete-selected', [HakAksesController::class, 'postDeleteSelected'])->name('hak-akses.delete-selected-post');
+        });
+
+        // Todo Routes
+        Route::prefix('todo')->group(function () {
+            Route::get('/', [TodoController::class, 'index'])->name('todo');
+            Route::post('/change', [TodoController::class, 'postChange'])->name('todo.change-post');
+            Route::post('/delete', [TodoController::class, 'postDelete'])->name('todo.delete-post');
         });
     });
 });

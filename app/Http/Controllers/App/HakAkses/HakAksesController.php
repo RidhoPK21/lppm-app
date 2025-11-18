@@ -16,7 +16,7 @@ class HakAksesController extends Controller
     {
         $auth = $request->attributes->get('auth');
         $isEditor = $this->checkIsEditor($auth);
-        if (!$isEditor) {
+        if (! $isEditor) {
             return redirect()->route('home');
         }
 
@@ -65,7 +65,7 @@ class HakAksesController extends Controller
         // Cek izin
         $auth = $request->attributes->get('auth');
         $isEditor = $this->checkIsEditor($auth);
-        if (!$isEditor) {
+        if (! $isEditor) {
             return back()->with('error', 'Anda tidak memiliki izin untuk mengubah hak akses.');
         }
 
@@ -93,7 +93,7 @@ class HakAksesController extends Controller
         $auth = $request->attributes->get('auth');
         $isEditor = $this->checkIsEditor($auth);
 
-        if (!$isEditor) {
+        if (! $isEditor) {
             return back()->with('error', 'Anda tidak memiliki izin untuk mengubah hak akses.');
         }
 
@@ -112,7 +112,7 @@ class HakAksesController extends Controller
         // Cek izin
         $auth = $request->attributes->get('auth');
         $isEditor = $this->checkIsEditor($auth);
-        if (!$isEditor) {
+        if (! $isEditor) {
             return back()->with('error', 'Anda tidak memiliki izin untuk mengubah hak akses.');
         }
 

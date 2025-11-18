@@ -5,9 +5,9 @@ namespace Tests\Feature\Controllers\Api;
 use App\Http\Api\UserApi;
 use App\Http\Controllers\Api\ApiController;
 use Illuminate\Http\Request;
+use Mockery;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
-use Mockery;
 
 class ApiControllerTest extends TestCase
 {
@@ -34,19 +34,19 @@ class ApiControllerTest extends TestCase
             (object) ['id' => 2, 'name' => 'User 2'],
         ];
 
-        $userApiMock = Mockery::mock('alias:' . UserApi::class);
+        $userApiMock = Mockery::mock('alias:'.UserApi::class);
         $userApiMock
             ->shouldReceive('getUsers')
             ->with('valid-token', 'test', 5, '')
             ->andReturn((object) [
-                'data' => (object) ['users' => $mockUsers]
+                'data' => (object) ['users' => $mockUsers],
             ]);
 
         $request = Request::create('/api/fetch-users', 'POST');
         $request->headers->set('Authorization', 'Bearer valid-token');
         $request->merge(['search' => 'test']);
 
-        $controller = new ApiController();
+        $controller = new ApiController;
 
         // =====================================
         // Act (Aksi)
@@ -70,18 +70,18 @@ class ApiControllerTest extends TestCase
         // =====================================
         // Arrange (Persiapan)
         // =====================================
-        $userApiMock = Mockery::mock('alias:' . UserApi::class);
+        $userApiMock = Mockery::mock('alias:'.UserApi::class);
         $userApiMock
             ->shouldReceive('getUsers')
             ->with('valid-token', '', 5, '')
             ->andReturn((object) [
-                'data' => (object) ['users' => []]
+                'data' => (object) ['users' => []],
             ]);
 
         $request = Request::create('/api/fetch-users', 'POST');
         $request->headers->set('Authorization', 'Bearer valid-token');
 
-        $controller = new ApiController();
+        $controller = new ApiController;
 
         // =====================================
         // Act (Aksi)
@@ -103,19 +103,19 @@ class ApiControllerTest extends TestCase
         // =====================================
         // Arrange (Persiapan)
         // =====================================
-        $userApiMock = Mockery::mock('alias:' . UserApi::class);
+        $userApiMock = Mockery::mock('alias:'.UserApi::class);
         $userApiMock
             ->shouldReceive('getUsers')
             ->with('valid-token', 'test', 5, '')
             ->andReturn((object) [
-                'data' => (object) []  // Tidak ada property users
+                'data' => (object) [],  // Tidak ada property users
             ]);
 
         $request = Request::create('/api/fetch-users', 'POST');
         $request->headers->set('Authorization', 'Bearer valid-token');
         $request->merge(['search' => 'test']);
 
-        $controller = new ApiController();
+        $controller = new ApiController;
 
         // =====================================
         // Act (Aksi)

@@ -7,9 +7,9 @@ use App\Http\Controllers\App\Home\HomeController;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Mockery;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
-use Mockery;
 
 class HomeControllerTest extends TestCase
 {
@@ -54,7 +54,7 @@ class HomeControllerTest extends TestCase
             ->with('app/home/home-page', Mockery::any())
             ->andReturn($mockResponse);
 
-        $controller = new HomeController();
+        $controller = new HomeController;
 
         // =====================================
         // Act (Aksi)
@@ -87,7 +87,7 @@ class HomeControllerTest extends TestCase
             ->with('app/home/home-page', Mockery::any())
             ->andReturn($mockResponse);
 
-        $controller = new HomeController();
+        $controller = new HomeController;
 
         // =====================================
         // Act (Aksi)

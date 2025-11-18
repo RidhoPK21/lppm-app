@@ -9,14 +9,15 @@ use App\Models\HakAksesModel;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Mockery;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
-use Mockery;
 
 class HakAksesControllerTest extends TestCase
 {
     // Attribut untuk menyimpan mock objek
     protected $hakAksesModelMock;
+
     protected $userApiMock;
 
     // Setup sebelum setiap test => dipanggil sebelum test dijalankan
@@ -36,8 +37,8 @@ class HakAksesControllerTest extends TestCase
             });
 
         // Buat mock dengan alias
-        $this->hakAksesModelMock = Mockery::mock('alias:' . HakAksesModel::class);
-        $this->userApiMock = Mockery::mock('alias:' . UserApi::class);
+        $this->hakAksesModelMock = Mockery::mock('alias:'.HakAksesModel::class);
+        $this->userApiMock = Mockery::mock('alias:'.UserApi::class);
     }
 
     protected function tearDown(): void
@@ -56,7 +57,7 @@ class HakAksesControllerTest extends TestCase
         $request = Request::create('/hak-akses', 'GET');
         $request->attributes->set('auth', $auth);
 
-        $controller = new HakAksesController();
+        $controller = new HakAksesController;
 
         // =====================================
         // Act (Aksi)
@@ -91,8 +92,8 @@ class HakAksesControllerTest extends TestCase
             ->shouldReceive('postReqUsersByIds')
             ->andReturn((object) [
                 'data' => (object) [
-                    'users' => [(object) ['id' => 'user1', 'name' => 'Test User']]
-                ]
+                    'users' => [(object) ['id' => 'user1', 'name' => 'Test User']],
+                ],
             ]);
 
         ToolsHelper::setAuthToken('fake-token');
@@ -105,7 +106,7 @@ class HakAksesControllerTest extends TestCase
             ->andReturn($mockResponse);
 
         // Biarkan always() dipanggil tanpa mock (gunakan real method)
-        $controller = new HakAksesController();
+        $controller = new HakAksesController;
 
         // =====================================
         // Act (Aksi)
@@ -127,7 +128,7 @@ class HakAksesControllerTest extends TestCase
         $auth = (object) ['akses' => ['Admin'], 'roles' => []];
         $request = Request::create('/hak-akses/change', 'POST', [
             'userId' => 'user123',
-            'hakAkses' => ['read', 'write']
+            'hakAkses' => ['read', 'write'],
         ]);
         $request->attributes->set('auth', $auth);
 
@@ -155,7 +156,7 @@ class HakAksesControllerTest extends TestCase
                     $data['akses'] === 'read,write';
             }));
 
-        $controller = new HakAksesController();
+        $controller = new HakAksesController;
 
         // =====================================
         // Act (Aksi)
@@ -170,7 +171,7 @@ class HakAksesControllerTest extends TestCase
     }
 
     #[Test]
-    public function aksesList_closure_mengembalikan_data_dengan_format_yang_benar()
+    public function akses_list_closure_mengembalikan_data_dengan_format_yang_benar()
     {
         // =====================================
         // Arrange (Persiapan)
@@ -184,13 +185,13 @@ class HakAksesControllerTest extends TestCase
             (object) [
                 'id' => '1',
                 'user_id' => 'user1',
-                'akses' => 'read,write'
+                'akses' => 'read,write',
             ],
             (object) [
                 'id' => '2',
                 'user_id' => 'user2',
-                'akses' => 'read,delete'
-            ]
+                'akses' => 'read,delete',
+            ],
         ]);
 
         // Mock data UserApi response
@@ -198,9 +199,9 @@ class HakAksesControllerTest extends TestCase
             'data' => (object) [
                 'users' => [
                     (object) ['id' => 'user1', 'name' => 'John Doe', 'email' => 'john@example.com'],
-                    (object) ['id' => 'user2', 'name' => 'Jane Smith', 'email' => 'jane@example.com']
-                ]
-            ]
+                    (object) ['id' => 'user2', 'name' => 'Jane Smith', 'email' => 'jane@example.com'],
+                ],
+            ],
         ];
 
         // Setup mock behavior
@@ -228,7 +229,7 @@ class HakAksesControllerTest extends TestCase
             ->with('app/hak-akses/hak-akses-page', Mockery::capture($capturedProps))
             ->andReturn($mockResponse);
 
-        $controller = new HakAksesController();
+        $controller = new HakAksesController;
 
         // =====================================
         // Act (Aksi)
@@ -248,7 +249,7 @@ class HakAksesControllerTest extends TestCase
     }
 
     #[Test]
-    public function aksesList_closure_handle_empty_data()
+    public function akses_list_closure_handle_empty_data()
     {
         // =====================================
         // Arrange (Persiapan)
@@ -281,7 +282,7 @@ class HakAksesControllerTest extends TestCase
             ->with('app/hak-akses/hak-akses-page', Mockery::capture($capturedProps))
             ->andReturn($mockResponse);
 
-        $controller = new HakAksesController();
+        $controller = new HakAksesController;
 
         // =====================================
         // Act (Aksi)
@@ -298,7 +299,7 @@ class HakAksesControllerTest extends TestCase
     }
 
     #[Test]
-    public function aksesList_closure_handle_user_not_found()
+    public function akses_list_closure_handle_user_not_found()
     {
         // =====================================
         // Arrange (Persiapan)
@@ -312,17 +313,17 @@ class HakAksesControllerTest extends TestCase
             (object) [
                 'id' => '1',
                 'user_id' => 'user1',
-                'akses' => 'read,write'
-            ]
+                'akses' => 'read,write',
+            ],
         ]);
 
         // Mock UserApi response tanpa user yang sesuai
         $mockUsersResponse = (object) [
             'data' => (object) [
                 'users' => [
-                    (object) ['id' => 'user999', 'name' => 'Other User']  // Different user ID
-                ]
-            ]
+                    (object) ['id' => 'user999', 'name' => 'Other User'],  // Different user ID
+                ],
+            ],
         ];
 
         $this
@@ -348,7 +349,7 @@ class HakAksesControllerTest extends TestCase
             ->with('app/hak-akses/hak-akses-page', Mockery::capture($capturedProps))
             ->andReturn($mockResponse);
 
-        $controller = new HakAksesController();
+        $controller = new HakAksesController;
 
         // =====================================
         // Act (Aksi)
@@ -369,7 +370,7 @@ class HakAksesControllerTest extends TestCase
     }
 
     #[Test]
-    public function aksesList_closure_handle_api_error()
+    public function akses_list_closure_handle_api_error()
     {
         // =====================================
         // Arrange (Persiapan)
@@ -382,8 +383,8 @@ class HakAksesControllerTest extends TestCase
             (object) [
                 'id' => '1',
                 'user_id' => 'user1',
-                'akses' => 'read'
-            ]
+                'akses' => 'read',
+            ],
         ]);
 
         // Mock API returning null or error
@@ -410,7 +411,7 @@ class HakAksesControllerTest extends TestCase
             ->with('app/hak-akses/hak-akses-page', Mockery::capture($capturedProps))
             ->andReturn($mockResponse);
 
-        $controller = new HakAksesController();
+        $controller = new HakAksesController;
 
         // =====================================
         // Act (Aksi)
@@ -431,7 +432,7 @@ class HakAksesControllerTest extends TestCase
     }
 
     #[Test]
-    public function aksesList_closure_handle_akses_sorting_correctly()
+    public function akses_list_closure_handle_akses_sorting_correctly()
     {
         // =====================================
         // Arrange (Persiapan)
@@ -445,16 +446,16 @@ class HakAksesControllerTest extends TestCase
             (object) [
                 'id' => '1',
                 'user_id' => 'user1',
-                'akses' => 'write,read,delete'
-            ]
+                'akses' => 'write,read,delete',
+            ],
         ]);
 
         $mockUsersResponse = (object) [
             'data' => (object) [
                 'users' => [
-                    (object) ['id' => 'user1', 'name' => 'Test User']
-                ]
-            ]
+                    (object) ['id' => 'user1', 'name' => 'Test User'],
+                ],
+            ],
         ];
 
         $this
@@ -480,7 +481,7 @@ class HakAksesControllerTest extends TestCase
             ->with('app/hak-akses/hak-akses-page', Mockery::capture($capturedProps))
             ->andReturn($mockResponse);
 
-        $controller = new HakAksesController();
+        $controller = new HakAksesController;
 
         // =====================================
         // Act (Aksi)
@@ -507,7 +508,7 @@ class HakAksesControllerTest extends TestCase
         // =====================================
         $auth = (object) ['akses' => ['Admin'], 'roles' => []];
         $request = Request::create('/hak-akses/delete', 'POST', [
-            'userId' => 'user123'
+            'userId' => 'user123',
         ]);
         $request->attributes->set('auth', $auth);
 
@@ -523,7 +524,7 @@ class HakAksesControllerTest extends TestCase
             ->once()
             ->andReturn($queryMock);
 
-        $controller = new HakAksesController();
+        $controller = new HakAksesController;
 
         // =====================================
         // Act (Aksi)
@@ -547,7 +548,7 @@ class HakAksesControllerTest extends TestCase
         $request = Request::create('/hak-akses/change', 'POST');
         $request->attributes->set('auth', $auth);
 
-        $controller = new HakAksesController();
+        $controller = new HakAksesController;
 
         // =====================================
         // Act (Aksi)
@@ -562,7 +563,7 @@ class HakAksesControllerTest extends TestCase
     }
 
     #[Test]
-    public function postDelete_redirect_back_jika_bukan_editor()
+    public function post_delete_redirect_back_jika_bukan_editor()
     {
         // =====================================
         // Arrange (Persiapan)
@@ -571,7 +572,7 @@ class HakAksesControllerTest extends TestCase
         $request = Request::create('/hak-akses/delete', 'POST');
         $request->attributes->set('auth', $auth);
 
-        $controller = new HakAksesController();
+        $controller = new HakAksesController;
 
         // =====================================
         // Act (Aksi)
@@ -586,7 +587,7 @@ class HakAksesControllerTest extends TestCase
     }
 
     #[Test]
-    public function postDeleteSelected_redirect_back_jika_bukan_editor()
+    public function post_delete_selected_redirect_back_jika_bukan_editor()
     {
         // =====================================
         // Arrange (Persiapan)
@@ -595,7 +596,7 @@ class HakAksesControllerTest extends TestCase
         $request = Request::create('/hak-akses/delete-selected', 'POST');
         $request->attributes->set('auth', $auth);
 
-        $controller = new HakAksesController();
+        $controller = new HakAksesController;
 
         // =====================================
         // Act (Aksi)
@@ -610,14 +611,14 @@ class HakAksesControllerTest extends TestCase
     }
 
     #[Test]
-    public function postDeleteSelected_berhasil_menghapus_hak_akses_terpilih()
+    public function post_delete_selected_berhasil_menghapus_hak_akses_terpilih()
     {
         // =====================================
         // Arrange (Persiapan)
         // =====================================
         $auth = (object) ['akses' => ['Admin'], 'roles' => []];
         $request = Request::create('/hak-akses/delete-selected', 'POST', [
-            'userIds' => ['user123', 'user456']
+            'userIds' => ['user123', 'user456'],
         ]);
         $request->attributes->set('auth', $auth);
 
@@ -633,7 +634,7 @@ class HakAksesControllerTest extends TestCase
             ->once()
             ->andReturn($queryMock);
 
-        $controller = new HakAksesController();
+        $controller = new HakAksesController;
 
         // =====================================
         // Act (Aksi)
@@ -648,14 +649,14 @@ class HakAksesControllerTest extends TestCase
     }
 
     #[Test]
-    public function postDeleteSelected_berhasil_menghapus_hak_akses_terpilih_dengan_role_admin()
+    public function post_delete_selected_berhasil_menghapus_hak_akses_terpilih_dengan_role_admin()
     {
         // =====================================
         // Arrange (Persiapan)
         // =====================================
         $auth = (object) ['akses' => [], 'roles' => ['Admin']];
         $request = Request::create('/hak-akses/delete-selected', 'POST', [
-            'userIds' => ['user123', 'user456']
+            'userIds' => ['user123', 'user456'],
         ]);
         $request->attributes->set('auth', $auth);
 
@@ -671,7 +672,7 @@ class HakAksesControllerTest extends TestCase
             ->once()
             ->andReturn($queryMock);
 
-        $controller = new HakAksesController();
+        $controller = new HakAksesController;
 
         // =====================================
         // Act (Aksi)
