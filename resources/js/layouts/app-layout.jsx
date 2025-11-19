@@ -20,7 +20,7 @@ import { useTheme } from "@/providers/theme-provider";
 import { usePage } from "@inertiajs/react";
 
 import * as Icon from "@tabler/icons-react";
-import { Moon, Sun } from "lucide-react";
+import { Moon, Sun, HandCoins } from "lucide-react";
 import { Toaster } from "sonner";
 import { route } from "ziggy-js";
 
@@ -61,6 +61,60 @@ export default function AppLayout({ children }) {
                     title: "Hak Akses",
                     url: route("hak-akses"),
                     icon: Icon.IconLock,
+                },
+            ],
+        },
+
+        // ------------------------------------------
+        //   INI BLOK BARU → MENU LPPM + SUBMENU UI jangan di otak atik dl
+        // -------
+
+        // ============================================================
+        //  SUBSIDEBAR #1 — PENGAJUAN DANA (SUDAH ADA)
+        // ============================================================
+        // ============================================================
+        //  PENGAJUAN DANA  (COLLAPSIBLE)
+        // ============================================================
+        {
+            title: "Registrasi",
+            collapsible: true,
+            groupIcon: HandCoins,
+            items: [
+                {
+                    title: "Registrasi Seminar",
+                    url: route("registrasi.seminar"),
+                    icon: Icon.IconNotebook,
+                },
+                {
+                    title: "Registrasi Jurnal",
+                    url: route("registrasi.jurnal"),
+                    icon: Icon.IconBook,
+                },
+            ],
+        },
+
+        // ============================================================
+        //  PENGHARGAAN (COLLAPSIBLE)
+        // ============================================================
+        {
+            title: "Penghargaan",
+            collapsible: true,
+            groupIcon: Icon.IconAward, // <<=== INI ICON UTAMA MENU PENGHARGAAN
+            items: [
+                {
+                    title: "Penghargaan Buku",
+                    url: route("penghargaan.dosen"),
+                    icon: Icon.IconBook2,
+                },
+                {
+                    title: "Penghargaan Jurnal",
+                    url: route("penghargaan.mahasiswa"),
+                    icon: Icon.IconFileCertificate,
+                },
+                {
+                    title: "Penghargaan Seminar",
+                    url: route("penghargaan.penelitian"),
+                    icon: Icon.IconPresentation,
                 },
             ],
         },

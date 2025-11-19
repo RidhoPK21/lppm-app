@@ -1,3 +1,4 @@
+
 <?php
 
 use App\Http\Controllers\App\HakAkses\HakAksesController;
@@ -5,6 +6,9 @@ use App\Http\Controllers\App\Home\HomeController;
 use App\Http\Controllers\App\Todo\TodoController;
 use App\Http\Controllers\Auth\AuthController;
 use Illuminate\Support\Facades\Route;
+
+use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 Route::middleware(['throttle:req-limit', 'handle.inertia'])->group(function () {
     // SSO Routes
@@ -45,5 +49,43 @@ Route::middleware(['throttle:req-limit', 'handle.inertia'])->group(function () {
             Route::post('/change', [TodoController::class, 'postChange'])->name('todo.change-post');
             Route::post('/delete', [TodoController::class, 'postDelete'])->name('todo.delete-post');
         });
+    });
+
+    // LPPM Specific Routes Trying
+
+    // LPPM - UI Testing
+    Route::get('/lppm/todo-ui', function () {
+        return inertia('app/lppm/todo-ui', [
+            'pageName' => 'Todo UI Test'
+        ]);
+    })->name('lppm.todo-ui');
+
+    // Nanti digunakan sebagai submenu
+    Route::get('/registrasi/seminar', function () {
+        return 'Registrasi Seminar UI (dummy)';
+    })->name('registrasi.seminar');
+
+    Route::get('/registrasi/jurnal', function () {
+        return 'Registrasi Jurnal UI (dummy)';
+    })->name('registrasi.jurnal');
+
+
+
+
+    
+    // LPPM - Penghargaan (submenu)
+    Route::prefix('penghargaan')->group(function () {
+
+        Route::get('/dosen', function () {
+            return 'Penghargaan Dosen UI (dummy)';
+        })->name('penghargaan.dosen');
+
+        Route::get('/mahasiswa', function () {
+            return 'Penghargaan Mahasiswa UI (dummy)';
+        })->name('penghargaan.mahasiswa');
+
+        Route::get('/penelitian', function () {
+            return 'Penghargaan Penelitian UI (dummy)';
+        })->name('penghargaan.penelitian');
     });
 });
