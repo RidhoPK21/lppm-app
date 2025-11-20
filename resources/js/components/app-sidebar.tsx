@@ -158,7 +158,6 @@ function LppmCollapsibleMenu({
         items: {
             title: string;
             url: string;
-            icon: React.ElementType;
         }[];
     };
     active: string;
@@ -167,33 +166,35 @@ function LppmCollapsibleMenu({
 
     return (
         <>
-            {/* BUTTON UTAMA (TANPA LABEL DI ATAS) */}
+            {/* HEADER (MASIH PAKAI ICON!) */}
             <button
                 onClick={() => setOpen(!open)}
                 className="flex items-center justify-between w-full px-2 py-2 hover:bg-accent rounded-md transition-colors"
             >
                 <div className="flex items-center gap-2">
-                    {group.groupIcon && <group.groupIcon className="w-4 h-4" />}
-                    <span className="text-sm">{group.title}</span>
+                    {group.groupIcon && (
+                        <group.groupIcon className="w-4 h-4 text-muted-foreground" />
+                    )}
+                    <span className="text-sm font-medium">{group.title}</span>
                 </div>
 
                 {open ? (
-                    <ChevronDown className="w-4 h-4 transition-transform" />
+                    <ChevronDown className="w-4 h-4" />
                 ) : (
-                    <ChevronRight className="w-4 h-4 transition-transform" />
+                    <ChevronRight className="w-4 h-4" />
                 )}
             </button>
 
+            {/* SUBMENU — TANPA ICON, ADA BORDER-L */}
             {open && (
-                <SidebarMenu className="ml-4 mt-1 border-l border-accent pl-3 space-y-1 animate-slideDown">
+                <SidebarMenu className="ml-4 border-l border-border pl-4 mt-1 space-y-1">
                     {group.items.map((item) => (
                         <SidebarMenuItem key={item.title}>
                             <SidebarMenuButton
                                 asChild
                                 className={menuActive(item.title, active)}
                             >
-                                <a href={item.url}>
-                                    <item.icon />
+                                <a href={item.url} className="pl-1">
                                     <span>{item.title}</span>
                                 </a>
                             </SidebarMenuButton>

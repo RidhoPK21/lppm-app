@@ -39,6 +39,7 @@ export default function AppLayout({ children }) {
     ];
 
     const navData = [
+        // 1. GROUP MAIN
         {
             title: "Main",
             items: [
@@ -54,27 +55,8 @@ export default function AppLayout({ children }) {
                 },
             ],
         },
-        {
-            title: "Admin",
-            items: [
-                {
-                    title: "Hak Akses",
-                    url: route("hak-akses"),
-                    icon: Icon.IconLock,
-                },
-            ],
-        },
 
-        // ------------------------------------------
-        //   INI BLOK BARU → MENU LPPM + SUBMENU UI jangan di otak atik dl
-        // -------
-
-        // ============================================================
-        //  SUBSIDEBAR #1 — PENGAJUAN DANA (SUDAH ADA)
-        // ============================================================
-        // ============================================================
-        //  PENGAJUAN DANA  (COLLAPSIBLE)
-        // ============================================================
+        // 2. GROUP REGISTRASI (Langsung di bawah Todo)
         {
             title: "Registrasi",
             collapsible: true,
@@ -93,17 +75,16 @@ export default function AppLayout({ children }) {
             ],
         },
 
-        // ============================================================
-        //  PENGHARGAAN (COLLAPSIBLE)
-        // ============================================================
+        // 3. GROUP PENGHARGAAN
         {
             title: "Penghargaan",
             collapsible: true,
-            groupIcon: Icon.IconAward, // <<=== INI ICON UTAMA MENU PENGHARGAAN
+            groupIcon: Icon.IconAward,
             items: [
                 {
                     title: "Penghargaan Buku",
-                    url: route("penghargaan.dosen"),
+                    // Dikembalikan ke sini dengan route yang benar
+                    url: route("app.penghargaan.buku.index"),
                     icon: Icon.IconBook2,
                 },
                 {
@@ -115,6 +96,18 @@ export default function AppLayout({ children }) {
                     title: "Penghargaan Seminar",
                     url: route("penghargaan.penelitian"),
                     icon: Icon.IconPresentation,
+                },
+            ],
+        },
+
+        // 4. GROUP ADMIN (Pindah ke Bawah)
+        {
+            title: "Admin",
+            items: [
+                {
+                    title: "Hak Akses",
+                    url: route("hak-akses"),
+                    icon: Icon.IconLock,
                 },
             ],
         },
