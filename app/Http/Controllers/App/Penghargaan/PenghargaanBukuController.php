@@ -8,49 +8,56 @@ use Inertia\Inertia;
 
 class PenghargaanBukuController extends Controller
 {
-    /**
-     * Menampilkan halaman daftar buku (Index).
-     * Berisi Card Informasi dan Tabel Riwayat Pengajuan.
-     */
     public function index()
     {
-        // DATA DUMMY UNTUK TABEL
-        // Sudah disesuaikan dengan kolom-kolom baru (jumlah_halaman, bidang_keilmuan)
+        // DATA DUMMY
         $dummyData = [
             [
                 'id' => 1,
-                'judul' => 'Rekayasa Perangkat Lunak Modern',
-                'penulis' => 'Dr. Arnaldo',
-                'penerbit' => 'Andi Publisher',
+                'judul' => 'Judul Buku 1',
+                'penulis' => 'Penulis 1, Penulis 2',
+                'penerbit' => 'Penerbit A',
                 'tahun' => '2024',
-                'isbn' => '978-1-23-456789-0',
-                'status' => 'diajukan',
+                'isbn' => '978-1-111',
+                'status' => 'Belum Disetujui', // Diubah agar merah sesuai gambar
                 'kategori' => 'Buku Referensi',
                 'jumlah_halaman' => 150,
                 'bidang_keilmuan' => 'Ilmu Komputer'
             ],
             [
                 'id' => 2,
-                'judul' => 'Algoritma Pemrograman Dasar',
-                'penulis' => 'Siti Saragih, M.T.',
-                'penerbit' => 'IT Del Press',
+                'judul' => 'Judul Buku 2',
+                'penulis' => 'Penulis 1, Penulis 2',
+                'penerbit' => 'Penerbit B',
                 'tahun' => '2023',
-                'isbn' => '978-9-87-654321-0',
-                'status' => 'disetujui',
+                'isbn' => '978-2-222',
+                'status' => 'Belum Disetujui',
                 'kategori' => 'Buku Ajar',
                 'jumlah_halaman' => 200,
                 'bidang_keilmuan' => 'Sistem Informasi'
             ],
             [
                 'id' => 3,
-                'judul' => 'Sistem Informasi Manajemen',
-                'penulis' => 'Budi Santoso',
-                'penerbit' => 'Gramedia',
+                'judul' => 'Judul Buku 3',
+                'penulis' => 'Penulis 1, Penulis 2',
+                'penerbit' => 'Penerbit C',
                 'tahun' => '2024',
-                'isbn' => '978-602-03-1234-5',
-                'status' => 'ditolak',
+                'isbn' => '978-3-333',
+                'status' => 'Belum Disetujui',
                 'kategori' => 'Monograf',
-                'jumlah_halaman' => 35, // Contoh < 40 halaman
+                'jumlah_halaman' => 35,
+                'bidang_keilmuan' => 'Manajemen Rekayasa'
+            ],
+             [
+                'id' => 4,
+                'judul' => 'Judul Buku 4',
+                'penulis' => 'Penulis 1, Penulis 2',
+                'penerbit' => 'Penerbit D',
+                'tahun' => '2024',
+                'isbn' => '978-4-444',
+                'status' => 'Belum Disetujui',
+                'kategori' => 'Monograf',
+                'jumlah_halaman' => 45,
                 'bidang_keilmuan' => 'Manajemen Rekayasa'
             ],
         ];
@@ -61,22 +68,12 @@ class PenghargaanBukuController extends Controller
         ]);
     }
 
-    /**
-     * LANGKAH 1: Menampilkan Form Data Buku
-     */
-    public function create()
-    {
-        return Inertia::render('app/penghargaan/buku/create', [
-            'pageName' => 'Formulir Pengajuan Buku',
-        ]);
+    // ... Method create, store, uploadDocs, storeUpload SAMA SEPERTI SEBELUMNYA (Tidak berubah)
+    public function create() {
+        return Inertia::render('app/penghargaan/buku/create', ['pageName' => 'Formulir Pengajuan Buku']);
     }
 
-    /**
-     * PROSES LANGKAH 1: Simpan Data Buku Sementara & Redirect ke Upload
-     */
-    public function store(Request $request)
-    {
-        // 1. Validasi Input sesuai Pedoman
+    public function store(Request $request) {
         $validated = $request->validate([
             'judul' => 'required|string|max:255',
             'penulis' => 'required|string|max:255',
@@ -85,54 +82,23 @@ class PenghargaanBukuController extends Controller
             'isbn' => 'required|string',
             'kategori' => 'required|string',
             'bidang_keilmuan' => 'required|string',
-            'jumlah_halaman' => 'required|integer|min:40', // Validasi min 40 halaman
+            'jumlah_halaman' => 'required|integer|min:40',
         ], [
             'jumlah_halaman.min' => 'Sesuai standar UNESCO, buku harus memiliki minimal 40 halaman.',
             'bidang_keilmuan.required' => 'Bidang keilmuan wajib dipilih.',
             'judul.required' => 'Judul buku wajib diisi.',
         ]);
-
-        // 2. Logika Simpan ke Database (Simulasi)
-        // $newBook = PenghargaanBuku::create([...]);
-        // Kita gunakan ID dummy 999 untuk simulasi
         $newBookId = 999;
-
-        // 3. REDIRECT KE HALAMAN UPLOAD (Bukan kembali ke Index)
         return redirect()->route('app.penghargaan.buku.upload', ['id' => $newBookId])
             ->with('success', 'Data buku berhasil disimpan. Silakan lengkapi dokumen pendukung.');
     }
 
-    /**
-     * LANGKAH 2: Menampilkan Halaman Upload Dokumen
-     */
-    public function uploadDocs($id)
-    {
-        return Inertia::render('app/penghargaan/buku/upload-docs', [
-            'pageName' => 'Unggah Dokumen Pendukung',
-            'bookId' => $id
-        ]);
+    public function uploadDocs($id) {
+        return Inertia::render('app/penghargaan/buku/upload-docs', ['pageName' => 'Unggah Dokumen Pendukung', 'bookId' => $id]);
     }
 
-    /**
-     * PROSES LANGKAH 2: Simpan Dokumen Final & Selesai
-     */
-    public function storeUpload(Request $request)
-    {
-        // Validasi Link Drive (Wajib)
-        $request->validate([
-            'link_drive' => 'required', 
-            // Field lain opsional/nullable di validasi jika user boleh mengosongkan
-        ], [
-            'link_drive.required' => 'Link Google Drive wajib diisi.',
-        ]);
-
-        // Logika Update Database untuk menyimpan link dokumen...
-        // $book = PenghargaanBuku::find($request->book_id);
-        // $book->update([...]);
-
-        // PERUBAHAN PENTING:
-        // Return back() agar Frontend bisa menangkap respon 'onSuccess'
-        // dan menampilkan SweetAlert terlebih dahulu sebelum redirect manual via JS.
+    public function storeUpload(Request $request) {
+        $request->validate(['link_drive' => 'required'], ['link_drive.required' => 'Link Google Drive wajib diisi.']);
         return back()->with('success', 'Data berhasil disimpan');
     }
 }
