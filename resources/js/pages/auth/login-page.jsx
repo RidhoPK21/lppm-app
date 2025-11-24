@@ -8,12 +8,15 @@ import {
     FieldSeparator,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { AUTH_TOKEN_KEY } from "@/lib/consts";
 import { getDeviceInfo } from "@/lib/utils";
-import { router, useForm, usePage } from "@inertiajs/react";
+import { useForm, usePage } from "@inertiajs/react";
+
 import { LoaderCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { route } from "ziggy-js";
+import { router } from "@inertiajs/react"; 
+
+import { AUTH_TOKEN_KEY } from "@/lib/consts";
 
 export default function LoginPage() {
     const { appName, urlLoginSSO } = usePage().props;

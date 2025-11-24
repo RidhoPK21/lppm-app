@@ -2,138 +2,103 @@
 
 namespace App\Http\Controllers\App\HakAkses;
 
-use App\Helper\ConstHelper;
+
 use App\Helper\ToolsHelper;
 use App\Http\Api\UserApi;
 use App\Http\Controllers\Controller;
 use App\Models\HakAksesModel;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Support\Str;
+
 
 class HakAksesController extends Controller
 {
     public function index(Request $request)
     {
         $auth = $request->attributes->get('auth');
-        $isEditor = $this->checkIsEditor($auth);
-        if (! $isEditor) {
+
+        // Hanya Admin atau role Admin yang boleh akses halaman
+        if (!in_array('Admin', $auth->akses) && !in_array('Admin', $auth->roles)) {
             return redirect()->route('home');
         }
 
-        return Inertia::render('app/hak-akses/hak-akses-page', [
-            // SELALU diperlukan, tapi LAZY loading
-            'aksesList' => function () {
-                $aksesList = HakAksesModel::all();
+  return Inertia::render('App/HakAkses/Index', [
+    'aksesList' => $this->aksesList(),
+]);
 
-                $response = UserApi::postReqUsersByIds(
-                    ToolsHelper::getAuthToken(),
-                    $aksesList->pluck('user_id')->unique()->toArray(),
-                );
 
-                $usersList = [];
-                if ($response && isset($response->data->users)) {
-                    $usersList = collect($response->data->users)->map(function ($user) {
-                        return (object) $user;
-                    })->all();
-                }
-
-                foreach ($aksesList as $akses) {
-                    $akses->user = collect($usersList)->firstWhere('id', $akses->user_id);
-                    $data_akses = explode(',', $akses->akses);
-                    sort($data_akses);
-                    $akses->data_akses = $data_akses;
-                }
-
-                return $aksesList->sortBy(function ($item) {
-                    $user = $item->user;
-
-                    return $user ? strtolower($user->name) : '';
-                })->values();
-            },
-            // SELALU diperlukan dan SELALU dikirim
-            'pageName' => Inertia::always('Hak Akses'),
-            'auth' => Inertia::always($auth),
-            'isEditor' => Inertia::always(
-                in_array('Admin', $auth->akses) || in_array('Admin', $auth->roles) ? true : false
-            ),
-            'optionRoles' => Inertia::always(ConstHelper::getOptionRoles()),
-        ]);
     }
 
-    public function postChange(Request $request)
+    private function aksesList()
     {
-        // Cek izin
-        $auth = $request->attributes->get('auth');
-        $isEditor = $this->checkIsEditor($auth);
-        if (! $isEditor) {
-            return back()->with('error', 'Anda tidak memiliki izin untuk mengubah hak akses.');
-        }
+        $hakAkses = HakAksesModel::all();
+        $token = ToolsHelper::getAuthToken();
+        $userIds = $hakAkses->pluck('user_id')->toArray();
 
-        $request->validate([
-            'userId' => 'required',
-            'hakAkses' => 'required|array',
-        ]);
+        $response = UserApi::postReqUsersByIds($token, $userIds);
+        $users = $response->data->users ?? [];
 
-        // Hapus akses lama
-        HakAksesModel::where('user_id', $request->userId)->delete();
+        return $hakAkses->map(function ($item) use ($users) {
+            $user = collect($users)->firstWhere('id', $item->user_id);
 
-        // Simpan hak akses baru
-        HakAksesModel::create([
-            'id' => ToolsHelper::generateId(),
-            'user_id' => $request->userId,
-            'akses' => implode(',', $request->hakAkses),
-        ]);
-
-        return back()->with('success', 'Hak akses berhasil diperbarui.');
+            return (object) [
+                'id' => $item->id,
+                'user_id' => $item->user_id,
+                'user' => $user ?? null,
+                'data_akses' => collect(explode(',', $item->akses))
+                    ->map(fn ($v) => trim($v))
+                    ->sort()
+                    ->values()
+                    ->toArray(),
+            ];
+        });
     }
+
+   public function postChange(Request $request)
+{
+    $auth = $request->attributes->get('auth');
+
+    if (!in_array('Admin', $auth->akses) && !in_array('Admin', $auth->roles)) {
+        return redirect()->back()->with('error', 'Anda tidak memiliki izin untuk mengubah hak akses.');
+    }
+
+    $userId = $request->get('userId');
+    $akses = implode(',', $request->get('hakAkses'));
+
+    HakAksesModel::where('user_id', $userId)->delete();
+
+    HakAksesModel::create([
+        'id' => \Illuminate\Support\Str::uuid()->toString(), // FIX UUID valid
+        'user_id' => $userId,
+        'akses' => trim($akses, ','), // FIX hilangkan koma terakhir
+    ]);
+
+    return redirect()->back()->with('success', 'Hak akses berhasil diperbarui.');
+}
+
 
     public function postDelete(Request $request)
     {
-        // Cek izin
         $auth = $request->attributes->get('auth');
-        $isEditor = $this->checkIsEditor($auth);
 
-        if (! $isEditor) {
-            return back()->with('error', 'Anda tidak memiliki izin untuk mengubah hak akses.');
+        if (!in_array('Admin', $auth->akses) && !in_array('Admin', $auth->roles)) {
+            return redirect()->back()->with('error', 'Anda tidak memiliki izin untuk mengubah hak akses.');
         }
 
-        $request->validate([
-            'userId' => 'required',
-        ]);
-
-        // Hapus akses
-        HakAksesModel::where('user_id', $request->userId)->delete();
-
-        return back()->with('success', 'Hak akses pengguna berhasil dihapus.');
+        HakAksesModel::where('user_id', $request->get('userId'))->delete();
+        return redirect()->back()->with('success', 'Hak akses pengguna berhasil dihapus.');
     }
 
     public function postDeleteSelected(Request $request)
     {
-        // Cek izin
         $auth = $request->attributes->get('auth');
-        $isEditor = $this->checkIsEditor($auth);
-        if (! $isEditor) {
-            return back()->with('error', 'Anda tidak memiliki izin untuk mengubah hak akses.');
+
+        if (!in_array('Admin', $auth->akses) && !in_array('Admin', $auth->roles)) {
+            return redirect()->back()->with('error', 'Anda tidak memiliki izin untuk mengubah hak akses.');
         }
 
-        $request->validate([
-            'userIds' => 'required|array',
-        ]);
-
-        // Hapus akses
-        HakAksesModel::whereIn('user_id', $request->userIds)->delete();
-
-        return back()->with('success', 'Hak akses untuk pengguna yang dipilih berhasil dihapus.');
-    }
-
-    private function checkIsEditor($auth)
-    {
-        if (ToolsHelper::checkRoles('Admin', $auth->akses)) {
-            return true;
-        } elseif (ToolsHelper::checkRoles('Admin', $auth->roles)) {
-            return true;
-        }
-
-        return false;
+        HakAksesModel::whereIn('user_id', $request->get('userIds'))->delete();
+        return redirect()->back()->with('success', 'Hak akses untuk pengguna yang dipilih berhasil dihapus.');
     }
 }

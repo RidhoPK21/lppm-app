@@ -1,5 +1,7 @@
 import { AppSidebar } from "@/components/app-sidebar";
 import { Button } from "@/components/ui/button";
+import { Link } from "@inertiajs/react";
+import { Bell } from "lucide-react";
 import {
     Select,
     SelectContent,
@@ -17,10 +19,10 @@ import {
 } from "@/components/ui/sidebar";
 import { useTheme } from "@/providers/theme-provider";
 
-import { usePage, Link } from "@inertiajs/react"; // Update: Tambah Link
+import { usePage } from "@inertiajs/react";
 
 import * as Icon from "@tabler/icons-react";
-import { Moon, Sun, HandCoins, Bell } from "lucide-react"; // Update: Tambah Bell
+import { Moon, Sun, HandCoins } from "lucide-react";
 import { Toaster } from "sonner";
 import { route } from "ziggy-js";
 
@@ -39,7 +41,6 @@ export default function AppLayout({ children }) {
     ];
 
     const navData = [
-        // 1. GROUP MAIN
         {
             title: "Main",
             items: [
@@ -55,52 +56,97 @@ export default function AppLayout({ children }) {
                 },
             ],
         },
-
-        // 2. GROUP REGISTRASI (Langsung di bawah Todo)
+        // ============================================================
+        //  SUBSIDEBAR #1 — PENGAJUAN DANA (SUDAH ADA)
+        // ============================================================
+        // ============================================================
+        //  PENGAJUAN DANA  (COLLAPSIBLE)
+        // ============================================================
         {
             title: "Registrasi",
             collapsible: true,
             groupIcon: HandCoins,
             items: [
                 {
-                    title: "Registrasi Seminar",
-                    url: route("registrasi.seminar"),
+                    title: "Seminar",
+                   url: route("regis-semi.index"),
                     icon: Icon.IconNotebook,
                 },
                 {
-                    title: "Registrasi Jurnal",
-                    url: route("registrasi.jurnal"),
+                    title: "Jurnal",
+                   url: route("regis-semi.index"),
                     icon: Icon.IconBook,
                 },
             ],
         },
 
-        // 3. GROUP PENGHARGAAN
+        // ============================================================
+        //  PENGHARGAAN (COLLAPSIBLE)
+        // ============================================================
         {
             title: "Penghargaan",
             collapsible: true,
-            groupIcon: Icon.IconAward,
+            groupIcon: Icon.IconAward, // <<=== INI ICON UTAMA MENU PENGHARGAAN
             items: [
                 {
                     title: "Penghargaan Buku",
-                    // Dikembalikan ke sini dengan route yang benar
-                    url: route("app.penghargaan.buku.index"),
+                     url: route("app.penghargaan.buku.index"),
                     icon: Icon.IconBook2,
                 },
                 {
                     title: "Penghargaan Jurnal",
-                    url: route("penghargaan.mahasiswa"),
+                    url: route("regis-semi.index"),
                     icon: Icon.IconFileCertificate,
                 },
                 {
                     title: "Penghargaan Seminar",
-                    url: route("penghargaan.penelitian"),
+                     url: route("regis-semi.index"),
+                    icon: Icon.IconPresentation,
+                },
+            ],
+        }, {
+            title: "Registrasi Masuk",
+            collapsible: true,
+           // <<=== INI ICON UTAMA MENU PENGHARGAAN
+            items: [
+                {
+                    title: "Registrasi Buku Masuk",
+                     url: route("regis-semi.index"),
+                    icon: Icon.IconBook2,
+                },
+                {
+                    title: "Registrasi Jurnal Masuk",
+                    url: route("regis-semi.index"),
+                    icon: Icon.IconFileCertificate,
+                },
+                {
+                    title: "Registrasi Seminar Masuk",
+                     url: route("regis-semi.index"),
+                    icon: Icon.IconPresentation,
+                },
+            ],
+        }, {
+            title: "Penghargaan Masuk",
+            collapsible: true,
+          // <<=== INI ICON UTAMA MENU PENGHARGAAN
+            items: [
+                {
+                    title: "Penghargaan Buku Masuk",
+                     url: route("regis-semi.index"),
+                    icon: Icon.IconBook2,
+                },
+                {
+                    title: "Penghargaan Jurnal Masuk",
+                    url: route("regis-semi.index"),
+                    icon: Icon.IconFileCertificate,
+                },
+                {
+                    title: "Penghargaan Seminar Masuk",
+                     url: route("regis-semi.index"),
                     icon: Icon.IconPresentation,
                 },
             ],
         },
-
-        // 4. GROUP ADMIN (Pindah ke Bawah)
         {
             title: "Admin",
             items: [
@@ -111,6 +157,10 @@ export default function AppLayout({ children }) {
                 },
             ],
         },
+
+        // ------------------------------------------
+        //   INI BLOK BARU → MENU LPPM + SUBMENU UI jangan di otak atik dl
+        // -------
     ];
 
     return (
@@ -140,8 +190,8 @@ export default function AppLayout({ children }) {
                                 {pageName}
                             </h1>
                             <div className="ml-auto flex items-center gap-2">
-                                {/* --- TOMBOL NOTIFIKASI DITAMBAHKAN DI SINI --- */}
-                                <Button variant="ghost" size="icon" asChild>
+
+                                 <Button variant="ghost" size="icon" asChild>
                                     <Link href={route("notifications.index")}>
                                         <Bell className="h-4 w-4" />
                                         <span className="sr-only">
@@ -149,7 +199,7 @@ export default function AppLayout({ children }) {
                                         </span>
                                     </Link>
                                 </Button>
-                                {/* --------------------------------------------- */}
+
 
                                 <Select
                                     className="capitalize"

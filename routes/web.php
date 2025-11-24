@@ -1,48 +1,60 @@
 <?php
 
-use App\Http\Controllers\App\HakAkses\HakAksesController;
-use App\Http\Controllers\App\Home\HomeController;
-use App\Http\Controllers\App\Penghargaan\PenghargaanBukuController;
-use App\Http\Controllers\App\Todo\TodoController;
-use App\Http\Controllers\Auth\AuthController;
 use Illuminate\Support\Facades\Route;
+
+use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\App\Home\HomeController;
+use App\Http\Controllers\App\HakAkses\HakAksesController;
+use App\Http\Controllers\App\Todo\TodoController;
+use App\Http\Controllers\App\RegisSemi\RegisSemiController;
+use App\Http\Controllers\App\Penghargaan\PenghargaanBukuController;
 use Inertia\Inertia;
 
 Route::middleware(['throttle:req-limit', 'handle.inertia'])->group(function () {
-    // =========================================================================
-    // 1. SSO Routes (Public)
-    // =========================================================================
-    Route::group(['prefix' => 'sso'], function () {
+
+    /*
+    |--------------------------------------------------------------------------
+    | SSO ROUTES
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('sso')->group(function () {
         Route::get('/callback', [AuthController::class, 'ssoCallback'])->name('sso.callback');
     });
 
-    // =========================================================================
-    // 2. Authentication Routes (Public/Guest)
-    // =========================================================================
+    /*
+    |--------------------------------------------------------------------------
+    | AUTH ROUTES
+    |--------------------------------------------------------------------------
+    */
     Route::prefix('auth')->group(function () {
         Route::get('/login', [AuthController::class, 'login'])->name('auth.login');
         Route::post('/login-check', [AuthController::class, 'postLoginCheck'])->name('auth.login-check');
         Route::post('/login-post', [AuthController::class, 'postLogin'])->name('auth.login-post');
+
         Route::get('/logout', [AuthController::class, 'logout'])->name('auth.logout');
+
         Route::get('/totp', [AuthController::class, 'totp'])->name('auth.totp');
         Route::post('/totp-post', [AuthController::class, 'postTotp'])->name('auth.totp-post');
     });
 
-    // =========================================================================
-    // 3. Protected Routes (Memerlukan Login)
-    // =========================================================================
-    Route::group(['middleware' => 'check.auth'], function () {
-        
-        // --- Dashboard Home ---
+    /*
+    |--------------------------------------------------------------------------
+    | PROTECTED ROUTES
+    |--------------------------------------------------------------------------
+    */
+    Route::middleware('check.auth')->group(function () {
+
+        // HOME
         Route::get('/', [HomeController::class, 'index'])->name('home');
 
-        // --- Notification Route (FIXED) ---
-        // Mengarahkan ke file: resources/js/pages/app/notifikasi/page.jsx
-        Route::get('/notifikasi-dummy', function () {
-            return Inertia::render('app/notifikasi/page');
-        })->name('notifications.index');
+        // DOSEN
+        Route::get('/dosen/home', function () {
+            return inertia('app/dosen/dosen-home-page', [
+                'pageName' => 'Dashboard Dosen',
+            ]);
+        })->name('dosen.home');
 
-        // --- Hak Akses Module ---
+        // HAK AKSES
         Route::prefix('hak-akses')->group(function () {
             Route::get('/', [HakAksesController::class, 'index'])->name('hak-akses');
             Route::post('/change', [HakAksesController::class, 'postChange'])->name('hak-akses.change-post');
@@ -50,37 +62,39 @@ Route::middleware(['throttle:req-limit', 'handle.inertia'])->group(function () {
             Route::post('/delete-selected', [HakAksesController::class, 'postDeleteSelected'])->name('hak-akses.delete-selected-post');
         });
 
-        // --- Todo Module ---
+
+
+        // TODO
         Route::prefix('todo')->group(function () {
             Route::get('/', [TodoController::class, 'index'])->name('todo');
             Route::post('/change', [TodoController::class, 'postChange'])->name('todo.change-post');
             Route::post('/delete', [TodoController::class, 'postDelete'])->name('todo.delete-post');
         });
+    });
 
-        // ============================================================
-        //    LPPM ROUTES (Modules)
-        // ============================================================
+    /*
+    |--------------------------------------------------------------------------
+    | LPPM - REGISTRASI SEMINAR / JURNAL
+    |--------------------------------------------------------------------------
+    */
+ // ...
+Route::get('/app/regis-semi/{id}/link-google-drive', [RegisSemiController::class, 'showInvite'])
+     ->name('regis-semi.invite'); // <-- PASTIKAN NAMA INI SAMA
+// ...
+Route::get('/{id}/invite', [RegisSemiController::class, 'invite'])->name('invite');
+// Rute untuk Detail Buku
+Route::get('/app/regis-semi/{id}/detail', [RegisSemiController::class, 'show'])->name('regis-semi.detail');
+Route::get('/{id}/result', [RegisSemiController::class, 'result'])->name('regis-semi.result');
 
-        // UI Testing Route
-        Route::get('/lppm/todo-ui', function () {
-            return Inertia::render('app/lppm/todo-ui', [
-                'pageName' => 'Todo UI Test'
-            ]);
-        })->name('lppm.todo-ui');
-
-        // --- Registrasi Group (Dummy Closures) ---
-        Route::prefix('registrasi')->group(function () {
-            Route::get('/seminar', function () {
-                return 'Halaman Registrasi Seminar (Segera Hadir)';
-            })->name('registrasi.seminar');
-
-            Route::get('/jurnal', function () {
-                return 'Halaman Registrasi Jurnal (Segera Hadir)';
-            })->name('registrasi.jurnal');
+Route::prefix('regis-semi')->name('regis-semi.')->group(function () {
+            Route::get('/', [RegisSemiController::class, 'index'])->name('index');
+            Route::post('/change', [RegisSemiController::class, 'postChange'])->name('change');
+            Route::post('/delete', [RegisSemiController::class, 'postDelete'])->name('delete');
+            Route::post('/delete-selected', [RegisSemiController::class, 'postDeleteSelected'])->name('delete-selected');
         });
+   
 
-        // --- Penghargaan Group ---
-        Route::prefix('penghargaan')->group(function () {
+          Route::prefix('penghargaan')->group(function () {
             
             // 1. Penghargaan Buku (LENGKAP)
             
@@ -109,5 +123,9 @@ Route::middleware(['throttle:req-limit', 'handle.inertia'])->group(function () {
             Route::get('/mahasiswa', function () { return 'Penghargaan Mahasiswa UI (Dummy)'; })->name('penghargaan.mahasiswa');
             Route::get('/penelitian', function () { return 'Penghargaan Penelitian UI (Dummy)'; })->name('penghargaan.penelitian');
         });
-    });
+
+    Route::get('/notifikasi-dummy', function () {
+            return Inertia::render('app/notifikasi/page');
+        })->name('notifications.index');
+  
 });

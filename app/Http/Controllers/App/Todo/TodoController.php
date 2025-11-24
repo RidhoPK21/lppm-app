@@ -26,18 +26,22 @@ class TodoController extends Controller
 
         return Inertia::render('app/todo/todo-page', [
             // LAZY: hanya dipanggil jika dibutuhkan di sisi front-end
-            'todoList' => fn () => TodoModel::query()
-                ->where('user_id', $auth->id)
-                ->when($search, function ($query) use ($search) {
-                    $lower = strtolower($search);
+            'todoList' => fn() =>
+                TodoModel::query()
+                    ->where('user_id', $auth->id)
+                    ->when($search, function ($query) use ($search) {
+                        $lower = strtolower($search);
 
-                    $query->where(fn ($q) => $q
-                        ->whereRaw('LOWER(title) LIKE ?', ["%{$lower}%"])
-                        ->orWhereRaw('LOWER(description) LIKE ?', ["%{$lower}%"]));
-                })
-                ->orderByDesc('created_at')
-                ->paginate($perPage),
-            // ALWAYS: selalu dikirim (meskipun lazy props tidak dipanggil)
+                        $query->where(fn($q) =>
+                            $q
+                                ->whereRaw('LOWER(title) LIKE ?', ["%{$lower}%"])
+                                ->orWhereRaw('LOWER(description) LIKE ?', ["%{$lower}%"])
+                        );
+                    })
+                    ->orderByDesc('created_at')   // Diperbaiki
+                    ->paginate($perPage),
+
+            // ALWAYS: selalu dikirim
             'pageName' => Inertia::always('Todo List'),
             'auth' => Inertia::always($auth),
             'isEditor' => Inertia::always($isEditor),
@@ -50,10 +54,9 @@ class TodoController extends Controller
 
     public function postChange(Request $request)
     {
-        // Cek izin
         $auth = $request->attributes->get('auth');
         $isEditor = $this->checkIsEditor($auth);
-        if (! $isEditor) {
+        if (!$isEditor) {
             return back()->with('error', 'Anda tidak memiliki izin untuk mengolah todo.');
         }
 
@@ -63,39 +66,41 @@ class TodoController extends Controller
             'isDone' => 'required|boolean',
         ]);
 
-        if (isset($request->todoId) && ! empty($request->todoId)) {
-            $todo = TodoModel::where('id', $request->todoId)->where('user_id', $auth->id)->first();
-            if (! $todo) {
+        if ($request->filled('todoId')) {
+            $todo = TodoModel::where('id', $request->todoId)
+                ->where('user_id', $auth->id)
+                ->first();
+
+            if (!$todo) {
                 return back()->with('error', 'Todo tidak ditemukan.');
             }
 
-            // Update todo
-            $todo->title = $request->title;
-            $todo->description = $request->description;
-            $todo->is_done = $request->isDone;
-            $todo->save();
-
-            return back()->with('success', 'Todo berhasil diperbarui.');
-        } else {
-            // Simpan todo baru
-            TodoModel::create([
-                'id' => ToolsHelper::generateId(),
-                'user_id' => $auth->id,
+            $todo->update([
                 'title' => $request->title,
                 'description' => $request->description,
                 'is_done' => $request->isDone,
             ]);
 
-            return back()->with('success', 'Todo berhasil ditambahkan.');
+            return back()->with('success', 'Todo berhasil diperbarui.');
         }
+
+        TodoModel::create([
+            'id' => ToolsHelper::generateId(),
+            'user_id' => $auth->id,
+            'title' => $request->title,
+            'description' => $request->description,
+            'is_done' => $request->isDone,
+        ]);
+
+        return back()->with('success', 'Todo berhasil ditambahkan.');
     }
 
     public function postDelete(Request $request)
     {
-        // Cek izin
         $auth = $request->attributes->get('auth');
         $isEditor = $this->checkIsEditor($auth);
-        if (! $isEditor) {
+
+        if (!$isEditor) {
             return back()->with('error', 'Anda tidak memiliki izin untuk mengolah todo.');
         }
 
@@ -103,18 +108,15 @@ class TodoController extends Controller
             'todoIds' => 'required',
         ]);
 
-        // Hapus akses
-        TodoModel::whereIn('id', $request->todoIds)->where('user_id', $auth->id)->delete();
+        TodoModel::whereIn('id', $request->todoIds)
+            ->where('user_id', $auth->id)
+            ->delete();
 
         return back()->with('success', 'Todo yang dipilih berhasil dihapus.');
     }
 
     private function checkIsEditor($auth)
     {
-        if (ToolsHelper::checkRoles('Todo', $auth->akses)) {
-            return true;
-        }
-
-        return false;
+        return ToolsHelper::checkRoles('Todo', $auth->akses);
     }
 }

@@ -59,7 +59,8 @@ export const columns = [
     {
         id: "actions",
         header: "Aksi",
-        cell: ({ row }) => {
+        // FIX: Menghapus parameter { row } yang tidak terpakai untuk menghindari error ESLint
+        cell: () => {
             return (
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>

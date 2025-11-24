@@ -1,7 +1,11 @@
+import { Badge } from "@/components/ui/badge";
 
 import { Button } from "@/components/ui/button";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
 import { Checkbox } from "@/components/ui/checkbox";
+
 import {
     DropdownMenu,
     DropdownMenuCheckboxItem,
@@ -10,16 +14,13 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+
 import {
     InputGroup,
     InputGroupAddon,
     InputGroupInput,
 } from "@/components/ui/input-group";
-import {
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-} from "@/components/ui/select";
+
 import {
     Table,
     TableBody,
@@ -28,10 +29,13 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
+
 import AppLayout from "@/layouts/app-layout";
+
 import { router, usePage } from "@inertiajs/react";
-import { Select, SelectValue } from "@radix-ui/react-select";
+
 import * as Icon from "@tabler/icons-react";
+
 import {
     flexRender,
     getCoreRowModel,
@@ -40,124 +44,108 @@ import {
     getSortedRowModel,
     useReactTable,
 } from "@tanstack/react-table";
-import dayjs from "dayjs";
+
 import { ChevronDown } from "lucide-react";
+
 import * as React from "react";
+
 import { toast } from "sonner";
-import { TodoChangeDialog } from "./dialogs/change-dialog";
-import { TodoDeleteDialog } from "./dialogs/delete-dialog";
 
-export default function TodoPage() {
-    // ============================ DATA & STATE ============================
+import HakAksesChangeDialog from "./Dialogs/change-dialog";
 
-    // Ambil data dari server melalui Inertia
-    const {
-        todoList,
-        flash,
-        isEditor,
-        perPage,
-        search: initialSearch,
-        page: initialPage,
-        perPageOptions,
-    } = usePage().props;
+import HakAksesDeleteDialog from "./Dialogs/delete-dialog";
 
-    // State untuk pencarian dengan debounce
-    const [search, setSearch] = React.useState(initialSearch || "");
-    const [debouncedSearch, setDebouncedSearch] = React.useState("");
-    const titleChangeDialog = "Tambah Todo";
+import HakAksesDeleteSelectedDialog from "./Dialogs/delete-selected-dialog";
 
-    // State untuk tabel
+export default function Index() {
+    const { aksesList, flash } = usePage().props;
+
+    const [search, setSearch] = React.useState("");
+
+    const [dataAkses, setDataAkses] = React.useState(aksesList);
+
+    const [titleChangeDialog, setTitleChangeDialog] =
+        React.useState("Tambah Hak Akses");
+
     const [sorting, setSorting] = React.useState([]);
+
     const [columnFilters, setColumnFilters] = React.useState([]);
+
     const [columnVisibility, setColumnVisibility] = React.useState({});
+
     const [rowSelection, setRowSelection] = React.useState({});
 
-    // State untuk dialog edit
+    // Data Edit
+
     const [isChangeDialogOpen, setIsChangeDialogOpen] = React.useState(false);
+
     const [dataEdit, setDataEdit] = React.useState(null);
 
-    // State untuk dialog hapus
+    // Data Delete
+
     const [dataDelete, setDataDelete] = React.useState(null);
+
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
 
-    // Ref untuk menandai initial page load
-    const isFirst = React.useRef(true);
+    // Data Delete Selected
 
-    // ============================ EFFECTS ============================
+    const [dataDeleteSelected, setDataDeleteSelected] = React.useState(null);
 
-    // Debounce untuk input pencarian
-    React.useEffect(() => {
-        const timer = setTimeout(() => {
-            setDebouncedSearch(search);
-        }, 500); // Delay 500ms
+    const [isDeleteSelectedDialogOpen, setIsDeleteSelectedDialogOpen] =
+        React.useState(false);
 
-        return () => clearTimeout(timer);
-    }, [search]);
+    // Tampilkan notifikasi jika ada pesan flash
 
-    // Fetch data ketika pencarian berubah
-    React.useEffect(() => {
-        const targetPage = isFirst.current ? initialPage : 1;
-        isFirst.current = false;
-
-        if (debouncedSearch !== undefined) {
-            handlePagination(
-                route("todo") + `?page=${targetPage}&search=${debouncedSearch}`,
-                debouncedSearch
-            );
-        }
-    }, [debouncedSearch]);
-
-    // Handle flash messages dan reload data
     React.useEffect(() => {
         if (flash.success) {
-            // Reload hanya data todoList
-            handlePagination(route("todo") + `?page=1&perPage=${perPage}`, "");
+            router.reload({ only: ["aksesList"] });
+
             setIsChangeDialogOpen(false);
+
             setIsDeleteDialogOpen(false);
-            setRowSelection({}); // Reset seleksi baris
+
+            setIsDeleteSelectedDialogOpen(false);
+
             toast.success(flash.success);
         }
+
         if (flash.error) {
             toast.error(flash.error);
         }
     }, [flash]);
 
-    // ============================ FUNCTIONS ============================
+    React.useEffect(() => {
+        if (search === "") {
+            setDataAkses(aksesList);
 
-    /**
-     * Handle perubahan pagination
-     * @param {string} page - URL halaman tujuan
-     */
-    const handlePagination = (page, search) => {
-        // Reset seleksi baris saat halaman berubah
-        setSearch(search);
-        setRowSelection({});
+            return;
+        }
 
-        // Parse URL dan parameter
-        const url = new URL(page);
-        const paramPage = url.searchParams.get("page") || page;
-        const paramPerPage = url.searchParams.get("perPage") || perPage;
-        // Bangun URL lengkap
-        const fixUrl =
-            route("todo") +
-            `?page=${paramPage}&perPage=${paramPerPage}&search=${search}`;
+        const filteredData = aksesList.filter((item) => {
+            const user = item.user;
 
-        // Panggil router Inertia
-        router.visit(fixUrl, {
-            preserveState: true,
-            replace: true,
-            only: ["todoList"],
+            const searchLower = search.toLowerCase();
+
+            return (
+                user.name.toLowerCase().includes(searchLower) ||
+                user.username.toLowerCase().includes(searchLower) ||
+                item.data_akses.some((akses) =>
+                    akses.toLowerCase().includes(searchLower)
+                )
+            );
         });
-    };
 
-    // ============================ TABLE COLUMNS ============================
+        setDataAkses(filteredData);
+    }, [search, aksesList]);
 
-    // Definisi kolom tabel
-    let columns = [
-        // Kolom seleksi baris
+    // Definisi kolom untuk tabel Hak Akses
+
+    const columns = [
+        // Kolom Pilih
+
         {
-            forEditor: true,
             id: "Pilih Baris",
+
             header: ({ table }) => (
                 <Checkbox
                     checked={
@@ -170,6 +158,7 @@ export default function TodoPage() {
                     aria-label="Pilih semua baris"
                 />
             ),
+
             cell: ({ row }) => (
                 <Checkbox
                     checked={row.getIsSelected()}
@@ -177,30 +166,19 @@ export default function TodoPage() {
                     aria-label="Pilih baris"
                 />
             ),
+
             enableSorting: false,
+
             enableHiding: false,
         },
-        // Nomor urut
+
+        //  Kolom Identitas
+
         {
-            id: "No",
-            header: "No",
-            cell: ({ row }) => {
-                return (
-                    <div>
-                        {(
-                            (todoList.current_page - 1) * todoList.per_page +
-                            row.index +
-                            1
-                        ).toString()}
-                    </div>
-                );
-            },
-            enableSorting: false,
-        },
-        // Kolom judul
-        {
-            id: "Judul",
-            accessorKey: "title",
+            id: "Identitas",
+
+            accessorKey: "user",
+
             header: ({ column }) => (
                 <Button
                     variant="ghost"
@@ -208,7 +186,7 @@ export default function TodoPage() {
                         column.toggleSorting(column.getIsSorted() === "asc");
                     }}
                 >
-                    {column.id}
+                    Identitas
                     {column.getIsSorted() ? (
                         column.getIsSorted() === "asc" ? (
                             <Icon.IconArrowUp size={16} />
@@ -220,93 +198,98 @@ export default function TodoPage() {
                     )}
                 </Button>
             ),
-            cell: ({ row }) => <div>{row.original.title}</div>,
-        },
 
-        // Kolom status selesai
-        {
-            id: "Status Selesai",
-            accessorKey: "is_done",
-            header: ({ column }) => (
-                <Button
-                    variant="ghost"
-                    onClick={() =>
-                        column.toggleSorting(column.getIsSorted() === "asc")
-                    }
-                >
-                    {column.id}
-                    {column.getIsSorted() ? (
-                        column.getIsSorted() === "asc" ? (
-                            <Icon.IconArrowUp size={16} />
-                        ) : (
-                            <Icon.IconArrowDown size={16} />
-                        )
-                    ) : (
-                        <Icon.IconArrowsDownUp />
-                    )}
-                </Button>
-            ),
             cell: ({ row }) => (
-                <div>{row.original.is_done ? "Selesai" : "Belum Selesai"}</div>
-            ),
-        },
+                <div>
+                    <span className="text-gray-400">
+                        @{row.original.user.username}
+                    </span>
 
-        // Kolom Tanggal Dibuat
-        {
-            id: "Dibuat Pada",
-            accessorKey: "created_at",
-            header: ({ column }) => (
-                <Button
-                    variant="ghost"
-                    onClick={() =>
-                        column.toggleSorting(column.getIsSorted() === "asc")
-                    }
-                >
-                    {column.id}
-                    {column.getIsSorted() ? (
-                        column.getIsSorted() === "asc" ? (
-                            <Icon.IconArrowUp size={16} />
-                        ) : (
-                            <Icon.IconArrowDown size={16} />
-                        )
-                    ) : (
-                        <Icon.IconArrowsDownUp />
-                    )}
-                </Button>
-            ),
-            cell: ({ row }) => (
-                <div className="text-left">
-                    {dayjs(row.original.created_at).format("DD MMMM YYYY")}
+                    <br />
+
+                    <span className="font-medium">
+                        {row.original.user.name}
+                    </span>
                 </div>
             ),
         },
 
-        // Kolom tindakan
+        // Kolom Akses
+
         {
-            forEditor: true,
+            id: "Hak Akses",
+
+            accessorKey: "data_akses",
+
+            header: ({ column }) => (
+                <Button
+                    variant="ghost"
+                    onClick={() =>
+                        column.toggleSorting(column.getIsSorted() === "asc")
+                    }
+                >
+                    Hak Akses
+                    {column.getIsSorted() ? (
+                        column.getIsSorted() === "asc" ? (
+                            <Icon.IconArrowUp size={16} />
+                        ) : (
+                            <Icon.IconArrowDown size={16} />
+                        )
+                    ) : (
+                        <Icon.IconArrowsDownUp />
+                    )}
+                </Button>
+            ),
+
+            cell: ({ row }) => (
+                <div className="text-left">
+                    {row.original.data_akses.map((akses) => (
+                        <Badge
+                            key={akses}
+                            variant="secondary"
+                            className="mr-1 mb-1"
+                        >
+                            {akses}
+                        </Badge>
+                    ))}
+                </div>
+            ),
+        },
+
+        // Kolom Tindakan
+
+        {
             id: "Tindakan",
+
             header: "Tindakan",
-            isVisible: isEditor,
+
             cell: ({ row }) => {
                 return (
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="ghost" className="h-8 w-8 p-0">
-                                <span className="sr-only">Buka menu</span>
+                                <span className="sr-only">Open menu</span>
+
                                 <Icon.IconDotsVertical />
                             </Button>
                         </DropdownMenuTrigger>
+
                         <DropdownMenuContent align="end">
-                            {/* Tombol ubah */}
                             <DropdownMenuItem
                                 className="text-yellow-500"
                                 onClick={() => {
                                     setDataEdit({
-                                        todoId: row.original.id,
-                                        title: row.original.title,
-                                        description: row.original.description,
-                                        isDone: row.original.is_done,
+                                        id: row.original.id,
+
+                                        userId: row.original.user_id,
+
+                                        userName: `@${row.original.user.username} - ${row.original.user.name}`,
+
+                                        hakAkses: row.original.data_akses,
                                     });
+
+                                    setTitleChangeDialog("Ubah Hak Akses");
+
                                     setIsChangeDialogOpen(true);
                                 }}
                             >
@@ -316,20 +299,22 @@ export default function TodoPage() {
                                 />
                                 Ubah
                             </DropdownMenuItem>
+
                             <DropdownMenuSeparator />
-                            {/* Tombol hapus */}
+
                             <DropdownMenuItem
                                 className="text-red-500"
                                 onClick={() => {
                                     setDataDelete({
-                                        todoIds: [row.original.id],
-                                        dataList: [
-                                            {
-                                                id: row.original.id,
-                                                title: row.original.title,
-                                            },
-                                        ],
+                                        id: row.original.id,
+
+                                        userId: row.original.user_id,
+
+                                        userName: row.original.user.username,
+
+                                        hakAkses: row.original.data_akses,
                                     });
+
                                     setIsDeleteDialogOpen(true);
                                 }}
                             >
@@ -346,68 +331,72 @@ export default function TodoPage() {
         },
     ];
 
-    // ============================ TABLE CONFIG ============================
+    // Inisialisasi tabel dengan useReactTable
 
-    // Kalau bukan editor hapus kolom seleksi baris dan tindakan
-    if (!isEditor) {
-        columns = columns.filter(
-            (col) => !col.forEditor || col.forEditor === isEditor
-        );
-    }
-
-    // Inisialisasi tabel dengan react-table
     const table = useReactTable({
-        data: todoList.data, // Data dari pagination Laravel
+        data: dataAkses,
+
         columns,
+
         onSortingChange: setSorting,
+
         onColumnFiltersChange: setColumnFilters,
+
         getCoreRowModel: getCoreRowModel(),
+
         getPaginationRowModel: getPaginationRowModel(),
+
         getSortedRowModel: getSortedRowModel(),
+
         getFilteredRowModel: getFilteredRowModel(),
+
         onColumnVisibilityChange: setColumnVisibility,
+
         onRowSelectionChange: setRowSelection,
-        manualPagination: true, // Pagination dihandle server-side
-        pageCount: todoList.last_page, // Total halaman dari Laravel
+
         state: {
             sorting,
+
             columnFilters,
+
             columnVisibility,
+
             rowSelection,
         },
     });
 
-    // ============================ RENDER ============================
-
     return (
         <AppLayout>
-            {/* Kartu utama */}
             <Card className="h-full">
                 <CardHeader>
                     <CardTitle className="flex items-center">
-                        {/* Judul halaman */}
+                        {/* Judul */}
+
                         <div className="flex-1">
                             <div className="flex items-center">
-                                <Icon.IconChecklist className="inline mr-2" />
-                                <span>Todo List</span>
+                                <Icon.IconLock className="inline mr-2" />
+
+                                <span>Hak Akses</span>
                             </div>
                         </div>
 
-                        {/* Toolbar: search, filter, tambah */}
                         <div className="flex items-center space-x-2">
-                            {/* Input pencarian */}
+                            {/* Search Input */}
+
                             <InputGroup>
                                 <InputGroupInput
                                     placeholder="Cari..."
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
                                 />
+
                                 <InputGroupAddon>
                                     <Icon.IconSearch />
                                 </InputGroupAddon>
                             </InputGroup>
 
-                            {/* Dropdown filter kolom */}
+                            {/* Dropdown filter table */}
+
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button
@@ -417,20 +406,27 @@ export default function TodoPage() {
                                         Kolom <ChevronDown />
                                     </Button>
                                 </DropdownMenuTrigger>
+
                                 <DropdownMenuContent align="end">
                                     <DropdownMenuCheckboxItem
                                         onSelect={(e) => e.preventDefault()}
                                         className="capitalize font-medium"
                                         checked={table
+
                                             .getAllColumns()
+
                                             .filter((col) => col.getCanHide())
+
                                             .every((col) => col.getIsVisible())}
                                         onCheckedChange={(value) => {
                                             table
+
                                                 .getAllColumns()
+
                                                 .filter((col) =>
                                                     col.getCanHide()
                                                 )
+
                                                 .forEach((col) =>
                                                     col.toggleVisibility(
                                                         !!value
@@ -440,9 +436,13 @@ export default function TodoPage() {
                                     >
                                         Pilih Semua
                                     </DropdownMenuCheckboxItem>
+
                                     {table
+
                                         .getAllColumns()
+
                                         .filter((column) => column.getCanHide())
+
                                         .map((column) => (
                                             <DropdownMenuCheckboxItem
                                                 onSelect={(e) =>
@@ -463,24 +463,27 @@ export default function TodoPage() {
                                 </DropdownMenuContent>
                             </DropdownMenu>
 
-                            {/* Tombol tambah todo baru */}
-                            {isEditor && (
-                                <Button
-                                    variant="outline"
-                                    onClick={() => {
-                                        setDataEdit(null);
-                                        setIsChangeDialogOpen(true);
-                                    }}
-                                >
-                                    <Icon.IconPlus />
-                                </Button>
-                            )}
+                            {/* Tombol Tambah */}
+
+                            <Button
+                                variant="outline"
+                                onClick={() => {
+                                    setDataEdit(null);
+
+                                    setTitleChangeDialog("Tambah Hak Akses");
+
+                                    setIsChangeDialogOpen(true);
+                                }}
+                            >
+                                <Icon.IconPlus />
+                            </Button>
                         </div>
                     </CardTitle>
                 </CardHeader>
 
                 <CardContent>
-                    {/* Tombol hapus multiple (muncul ketika ada baris terpilih) */}
+                    {/* Tombol Aksi Ketika Row Dipilih  */}
+
                     {table.getFilteredSelectedRowModel().rows.length > 0 && (
                         <>
                             <div className="text-right mb-2">
@@ -490,18 +493,27 @@ export default function TodoPage() {
                                     className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
                                     onClick={() => {
                                         const selectedIds = table
+
                                             .getFilteredSelectedRowModel()
-                                            .rows.map((row) => row.original.id);
-                                        setDataDelete({
-                                            todoIds: selectedIds,
-                                            dataList: table
+
+                                            .rows.map(
+                                                (row) => row.original.user_id
+                                            );
+
+                                        setDataDeleteSelected({
+                                            userIds: selectedIds,
+
+                                            userNames: table
+
                                                 .getFilteredSelectedRowModel()
-                                                .rows.map((row) => ({
-                                                    id: row.original.id,
-                                                    title: row.original.title,
-                                                })),
+
+                                                .rows.map(
+                                                    (row) =>
+                                                        `@${row.original.user.username} - ${row.original.user.name}`
+                                                ),
                                         });
-                                        setIsDeleteDialogOpen(true);
+
+                                        setIsDeleteSelectedDialogOpen(true);
                                     }}
                                 >
                                     <Icon.IconTrash className="mr-2" />
@@ -516,7 +528,8 @@ export default function TodoPage() {
                         </>
                     )}
 
-                    {/* Tabel data todo */}
+                    {/* Table */}
+
                     <div className="overflow-hidden rounded-md border">
                         <Table>
                             <TableHeader className="bg-primary">
@@ -532,6 +545,7 @@ export default function TodoPage() {
                                                     : flexRender(
                                                           header.column
                                                               .columnDef.header,
+
                                                           header.getContext()
                                                       )}
                                             </TableHead>
@@ -539,6 +553,7 @@ export default function TodoPage() {
                                     </TableRow>
                                 ))}
                             </TableHeader>
+
                             <TableBody>
                                 {table.getRowModel().rows?.length ? (
                                     table.getRowModel().rows.map((row) => (
@@ -550,12 +565,15 @@ export default function TodoPage() {
                                             }
                                         >
                                             {row
+
                                                 .getVisibleCells()
+
                                                 .map((cell) => (
                                                     <TableCell key={cell.id}>
                                                         {flexRender(
                                                             cell.column
                                                                 .columnDef.cell,
+
                                                             cell.getContext()
                                                         )}
                                                     </TableCell>
@@ -568,9 +586,7 @@ export default function TodoPage() {
                                             colSpan={columns.length}
                                             className="h-24 text-center"
                                         >
-                                            {search
-                                                ? "Tidak ada data yang sesuai dengan pencarian."
-                                                : "Belum ada data yang tersedia."}
+                                            Belum ada data yang tersedia.
                                         </TableCell>
                                     </TableRow>
                                 )}
@@ -578,116 +594,40 @@ export default function TodoPage() {
                         </Table>
                     </div>
 
-                    {/* Kontrol pagination */}
-                    <div className="flex items-center justify-between space-x-2 py-4">
-                        <div className="flex-1">
-                            {/* Pilihan data per halaman */}
-                            <div className="flex items-center">
-                                <label className="mr-2 text-sm text-muted-foreground">
-                                    Data per halaman
-                                </label>
-                                <Select
-                                    className="rounded border border-input bg-background px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                    value={perPage}
-                                    onValueChange={(perPage) => {
-                                        handlePagination(
-                                            route("todo") +
-                                                `?page=1&perPage=${perPage}`,
-                                            debouncedSearch
-                                        );
-                                    }}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {perPageOptions.map((size) => (
-                                            <SelectItem
-                                                key={size}
-                                                value={size.toString()}
-                                            >
-                                                {size}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            {/* Info data yang ditampilkan */}
-                            <div className="text-muted-foreground text-sm">
-                                Menampilkan {todoList.from} sampai {todoList.to}{" "}
-                                dari {todoList.total} data.
-                                {table.getFilteredSelectedRowModel().rows
-                                    .length > 0 && (
-                                    <span className="ml-2">
-                                        (
-                                        {
-                                            table.getFilteredSelectedRowModel()
-                                                .rows.length
-                                        }{" "}
-                                        dipilih)
-                                    </span>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Navigasi halaman */}
-                        <div className="flex items-center space-x-2">
-                            {/* Tombol halaman sebelumnya */}
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() =>
-                                    handlePagination(
-                                        todoList.prev_page_url,
-                                        debouncedSearch
-                                    )
-                                }
-                                disabled={!todoList.prev_page_url}
-                            >
-                                Previous
-                            </Button>
-
-                            {/* Info halaman saat ini */}
-                            <span className="text-sm text-muted-foreground">
-                                Halaman {todoList.current_page} dari{" "}
-                                {todoList.last_page}
-                            </span>
-
-                            {/* Tombol halaman berikutnya */}
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() =>
-                                    handlePagination(
-                                        todoList.next_page_url,
-                                        debouncedSearch
-                                    )
-                                }
-                                disabled={!todoList.next_page_url}
-                            >
-                                Next
-                            </Button>
+                    <div className="flex items-center justify-end space-x-2 py-4">
+                        <div className="text-muted-foreground flex-1 text-sm">
+                            Memilih{" "}
+                            {table.getFilteredSelectedRowModel().rows.length}{" "}
+                            dari {table.getFilteredRowModel().rows.length} data
+                            yang tersedia.
                         </div>
                     </div>
                 </CardContent>
             </Card>
 
-            {/* ============================ DIALOGS ============================ */}
+            {/* Dialog Change */}
 
-            {/* Dialog ubah/tambah todo */}
-            <TodoChangeDialog
+            <HakAksesChangeDialog
                 dataEdit={dataEdit}
                 dialogTitle={titleChangeDialog}
                 openDialog={isChangeDialogOpen}
                 setOpenDialog={setIsChangeDialogOpen}
             />
 
-            {/* Dialog hapus todo */}
-            <TodoDeleteDialog
+            {/* Dialog Delete */}
+
+            <HakAksesDeleteDialog
                 dataDelete={dataDelete}
                 openDialog={isDeleteDialogOpen}
                 setOpenDialog={setIsDeleteDialogOpen}
+            />
+
+            {/* Dialog Delete Selected */}
+
+            <HakAksesDeleteSelectedDialog
+                dataDelete={dataDeleteSelected}
+                openDialog={isDeleteSelectedDialogOpen}
+                setOpenDialog={setIsDeleteSelectedDialogOpen}
             />
         </AppLayout>
     );

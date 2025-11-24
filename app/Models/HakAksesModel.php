@@ -3,21 +3,15 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
-/**
- * @property int $id
- * @property int $user_id
- * @property string $akses
- * @property \Carbon\Carbon|null $created_at
- * @property \Carbon\Carbon|null $updated_at
- * @property mixed $user
- * @property array $data_akses
- */
 class HakAksesModel extends Model
 {
     protected $table = 'm_hak_akses';
 
-    protected $keyType = 'string';
+    protected $primaryKey = 'id';
+    public $incrementing = false;     // ⬅ WAJIB untuk UUID
+    protected $keyType = 'string';    // ⬅ UUID bukan integer
 
     protected $fillable = [
         'id',
@@ -26,4 +20,16 @@ class HakAksesModel extends Model
     ];
 
     public $timestamps = true;
+
+    // Generate UUID otomatis jika tidak dikirim
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($model) {
+            if (!$model->id) {
+                $model->id = (string) Str::uuid();
+            }
+        });
+    }
 }

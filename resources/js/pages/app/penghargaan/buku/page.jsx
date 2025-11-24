@@ -10,10 +10,36 @@ import {
 } from "@/components/ui/select";
 import AppLayout from "@/layouts/app-layout";
 import { Head, Link } from "@inertiajs/react";
-import { CircleArrowUp, Plus, Search } from "lucide-react";
+import { CircleArrowUp, Plus } from "lucide-react"; // Search dihapus karena tidak dipakai
 import { route } from "ziggy-js";
 
-export default function PenghargaanBukuPage({ buku }) {
+export default function PenghargaanBukuPage({ buku: initialBuku }) {
+    // Data Dummy (Fallback jika props buku dari controller kosong)
+    // Ini agar halaman tetap bisa dirender saat development
+    const buku = initialBuku || [
+        {
+            id: 1,
+            judul: "Pemrograman Web Modern",
+            penulis: "Budi Santoso",
+            tahun: "2024",
+            status: "diajukan",
+        },
+        {
+            id: 2,
+            judul: "Dasar-Dasar Laravel 11",
+            penulis: "Siti Aminah",
+            tahun: "2023",
+            status: "disetujui",
+        },
+        {
+            id: 3,
+            judul: "Algoritma & Struktur Data",
+            penulis: "Eko Kurniawan",
+            tahun: "2022",
+            status: "ditolak",
+        },
+    ];
+
     const breadcrumbs = [
         { title: "Penghargaan", url: "#" },
         { title: "Buku", url: route("app.penghargaan.buku.index") },
@@ -27,10 +53,10 @@ export default function PenghargaanBukuPage({ buku }) {
             s.includes("diajukan") ||
             s.includes("pending")
         )
-            return "text-red-500";
+            return "text-yellow-500"; // Biasanya kuning untuk pending/diajukan
         if (s.includes("setuju") || s.includes("disetujui"))
             return "text-green-500";
-        if (s.includes("tolak")) return "text-gray-500";
+        if (s.includes("tolak")) return "text-red-500";
         return "text-gray-500";
     };
 
@@ -96,9 +122,9 @@ export default function PenghargaanBukuPage({ buku }) {
                 {/* List Buku (Card Rows) */}
                 <div className="flex flex-col gap-3 w-full">
                     {buku.map((item) => (
-                        // PERBAIKAN DI SINI: Menambahkan 'flex-row'
                         <Card
                             key={item.id}
+                            // PERBAIKAN: Menambahkan 'flex-row' agar item menyamping
                             className="w-full p-4 flex flex-row items-center justify-between gap-4 hover:bg-accent/5 transition-colors"
                         >
                             {/* BAGIAN KIRI: Icon + Judul + Penulis */}

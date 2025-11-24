@@ -22,32 +22,24 @@ import {
 } from "@/components/ui/sidebar";
 import { route } from "ziggy-js";
 
-export function NavUser({
-    user,
-}: {
-    user: {
-        name: string;
-        username: string;
-        photo: string;
-    };
-}) {
+export function NavUser({ user }: any) {
     const { isMobile } = useSidebar();
+
+    if (!user) return null; // mencegah crash
 
     return (
         <SidebarMenu>
             <SidebarMenuItem>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <SidebarMenuButton
-                            size="lg"
-                            className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-                        >
+                        <SidebarMenuButton size="lg">
                             <Avatar className="h-8 w-8 rounded-lg">
-                                <AvatarImage src={user.photo} alt={user.name} />
-                                <AvatarFallback className="rounded-lg">
-                                    {user.name.slice(0, 2).toUpperCase()}
+                                <AvatarImage src={user?.photo || ""} alt={user?.name || ""} />
+                                <AvatarFallback>
+                                    {user?.name?.slice(0, 2).toUpperCase()}
                                 </AvatarFallback>
                             </Avatar>
+
                             <div className="grid flex-1 text-left text-sm leading-tight">
                                 <span className="truncate font-medium">
                                     {user.name}
