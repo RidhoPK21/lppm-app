@@ -1,21 +1,42 @@
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import AppLayout from "@/layouts/app-layout";
 import { Head, Link } from "@inertiajs/react";
-import { CircleArrowUp, Plus } from "lucide-react"; // Search dihapus karena tidak dipakai
+import { CircleArrowUp, ChevronDown, Plus } from "lucide-react";
 import { route } from "ziggy-js";
 
+// Komponen Dropdown Reusable
+const SelectDropdown = ({ label, options, className = "", onChange }) => (
+    <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+            <div
+                className={`flex items-center justify-between border border-gray-300 rounded-md bg-white text-sm px-3 h-10 cursor-pointer ${className}`}
+            >
+                {label}
+                <ChevronDown className="h-4 w-4 ml-2 opacity-50" />
+            </div>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="min-w-[120px]">
+            {options.map((option) => (
+                <DropdownMenuItem
+                    key={option}
+                    onSelect={() => onChange(option)}
+                >
+                    {option}
+                </DropdownMenuItem>
+            ))}
+        </DropdownMenuContent>
+    </DropdownMenu>
+);
+
 export default function PenghargaanBukuPage({ buku: initialBuku }) {
-    // Data Dummy (Fallback jika props buku dari controller kosong)
-    // Ini agar halaman tetap bisa dirender saat development
+    // Data Dummy
     const buku = initialBuku || [
         {
             id: 1,
@@ -45,7 +66,6 @@ export default function PenghargaanBukuPage({ buku: initialBuku }) {
         { title: "Buku", url: route("app.penghargaan.buku.index") },
     ];
 
-    // Helper warna status
     const getStatusColor = (status) => {
         const s = status.toLowerCase();
         if (
@@ -53,7 +73,7 @@ export default function PenghargaanBukuPage({ buku: initialBuku }) {
             s.includes("diajukan") ||
             s.includes("pending")
         )
-            return "text-yellow-500"; // Biasanya kuning untuk pending/diajukan
+            return "text-yellow-500";
         if (s.includes("setuju") || s.includes("disetujui"))
             return "text-green-500";
         if (s.includes("tolak")) return "text-red-500";
@@ -64,114 +84,118 @@ export default function PenghargaanBukuPage({ buku: initialBuku }) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Penghargaan Buku" />
 
-            <div className="flex flex-col gap-6 w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                {/* Header Judul */}
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Buku</h1>
-                </div>
+            <Card className="h-full border-none shadow-none">
+                <CardHeader className="p-0 space-y-4">
+                    {/* Judul Halaman */}
+                    <CardTitle className="text-2xl font-normal px-4">
+                        Buku
+                    </CardTitle>
 
-                {/* Tombol Ajukan Besar */}
-                <Link
-                    href={route("app.penghargaan.buku.create")}
-                    className="w-full"
-                >
-                    <div className="bg-white dark:bg-sidebar border border-border rounded-lg p-4 shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center text-muted-foreground hover:text-primary group w-full">
-                        <span className="font-medium">
-                            Ajukan Penghargaan Buku
-                        </span>
-                        <Plus className="ml-auto h-5 w-5 opacity-50 group-hover:opacity-100 transition-opacity" />
+                    {/* Tombol Ajukan (Ditempatkan di header agar layout rapi seperti RegisSemi) */}
+                    <div className="px-4">
+                        <Link href={route("app.penghargaan.buku.create")}>
+                            <Button
+                                variant="outline"
+                                className="justify-between w-full md:w-1/4 max-w-xs font-normal text-base h-10 px-4"
+                            >
+                                <span>Ajukan Penghargaan Buku</span>
+                                <Plus className="h-4 w-4 ml-2 opacity-50" />
+                            </Button>
+                        </Link>
                     </div>
-                </Link>
 
-                {/* Baris Filter & Pencarian */}
-                <div className="flex flex-col md:flex-row gap-3 w-full">
-                    <div className="flex-1 flex gap-2">
-                        <Input
-                            placeholder="Type to search"
-                            className="bg-white dark:bg-sidebar"
-                        />
-                        <Button
-                            variant="secondary"
-                            className="bg-gray-100 dark:bg-muted hover:bg-gray-200"
-                        >
-                            Search
-                        </Button>
-                    </div>
-                    <div className="flex gap-2">
-                        <Select>
-                            <SelectTrigger className="w-[140px] bg-white dark:bg-sidebar">
-                                <SelectValue placeholder="Search by" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="judul">Judul</SelectItem>
-                                <SelectItem value="penulis">Penulis</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <Select>
-                            <SelectTrigger className="w-[140px] bg-white dark:bg-sidebar">
-                                <SelectValue placeholder="Sort by" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="terbaru">Terbaru</SelectItem>
-                                <SelectItem value="terlama">Terlama</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </div>
+                    {/* Baris Search & Filter */}
+                    <div className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2 items-center px-4">
+                        <div className="flex-1 flex border border-gray-300 rounded-md overflow-hidden h-10 w-full">
+                            <input
+                                type="text"
+                                placeholder="Type to search"
+                                className="flex-1 p-2 focus:outline-none placeholder:text-gray-400 text-sm border-none"
+                            />
+                            <Button
+                                variant="default"
+                                className="h-full px-4 bg-gray-100 text-gray-800 hover:bg-gray-200 rounded-l-none border-l border-gray-300 shadow-none font-normal text-sm"
+                            >
+                                Search
+                            </Button>
+                        </div>
 
-                {/* List Buku (Card Rows) */}
-                <div className="flex flex-col gap-3 w-full">
-                    {buku.map((item) => (
-                        <Card
-                            key={item.id}
-                            // PERBAIKAN: Menambahkan 'flex-row' agar item menyamping
-                            className="w-full p-4 flex flex-row items-center justify-between gap-4 hover:bg-accent/5 transition-colors"
-                        >
-                            {/* BAGIAN KIRI: Icon + Judul + Penulis */}
-                            <div className="flex items-center gap-4 min-w-0 flex-1 text-left">
-                                {/* Icon Bulat Hitam */}
-                                <div className="shrink-0">
-                                    <div className="h-10 w-10 rounded-full bg-black flex items-center justify-center text-white dark:bg-white dark:text-black">
-                                        <CircleArrowUp className="h-6 w-6" />
+                        <div className="w-full md:w-[150px]">
+                            <SelectDropdown
+                                label="Search by"
+                                options={["Judul", "Penulis"]}
+                                className="w-full h-10"
+                                onChange={() => {}}
+                            />
+                        </div>
+
+                        <div className="w-full md:w-[120px]">
+                            <SelectDropdown
+                                label="Sort by"
+                                options={["Terbaru", "Terlama"]}
+                                className="w-full h-10"
+                                onChange={() => {}}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Garis Pemisah */}
+                    <hr className="mt-4 mb-0" />
+                </CardHeader>
+
+                <CardContent className="p-0 px-4">
+                    <div className="flex flex-col gap-2 mt-4">
+                        {buku.map((item) => (
+                            <div
+                                key={item.id}
+                                className="bg-white rounded-lg shadow-md cursor-pointer hover:shadow-lg transition-shadow"
+                            >
+                                <div className="flex items-stretch p-4">
+                                    {/* Icon */}
+                                    <div className="mr-4 flex items-center justify-center w-10 h-10 rounded-full bg-black shrink-0">
+                                        <CircleArrowUp className="h-5 w-5 text-white" />
+                                    </div>
+
+                                    {/* Detail */}
+                                    <div className="flex-1 min-w-0 flex flex-col justify-center">
+                                        <div className="font-semibold text-lg truncate">
+                                            {item.judul}
+                                        </div>
+                                        <div className="text-sm text-gray-500 truncate">
+                                            {item.penulis}
+                                        </div>
+                                    </div>
+
+                                    {/* Status & Tanggal */}
+                                    <div className="text-right ml-4 flex flex-col justify-between h-full min-w-[100px]">
+                                        <div
+                                            className={`text-sm font-medium ${getStatusColor(
+                                                item.status
+                                            )}`}
+                                        >
+                                            Status :{" "}
+                                            <span className="capitalize font-normal">
+                                                {item.status}
+                                            </span>
+                                        </div>
+                                        <div className="text-gray-500 text-xs mt-2">
+                                            {item.tahun
+                                                ? `Tahun ${item.tahun}`
+                                                : "23 / 11 / 2025"}
+                                        </div>
                                     </div>
                                 </div>
-
-                                {/* Judul & Penulis */}
-                                <div className="flex flex-col min-w-0">
-                                    <h3 className="font-semibold text-base truncate">
-                                        {item.judul}
-                                    </h3>
-                                    <p className="text-sm text-muted-foreground truncate">
-                                        {item.penulis}
-                                    </p>
-                                </div>
                             </div>
+                        ))}
 
-                            {/* BAGIAN KANAN: Status + Tanggal */}
-                            <div className="text-right shrink-0">
-                                <p
-                                    className={`text-xs font-medium ${getStatusColor(
-                                        item.status
-                                    )}`}
-                                >
-                                    Status : {item.status}
-                                </p>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                    {item.tahun
-                                        ? `Tahun ${item.tahun}`
-                                        : "23 / 11 / 2025"}
-                                </p>
+                        {buku.length === 0 && (
+                            <div className="text-center py-10 text-muted-foreground bg-muted/10 rounded-lg border border-dashed w-full">
+                                Belum ada data buku yang diajukan.
                             </div>
-                        </Card>
-                    ))}
-
-                    {buku.length === 0 && (
-                        <div className="text-center py-10 text-muted-foreground bg-muted/10 rounded-lg border border-dashed w-full">
-                            Belum ada data buku yang diajukan.
-                        </div>
-                    )}
-                </div>
-            </div>
+                        )}
+                    </div>
+                </CardContent>
+            </Card>
         </AppLayout>
     );
 }

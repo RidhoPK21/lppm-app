@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import AppLayout from "@/layouts/app-layout";
 import * as Icon from "@tabler/icons-react";
-import { ChevronDown } from "lucide-react"; 
+import { ChevronDown } from "lucide-react";
 import * as React from "react";
 // Import 'router' dari Inertia jika ingin navigasi yang sebenarnya
 // import { router } from "@inertiajs/react";
@@ -22,7 +22,7 @@ const mockBukuList = [
         judul: "Judul Buku 1",
         penulis: "Penulis 1, Penulis 2",
         status: "belum disetujui",
-        tanggal: "dd / mm / yy", 
+        tanggal: "dd / mm / yy",
     },
     {
         id: 2,
@@ -51,33 +51,35 @@ const mockBukuList = [
  * Komponen untuk menampilkan setiap item buku dalam daftar
  */
 const BukuItem = ({ id, judul, penulis, status, tanggal, onClick }) => (
-    <div 
+    <div
         className="bg-white rounded-lg shadow-md mb-2 cursor-pointer hover:shadow-lg transition-shadow"
         onClick={() => onClick(id)}
     >
         {/* Kontainer utama flex: item-stretch memastikan kolom kanan setinggi p-4 */}
-        <div className="flex items-stretch p-4"> 
+        <div className="flex items-stretch p-4">
             {/* Ikon Segitiga Putih dalam Lingkaran Hitam */}
             <div className="mr-4 flex items-center justify-center w-10 h-10 rounded-full bg-black">
-                <Icon.IconTriangle size={20} fill="white" /> 
+                <Icon.IconTriangle size={20} fill="white" />
             </div>
 
             {/* Detail Buku */}
             <div className="flex-1 min-w-0 flex flex-col justify-center">
-                <div className="font-semibold text-lg truncate">{judul}</div> 
+                <div className="font-semibold text-lg truncate">{judul}</div>
                 <div className="text-sm text-gray-500 truncate">{penulis}</div>
             </div>
 
             {/* Status dan Tanggal (Perbaikan Final: Menggunakan h-full dan justify-between) */}
-            <div className="text-right ml-4 flex flex-col justify-between h-full"> 
-                
+            <div className="text-right ml-4 flex flex-col justify-between h-full">
                 {/* Status (didorong ke atas) */}
                 <div className="text-gray-500 text-sm">
-                    Status : <span className="text-red-500 capitalize font-normal">{status}</span>
+                    Status :{" "}
+                    <span className="text-red-500 capitalize font-normal">
+                        {status}
+                    </span>
                 </div>
-                
+
                 {/* Tanggal (didorong ke paling bawah) */}
-                <div className="text-gray-500 text-xs">{tanggal}</div> 
+                <div className="text-gray-500 text-xs">{tanggal}</div>
             </div>
         </div>
     </div>
@@ -97,14 +99,16 @@ const SelectDropdown = ({ label, options, className = "", onChange }) => (
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="min-w-[120px]">
             {options.map((option) => (
-                <DropdownMenuItem key={option} onSelect={() => onChange(option)}>
+                <DropdownMenuItem
+                    key={option}
+                    onSelect={() => onChange(option)}
+                >
                     {option}
                 </DropdownMenuItem>
             ))}
         </DropdownMenuContent>
     </DropdownMenu>
 );
-
 
 export default function Index() {
     const [search, setSearch] = React.useState("");
@@ -115,7 +119,7 @@ export default function Index() {
     // Fungsi placeholder untuk navigasi ke halaman Detail (SESUAI PERMINTAAN ASLI)
     // Di lingkungan Inertia, ini akan diganti dengan:
     // const handleBukuClick = (id) => {
-    //     router.visit(`/app/regis-semi/${id}/detail`); 
+    //     router.visit(`/app/regis-semi/${id}/detail`);
     // };
     const handleBukuClick = (id) => {
         // Untuk tujuan demonstrasi di sini, kita akan mengarahkan ke URL detail dummy
@@ -124,34 +128,18 @@ export default function Index() {
         window.location.href = `/app/regis-semi/${id}/detail`;
     };
 
-    const handleAjukanPenghargaan = () => {
-        
-    };
-
     return (
         <AppLayout>
-            <Card className="h-full border-none shadow-none"> 
+            <Card className="h-full border-none shadow-none">
                 {/* PADDING MINIMAL (p-0) SESUAI PERMINTAAN */}
                 <CardHeader className="p-0 space-y-4">
-                    
                     {/* Judul Halaman: Hanya px-4 */}
-                    <CardTitle className="text-2xl font-normal px-4">Buku</CardTitle>
-                    
-                    {/* BARIS UTAMA: Ajukan Penghargaan Buku */}
-                    <div className="mb-4 px-4">
-                       <Button
-                            variant="outline"
-                            className="justify-between w-full md:w-1/4 max-w-xs font-normal text-base h-10 px-4"
-                            onClick={handleAjukanPenghargaan}
-                        >
-                            Ajukan Penghargaan Buku
-                        </Button>
+                    <CardTitle className="text-2xl font-normal px-4">
+                        Buku
+                    </CardTitle>
 
-                    </div>
-                    
                     {/* BARIS SEARCH & FILTER (Diperbaiki sesuai gambar) */}
                     <div className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2 items-center px-4">
-                        
                         {/* Search Input dan Tombol Search dalam satu div */}
                         <div className="flex-1 flex border border-gray-300 rounded-md overflow-hidden h-10 w-full">
                             <input
@@ -163,17 +151,21 @@ export default function Index() {
                                 // Menghapus border karena sudah ada di div luar
                             />
                             {/* Tombol Search (digabungkan) */}
-                            <Button 
-                                variant="default" 
+                            <Button
+                                variant="default"
                                 className="h-full px-4 bg-gray-100 text-gray-800 hover:bg-gray-200 rounded-l-none border-l border-gray-300 shadow-none font-normal text-sm"
-                                onClick={() => console.log("Search button clicked")} // Placeholder action
+                                onClick={() =>
+                                    console.log("Search button clicked")
+                                } // Placeholder action
                             >
                                 Search
                             </Button>
                         </div>
-                        
+
                         {/* Search by Dropdown (Diubah menjadi SelectDropdown yang terlihat seperti input) */}
-                        <div className="w-full md:w-[150px]"> {/* Mengatur lebar yang sesuai */}
+                        <div className="w-full md:w-[150px]">
+                            {" "}
+                            {/* Mengatur lebar yang sesuai */}
                             <SelectDropdown
                                 label={searchBy}
                                 options={["Judul", "Penulis"]}
@@ -181,9 +173,11 @@ export default function Index() {
                                 onChange={setSearchBy}
                             />
                         </div>
-                        
+
                         {/* Sort by Dropdown (Diubah menjadi SelectDropdown yang terlihat seperti input) */}
-                        <div className="w-full md:w-[120px]"> {/* Mengatur lebar yang sesuai */}
+                        <div className="w-full md:w-[120px]">
+                            {" "}
+                            {/* Mengatur lebar yang sesuai */}
                             <SelectDropdown
                                 label={sortBy}
                                 options={["Tanggal", "Judul"]}
@@ -192,10 +186,9 @@ export default function Index() {
                             />
                         </div>
                     </div>
-                    
-                    {/* Garis pemisah */}
-                    <hr className="mt-4 mb-0" /> 
 
+                    {/* Garis pemisah */}
+                    <hr className="mt-4 mb-0" />
                 </CardHeader>
 
                 {/* Card Content: Hanya px-4 */}
@@ -203,11 +196,17 @@ export default function Index() {
                     <div className="space-y-3">
                         {mockBukuList
                             // Logika filter/sort sederhana
-                            .filter(buku => {
+                            .filter((buku) => {
                                 const searchTerm = search.toLowerCase();
                                 // Menggunakan nilai default untuk pencarian jika searchBy belum dipilih secara spesifik
-                                const searchField = searchBy === "Search by" || searchBy === "Judul" ? buku.judul : buku.penulis;
-                                return searchField.toLowerCase().includes(searchTerm);
+                                const searchField =
+                                    searchBy === "Search by" ||
+                                    searchBy === "Judul"
+                                        ? buku.judul
+                                        : buku.penulis;
+                                return searchField
+                                    .toLowerCase()
+                                    .includes(searchTerm);
                             })
                             .sort((a, b) => {
                                 // Mengabaikan sorting jika sortBy masih default
