@@ -17,10 +17,10 @@ import {
 } from "@/components/ui/sidebar";
 import { useTheme } from "@/providers/theme-provider";
 
-import { usePage } from "@inertiajs/react";
+import { usePage, Link } from "@inertiajs/react"; // Update: Tambah Link
 
 import * as Icon from "@tabler/icons-react";
-import { Moon, Sun, HandCoins } from "lucide-react";
+import { Moon, Sun, HandCoins, Bell } from "lucide-react"; // Update: Tambah Bell
 import { Toaster } from "sonner";
 import { route } from "ziggy-js";
 
@@ -140,6 +140,17 @@ export default function AppLayout({ children }) {
                                 {pageName}
                             </h1>
                             <div className="ml-auto flex items-center gap-2">
+                                {/* --- TOMBOL NOTIFIKASI DITAMBAHKAN DI SINI --- */}
+                                <Button variant="ghost" size="icon" asChild>
+                                    <Link href={route("notifications.index")}>
+                                        <Bell className="h-4 w-4" />
+                                        <span className="sr-only">
+                                            Notifikasi
+                                        </span>
+                                    </Link>
+                                </Button>
+                                {/* --------------------------------------------- */}
+
                                 <Select
                                     className="capitalize"
                                     value={colorTheme}

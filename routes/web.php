@@ -36,6 +36,12 @@ Route::middleware(['throttle:req-limit', 'handle.inertia'])->group(function () {
         // --- Dashboard Home ---
         Route::get('/', [HomeController::class, 'index'])->name('home');
 
+        // --- Notification Route (FIXED) ---
+        // Mengarahkan ke file: resources/js/pages/app/notifikasi/page.jsx
+        Route::get('/notifikasi-dummy', function () {
+            return Inertia::render('app/notifikasi/page');
+        })->name('notifications.index');
+
         // --- Hak Akses Module ---
         Route::prefix('hak-akses')->group(function () {
             Route::get('/', [HakAksesController::class, 'index'])->name('hak-akses');

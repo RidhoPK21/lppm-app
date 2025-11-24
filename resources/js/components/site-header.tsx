@@ -1,6 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Bell } from "lucide-react";
+import { Link } from "@inertiajs/react";
 
 export function SiteHeader() {
     return (
@@ -13,6 +15,19 @@ export function SiteHeader() {
                 />
                 <h1 className="text-base font-medium">Documents</h1>
                 <div className="ml-auto flex items-center gap-2">
+                    {/* Tombol Notifikasi - Saya ubah ke variant="outline" agar lebih terlihat */}
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        className="text-foreground"
+                        asChild
+                    >
+                        <Link href="/notifikasi-dummy">
+                            <Bell className="h-5 w-5" />
+                            <span className="sr-only">Notifikasi</span>
+                        </Link>
+                    </Button>
+
                     <Button
                         variant="ghost"
                         asChild
