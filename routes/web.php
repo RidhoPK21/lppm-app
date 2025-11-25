@@ -39,22 +39,22 @@ Route::middleware(['throttle:req-limit', 'handle.inertia'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | PROTECTED ROUTES
+    | PROTECTED ROUTES (LOGIN REQUIRED)
     |--------------------------------------------------------------------------
     */
     Route::middleware('check.auth')->group(function () {
 
-        // HOME
+        // HOME DASHBOARD
         Route::get('/', [HomeController::class, 'index'])->name('home');
 
-        // DOSEN
+        // DOSEN SPECIFIC
         Route::get('/dosen/home', function () {
             return inertia('app/dosen/dosen-home-page', [
                 'pageName' => 'Dashboard Dosen',
             ]);
         })->name('dosen.home');
 
-        // HAK AKSES
+        // MANAJEMEN HAK AKSES
         Route::prefix('hak-akses')->group(function () {
             Route::get('/', [HakAksesController::class, 'index'])->name('hak-akses');
             Route::post('/change', [HakAksesController::class, 'postChange'])->name('hak-akses.change-post');
@@ -62,70 +62,66 @@ Route::middleware(['throttle:req-limit', 'handle.inertia'])->group(function () {
             Route::post('/delete-selected', [HakAksesController::class, 'postDeleteSelected'])->name('hak-akses.delete-selected-post');
         });
 
-
-
-        // TODO
+        // TODO LIST
         Route::prefix('todo')->group(function () {
             Route::get('/', [TodoController::class, 'index'])->name('todo');
             Route::post('/change', [TodoController::class, 'postChange'])->name('todo.change-post');
             Route::post('/delete', [TodoController::class, 'postDelete'])->name('todo.delete-post');
         });
-    });
 
-    /*
-    |--------------------------------------------------------------------------
-    | LPPM - REGISTRASI SEMINAR / JURNAL
-    |--------------------------------------------------------------------------
-    */
- // ...
-Route::get('/app/regis-semi/{id}/link-google-drive', [RegisSemiController::class, 'showInvite'])
-     ->name('regis-semi.invite'); // <-- PASTIKAN NAMA INI SAMA
-// ...
-Route::get('/{id}/invite', [RegisSemiController::class, 'invite'])->name('invite');
-// Rute untuk Detail Buku
-Route::get('/app/regis-semi/{id}/detail', [RegisSemiController::class, 'show'])->name('regis-semi.detail');
-Route::get('/{id}/result', [RegisSemiController::class, 'result'])->name('regis-semi.result');
+        /*
+        |--------------------------------------------------------------------------
+        | LPPM APPS
+        |--------------------------------------------------------------------------
+        */
 
-Route::prefix('regis-semi')->name('regis-semi.')->group(function () {
+        // 1. REGISTRASI SEMINAR / JURNAL
+        Route::prefix('regis-semi')->name('regis-semi.')->group(function () {
             Route::get('/', [RegisSemiController::class, 'index'])->name('index');
             Route::post('/change', [RegisSemiController::class, 'postChange'])->name('change');
             Route::post('/delete', [RegisSemiController::class, 'postDelete'])->name('delete');
             Route::post('/delete-selected', [RegisSemiController::class, 'postDeleteSelected'])->name('delete-selected');
-        });
-   
-
-          Route::prefix('penghargaan')->group(function () {
             
-            // 1. Penghargaan Buku (LENGKAP)
+            // Detail & Undangan (Pastikan parameter {id} konsisten)
+            Route::get('/{id}/detail', [RegisSemiController::class, 'show'])->name('detail');
+            Route::get('/{id}/result', [RegisSemiController::class, 'result'])->name('result');
+            Route::get('/{id}/invite', [RegisSemiController::class, 'invite'])->name('invite');
             
-            // Halaman Utama (Card Info + Tabel)
-            Route::get('/buku', [PenghargaanBukuController::class, 'index'])
-                ->name('app.penghargaan.buku.index');
-            
-            // Langkah 1: Form Pengajuan Buku
-            Route::get('/buku/ajukan', [PenghargaanBukuController::class, 'create'])
-                ->name('app.penghargaan.buku.create');
-
-            // Proses Simpan Langkah 1
-            Route::post('/buku', [PenghargaanBukuController::class, 'store'])
-                ->name('app.penghargaan.buku.store');
-
-            // Langkah 2: Halaman Upload Dokumen (BARU)
-            Route::get('/buku/upload/{id}', [PenghargaanBukuController::class, 'uploadDocs'])
-                ->name('app.penghargaan.buku.upload');
-
-            // Proses Simpan Langkah 2 (Final)
-            Route::post('/buku/upload', [PenghargaanBukuController::class, 'storeUpload'])
-                ->name('app.penghargaan.buku.store_upload');
-
-            // 2. Penghargaan Lainnya (Masih Dummy)
-            Route::get('/dosen', function () { return 'Penghargaan Dosen UI (Dummy)'; })->name('penghargaan.dosen');
-            Route::get('/mahasiswa', function () { return 'Penghargaan Mahasiswa UI (Dummy)'; })->name('penghargaan.mahasiswa');
-            Route::get('/penelitian', function () { return 'Penghargaan Penelitian UI (Dummy)'; })->name('penghargaan.penelitian');
+            // Route khusus (perbaiki URL agar rapi)
+            Route::get('/{id}/link-google-drive', [RegisSemiController::class, 'showInvite'])->name('link-google-drive');
         });
 
-    Route::get('/notifikasi-dummy', function () {
+        // 2. PENGHARGAAN & PUBLIKASI
+        Route::prefix('penghargaan')->name('app.penghargaan.')->group(function () {
+            
+            // A. PENGHARGAAN BUKU (Full Feature)
+            Route::prefix('buku')->name('buku.')->group(function () {
+                // Halaman Utama (List Buku)
+                Route::get('/', [PenghargaanBukuController::class, 'index'])->name('index');
+                
+                // Langkah 1: Isi Form
+                Route::get('/ajukan', [PenghargaanBukuController::class, 'create'])->name('create');
+                Route::post('/store', [PenghargaanBukuController::class, 'store'])->name('store');
+                
+                // Langkah 2: Upload Dokumen
+                Route::get('/upload/{id}', [PenghargaanBukuController::class, 'uploadDocs'])->name('upload');
+                Route::post('/upload/{id}', [PenghargaanBukuController::class, 'storeUpload'])->name('store-upload');
+
+                // [BARU] Halaman Detail Buku
+                Route::get('/detail/{id}', [PenghargaanBukuController::class, 'show'])->name('detail');
+            });
+
+            // B. PENGHARGAAN LAINNYA (Placeholder)
+            Route::get('/dosen', function () { return 'Penghargaan Dosen UI (Coming Soon)'; })->name('dosen');
+            Route::get('/mahasiswa', function () { return 'Penghargaan Mahasiswa UI (Coming Soon)'; })->name('mahasiswa');
+            Route::get('/penelitian', function () { return 'Penghargaan Penelitian UI (Coming Soon)'; })->name('penelitian');
+        });
+
+        // NOTIFIKASI
+        Route::get('/notifikasi', function () {
             return Inertia::render('app/notifikasi/page');
         })->name('notifications.index');
-  
+
+    }); // End Protected Routes
+
 });

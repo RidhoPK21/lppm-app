@@ -19,7 +19,8 @@ import {
     CardTitle,
     CardFooter,
 } from "@/components/ui/card";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, AlertCircle } from "lucide-react"; // Import icon Alert
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"; // Import component Alert
 import { route } from "ziggy-js";
 
 export default function CreateBukuPage() {
@@ -29,11 +30,11 @@ export default function CreateBukuPage() {
         { title: "Ajukan", url: "#" },
     ];
 
-    // Setup form state dengan Inertia
     const { data, setData, post, processing, errors } = useForm({
         judul: "",
         penulis: "",
         penerbit: "",
+        level_penerbit: "",
         tahun: new Date().getFullYear(),
         isbn: "",
         kategori: "",
@@ -51,10 +52,8 @@ export default function CreateBukuPage() {
             <Head title="Formulir Pengajuan Buku" />
 
             <div className="max-w-2xl mx-auto w-full space-y-6">
-                {/* Tombol Kembali */}
                 <div className="flex items-center">
                     <Link href={route("app.penghargaan.buku.index")}>
-                        {/* PERUBAHAN DI SINI: Menggunakan style tombol hitam (seperti di halaman upload) */}
                         <Button
                             variant="secondary"
                             size="sm"
@@ -65,7 +64,18 @@ export default function CreateBukuPage() {
                     </Link>
                 </div>
 
-                {/* Form Card */}
+                {/* [BARU] MENAMPILKAN ERROR SISTEM / DATABASE */}
+                {errors.error && (
+                    <Alert
+                        variant="destructive"
+                        className="bg-red-50 border-red-200 text-red-800"
+                    >
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>Gagal Menyimpan!</AlertTitle>
+                        <AlertDescription>{errors.error}</AlertDescription>
+                    </Alert>
+                )}
+
                 <Card>
                     <CardHeader>
                         <CardTitle>
@@ -81,7 +91,10 @@ export default function CreateBukuPage() {
                         <CardContent className="space-y-4">
                             {/* Judul Buku */}
                             <div className="space-y-2">
-                                <Label htmlFor="judul">Judul Buku</Label>
+                                <Label htmlFor="judul">
+                                    Judul Buku{" "}
+                                    <span className="text-red-500">*</span>
+                                </Label>
                                 <Input
                                     id="judul"
                                     placeholder="Masukkan judul lengkap buku"
@@ -99,15 +112,21 @@ export default function CreateBukuPage() {
 
                             {/* Penulis */}
                             <div className="space-y-2">
-                                <Label htmlFor="penulis">Penulis</Label>
+                                <Label htmlFor="penulis">
+                                    Penulis (Tim){" "}
+                                    <span className="text-red-500">*</span>
+                                </Label>
                                 <Input
                                     id="penulis"
-                                    placeholder="Nama penulis (pisahkan dengan koma jika banyak)"
+                                    placeholder="Contoh: Budi Santoso, Siti Aminah"
                                     value={data.penulis}
                                     onChange={(e) =>
                                         setData("penulis", e.target.value)
                                     }
                                 />
+                                <p className="text-xs text-muted-foreground">
+                                    Pisahkan nama penulis dengan koma.
+                                </p>
                                 {errors.penulis && (
                                     <p className="text-sm text-red-500">
                                         {errors.penulis}
@@ -167,8 +186,49 @@ export default function CreateBukuPage() {
                                             setData("penerbit", e.target.value)
                                         }
                                     />
+                                    {errors.penerbit && (
+                                        <p className="text-sm text-red-500">
+                                            {errors.penerbit}
+                                        </p>
+                                    )}
                                 </div>
 
+                                {/* Level Penerbit */}
+                                <div className="space-y-2">
+                                    <Label>
+                                        Tingkat Penerbit{" "}
+                                        <span className="text-red-500">*</span>
+                                    </Label>
+                                    <Select
+                                        value={data.level_penerbit}
+                                        onValueChange={(val) =>
+                                            setData("level_penerbit", val)
+                                        }
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Pilih tingkat" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="NATIONAL">
+                                                Nasional
+                                            </SelectItem>
+                                            <SelectItem value="NATIONAL_ACCREDITED">
+                                                Nasional Terakreditasi
+                                            </SelectItem>
+                                            <SelectItem value="INTERNATIONAL">
+                                                Internasional
+                                            </SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    {errors.level_penerbit && (
+                                        <p className="text-sm text-red-500">
+                                            {errors.level_penerbit}
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {/* Tahun Terbit */}
                                 <div className="space-y-2">
                                     <Label htmlFor="tahun">Tahun Terbit</Label>
@@ -181,25 +241,33 @@ export default function CreateBukuPage() {
                                             setData("tahun", e.target.value)
                                         }
                                     />
+                                    {errors.tahun && (
+                                        <p className="text-sm text-red-500">
+                                            {errors.tahun}
+                                        </p>
+                                    )}
                                 </div>
-                            </div>
 
-                            {/* ISBN */}
-                            <div className="space-y-2">
-                                <Label htmlFor="isbn">ISBN</Label>
-                                <Input
-                                    id="isbn"
-                                    placeholder="Contoh: 978-602-xxxxx"
-                                    value={data.isbn}
-                                    onChange={(e) =>
-                                        setData("isbn", e.target.value)
-                                    }
-                                />
-                                {errors.isbn && (
-                                    <p className="text-sm text-red-500">
-                                        {errors.isbn}
-                                    </p>
-                                )}
+                                {/* ISBN */}
+                                <div className="space-y-2">
+                                    <Label htmlFor="isbn">
+                                        ISBN{" "}
+                                        <span className="text-red-500">*</span>
+                                    </Label>
+                                    <Input
+                                        id="isbn"
+                                        placeholder="Contoh: 978-602-xxxxx"
+                                        value={data.isbn}
+                                        onChange={(e) =>
+                                            setData("isbn", e.target.value)
+                                        }
+                                    />
+                                    {errors.isbn && (
+                                        <p className="text-sm text-red-500">
+                                            {errors.isbn}
+                                        </p>
+                                    )}
+                                </div>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -213,23 +281,28 @@ export default function CreateBukuPage() {
                                         }
                                     >
                                         <SelectTrigger>
-                                            <SelectValue placeholder="Pilih kategori buku" />
+                                            <SelectValue placeholder="Pilih kategori" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="Buku Ajar">
+                                            <SelectItem value="TEACHING">
                                                 Buku Ajar
                                             </SelectItem>
-                                            <SelectItem value="Buku Referensi">
+                                            <SelectItem value="REFERENCE">
                                                 Buku Referensi
                                             </SelectItem>
-                                            <SelectItem value="Monograf">
+                                            <SelectItem value="MONOGRAPH">
                                                 Monograf
                                             </SelectItem>
-                                            <SelectItem value="Bunga Rampai">
-                                                Bunga Rampai
+                                            <SelectItem value="CHAPTER">
+                                                Book Chapter
                                             </SelectItem>
                                         </SelectContent>
                                     </Select>
+                                    {errors.kategori && (
+                                        <p className="text-sm text-red-500">
+                                            {errors.kategori}
+                                        </p>
+                                    )}
                                 </div>
 
                                 {/* Jumlah Halaman */}
@@ -269,10 +342,16 @@ export default function CreateBukuPage() {
                             <Button
                                 type="submit"
                                 disabled={processing}
-                                className="w-full md:w-auto"
+                                className="w-full md:w-auto bg-black text-white hover:bg-gray-800"
                             >
-                                <ArrowRight className="mr-2 h-4 w-4" />
-                                Selanjutnya
+                                {processing ? (
+                                    "Menyimpan..."
+                                ) : (
+                                    <>
+                                        Selanjutnya{" "}
+                                        <ArrowRight className="ml-2 h-4 w-4" />
+                                    </>
+                                )}
                             </Button>
                         </CardFooter>
                     </form>

@@ -1,201 +1,220 @@
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import React, { useEffect, useState } from "react";
 import AppLayout from "@/layouts/app-layout";
-import { Head, Link } from "@inertiajs/react";
-import { CircleArrowUp, ChevronDown, Plus } from "lucide-react";
+import { Head, Link, usePage } from "@inertiajs/react"; // Hapus router, gunakan Link
+import { Button } from "@/components/ui/button";
+import { Plus, Search, BookOpen, User, FileText } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import { route } from "ziggy-js";
+import Swal from "sweetalert2";
 
-// Komponen Dropdown Reusable
-const SelectDropdown = ({ label, options, className = "", onChange }) => (
-    <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-            <div
-                className={`flex items-center justify-between border border-gray-300 rounded-md bg-white text-sm px-3 h-10 cursor-pointer ${className}`}
-            >
-                {label}
-                <ChevronDown className="h-4 w-4 ml-2 opacity-50" />
-            </div>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="min-w-[120px]">
-            {options.map((option) => (
-                <DropdownMenuItem
-                    key={option}
-                    onSelect={() => onChange(option)}
-                >
-                    {option}
-                </DropdownMenuItem>
-            ))}
-        </DropdownMenuContent>
-    </DropdownMenu>
-);
+export default function BukuPage({ buku }) {
+    const { flash } = usePage().props;
+    const [searchTerm, setSearchTerm] = useState("");
+    const [sortBy, setSortBy] = useState("newest");
 
-export default function PenghargaanBukuPage({ buku: initialBuku }) {
-    // Data Dummy
-    const buku = initialBuku || [
-        {
-            id: 1,
-            judul: "Pemrograman Web Modern",
-            penulis: "Budi Santoso",
-            tahun: "2024",
-            status: "diajukan",
-        },
-        {
-            id: 2,
-            judul: "Dasar-Dasar Laravel 11",
-            penulis: "Siti Aminah",
-            tahun: "2023",
-            status: "disetujui",
-        },
-        {
-            id: 3,
-            judul: "Algoritma & Struktur Data",
-            penulis: "Eko Kurniawan",
-            tahun: "2022",
-            status: "ditolak",
-        },
-    ];
+    useEffect(() => {
+        if (flash.success) {
+            Swal.fire({
+                title: "Berhasil!",
+                text: flash.success,
+                icon: "success",
+                confirmButtonText: "OK",
+                confirmButtonColor: "#000000",
+                timer: 3000,
+                timerProgressBar: true,
+            });
+        }
+    }, [flash]);
 
     const breadcrumbs = [
         { title: "Penghargaan", url: "#" },
-        { title: "Buku", url: route("app.penghargaan.buku.index") },
+        { title: "Buku", url: "#" },
     ];
 
     const getStatusColor = (status) => {
-        const s = status.toLowerCase();
-        if (
-            s.includes("belum") ||
-            s.includes("diajukan") ||
-            s.includes("pending")
-        )
-            return "text-yellow-500";
-        if (s.includes("setuju") || s.includes("disetujui"))
-            return "text-green-500";
-        if (s.includes("tolak")) return "text-red-500";
-        return "text-gray-500";
+        if (status.includes("Draft")) return "secondary";
+        if (status.includes("Menunggu")) return "outline";
+        if (status.includes("Disetujui")) return "default";
+        if (status.includes("Ditolak")) return "destructive";
+        return "outline";
     };
+
+    const filteredBooks = buku
+        .filter(
+            (item) =>
+                item.judul.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                item.penulis.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                item.isbn.includes(searchTerm)
+        )
+        .sort((a, b) => {
+            if (sortBy === "newest") return b.id - a.id;
+            if (sortBy === "oldest") return a.id - b.id;
+            if (sortBy === "title_asc") return a.judul.localeCompare(b.judul);
+            if (sortBy === "title_desc") return b.judul.localeCompare(a.judul);
+            return 0;
+        });
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Penghargaan Buku" />
 
-            <Card className="h-full border-none shadow-none">
-                <CardHeader className="p-0 space-y-4">
-                    {/* Judul Halaman */}
-                    <CardTitle className="text-2xl font-normal px-4">
-                        Buku
-                    </CardTitle>
-
-                    {/* Tombol Ajukan (Ditempatkan di header agar layout rapi seperti RegisSemi) */}
-                    <div className="px-4">
-                        <Link href={route("app.penghargaan.buku.create")}>
-                            <Button
-                                variant="outline"
-                                className="justify-between w-full md:w-1/4 max-w-xs font-normal text-base h-10 px-4"
-                            >
-                                <span>Ajukan Penghargaan Buku</span>
-                                <Plus className="h-4 w-4 ml-2 opacity-50" />
-                            </Button>
-                        </Link>
+            <div className="flex flex-col space-y-6">
+                {/* Header & Actions */}
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                        <h1 className="text-2xl font-bold tracking-tight">
+                            Penghargaan Buku
+                        </h1>
+                        <p className="text-muted-foreground">
+                            Kelola dan pantau status pengajuan buku Anda.
+                        </p>
                     </div>
+                    <Link href={route("app.penghargaan.buku.create")}>
+                        <Button className="bg-black text-white hover:bg-black/80 w-full md:w-auto">
+                            <Plus className="mr-2 h-4 w-4" />
+                            Ajukan Buku Baru
+                        </Button>
+                    </Link>
+                </div>
 
-                    {/* Baris Search & Filter */}
-                    <div className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2 items-center px-4">
-                        <div className="flex-1 flex border border-gray-300 rounded-md overflow-hidden h-10 w-full">
-                            <input
-                                type="text"
-                                placeholder="Type to search"
-                                className="flex-1 p-2 focus:outline-none placeholder:text-gray-400 text-sm border-none"
-                            />
-                            <Button
-                                variant="default"
-                                className="h-full px-4 bg-gray-100 text-gray-800 hover:bg-gray-200 rounded-l-none border-l border-gray-300 shadow-none font-normal text-sm"
-                            >
-                                Search
-                            </Button>
+                {/* Toolbar: Search & Sort */}
+                <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-white p-4 rounded-lg border shadow-sm">
+                    <div className="relative w-full md:w-96">
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            type="search"
+                            placeholder="Cari judul, penulis, atau ISBN..."
+                            className="pl-9"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+                    <div className="flex items-center gap-3 w-full md:w-auto">
+                        <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">
+                            Urutkan:
+                        </span>
+                        <Select value={sortBy} onValueChange={setSortBy}>
+                            <SelectTrigger className="w-[180px]">
+                                <SelectValue placeholder="Urutan" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="newest">Terbaru</SelectItem>
+                                <SelectItem value="oldest">Terlama</SelectItem>
+                                <SelectItem value="title_asc">
+                                    Judul (A-Z)
+                                </SelectItem>
+                                <SelectItem value="title_desc">
+                                    Judul (Z-A)
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+
+                {/* List Content (Stacked Cards) */}
+                {filteredBooks.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-20 text-center space-y-4 border-2 border-dashed rounded-lg bg-muted/10">
+                        <div className="bg-muted/50 p-4 rounded-full">
+                            <BookOpen className="h-10 w-10 text-muted-foreground" />
                         </div>
-
-                        <div className="w-full md:w-[150px]">
-                            <SelectDropdown
-                                label="Search by"
-                                options={["Judul", "Penulis"]}
-                                className="w-full h-10"
-                                onChange={() => {}}
-                            />
-                        </div>
-
-                        <div className="w-full md:w-[120px]">
-                            <SelectDropdown
-                                label="Sort by"
-                                options={["Terbaru", "Terlama"]}
-                                className="w-full h-10"
-                                onChange={() => {}}
-                            />
+                        <div className="space-y-1">
+                            <p className="text-lg font-medium">
+                                Tidak ada buku ditemukan
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                                Coba ubah kata kunci pencarian atau ajukan buku
+                                baru.
+                            </p>
                         </div>
                     </div>
-
-                    {/* Garis Pemisah */}
-                    <hr className="mt-4 mb-0" />
-                </CardHeader>
-
-                <CardContent className="p-0 px-4">
-                    <div className="flex flex-col gap-2 mt-4">
-                        {buku.map((item) => (
-                            <div
+                ) : (
+                    <div className="flex flex-col space-y-4">
+                        {filteredBooks.map((item) => (
+                            // [SOLUSI UTAMA] Bungkus Card dengan Link Inertia
+                            // block w-full: Agar Link mengisi lebar container
+                            // hover:opacity-75: Feedback visual saat di-hover
+                            <Link
                                 key={item.id}
-                                className="bg-white rounded-lg shadow-md cursor-pointer hover:shadow-lg transition-shadow"
+                                href={route("app.penghargaan.buku.detail", {
+                                    id: item.id,
+                                })}
+                                className="block w-full transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black rounded-lg"
                             >
-                                <div className="flex items-stretch p-4">
-                                    {/* Icon */}
-                                    <div className="mr-4 flex items-center justify-center w-10 h-10 rounded-full bg-black shrink-0">
-                                        <CircleArrowUp className="h-5 w-5 text-white" />
-                                    </div>
+                                <Card className="border-l-4 border-l-transparent hover:border-l-black hover:shadow-md transition-all relative overflow-hidden bg-white cursor-pointer">
+                                    <CardContent className="p-6">
+                                        <div className="flex flex-col gap-4">
+                                            {/* Header Card */}
+                                            <div className="flex justify-between items-start">
+                                                <div className="flex items-center gap-2">
+                                                    <Badge
+                                                        variant="outline"
+                                                        className="text-xs font-normal bg-gray-50"
+                                                    >
+                                                        {item.kategori}
+                                                    </Badge>
+                                                    <span className="text-xs text-muted-foreground">
+                                                        • {item.tahun}
+                                                    </span>
+                                                </div>
+                                                <Badge
+                                                    variant={getStatusColor(
+                                                        item.status
+                                                    )}
+                                                    className="shrink-0 ml-4"
+                                                >
+                                                    {item.status}
+                                                </Badge>
+                                            </div>
 
-                                    {/* Detail */}
-                                    <div className="flex-1 min-w-0 flex flex-col justify-center">
-                                        <div className="font-semibold text-lg truncate">
-                                            {item.judul}
-                                        </div>
-                                        <div className="text-sm text-gray-500 truncate">
-                                            {item.penulis}
-                                        </div>
-                                    </div>
+                                            {/* Body Card */}
+                                            <div>
+                                                <h3 className="text-xl font-bold text-gray-900 leading-tight">
+                                                    {item.judul}
+                                                </h3>
+                                                <p className="text-sm text-muted-foreground mt-1">
+                                                    Penerbit: {item.penerbit}
+                                                </p>
+                                            </div>
 
-                                    {/* Status & Tanggal */}
-                                    <div className="text-right ml-4 flex flex-col justify-between h-full min-w-[100px]">
-                                        <div
-                                            className={`text-sm font-medium ${getStatusColor(
-                                                item.status
-                                            )}`}
-                                        >
-                                            Status :{" "}
-                                            <span className="capitalize font-normal">
-                                                {item.status}
-                                            </span>
+                                            {/* Footer Card */}
+                                            <div className="flex flex-wrap gap-3 text-sm text-gray-600 pt-2 border-t border-gray-100 mt-2">
+                                                <div className="flex items-center gap-1.5">
+                                                    <User className="h-3.5 w-3.5 text-muted-foreground" />
+                                                    <span className="truncate max-w-[200px]">
+                                                        {item.penulis}
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center gap-1.5">
+                                                    <FileText className="h-3.5 w-3.5 text-muted-foreground" />
+                                                    <span>
+                                                        ISBN: {item.isbn}
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center gap-1.5">
+                                                    <BookOpen className="h-3.5 w-3.5 text-muted-foreground" />
+                                                    <span>
+                                                        {item.jumlah_halaman}{" "}
+                                                        Hal
+                                                    </span>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div className="text-gray-500 text-xs mt-2">
-                                            {item.tahun
-                                                ? `Tahun ${item.tahun}`
-                                                : "23 / 11 / 2025"}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                                    </CardContent>
+                                </Card>
+                            </Link>
                         ))}
-
-                        {buku.length === 0 && (
-                            <div className="text-center py-10 text-muted-foreground bg-muted/10 rounded-lg border border-dashed w-full">
-                                Belum ada data buku yang diajukan.
-                            </div>
-                        )}
                     </div>
-                </CardContent>
-            </Card>
+                )}
+            </div>
         </AppLayout>
     );
 }
