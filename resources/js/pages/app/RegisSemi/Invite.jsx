@@ -1,161 +1,192 @@
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import React, { useState } from "react";
 import AppLayout from "@/layouts/app-layout";
-import * as React from "react";
-import { useState } from "react"; 
-import { router } from '@inertiajs/react';
-import { ChevronLeft, Check } from 'lucide-react';
+import { Head, router } from "@inertiajs/react";
+import { route } from "ziggy-js";
 
-// Mock Data - Ganti dengan data dari props
-const mockDosenList = [
-    { id: 1, name: "Dosen", detail: "Ridho Pakpahan", avatarUrl: "https://placehold.co/40x40/4A5568/FFFFFF?text=R" },
-    { id: 2, name: "Dosen", detail: "Budi Santoso", avatarUrl: "https://placehold.co/40x40/7C3AED/FFFFFF?text=B" },
-    { id: 3, name: "Dosen", detail: "Siti Aisyah", avatarUrl: "https://placehold.co/40x40/DC2626/FFFFFF?text=S" },
-    { id: 4, name: "Dosen", detail: "Ahmad Hanafi", avatarUrl: "https://placehold.co/40x40/EA580C/FFFFFF?text=A" },
-    { id: 5, name: "Dosen", detail: "Dewi Puspita", avatarUrl: "https://placehold.co/40x40/059669/FFFFFF?text=D" },
-];
+// UI Components
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+    ArrowLeft,
+    Search,
+    UserPlus,
+    CheckCircle2,
+    Loader2,
+} from "lucide-react";
+import { toast } from "sonner";
 
-const DosenRow = React.memo(({ dosen, isSelected, onToggle }) => {
-    return (
-        <div
-            className={`flex items-center justify-between p-4 cursor-pointer transition duration-150 ${
-                isSelected ? "bg-gray-50" : "hover:bg-gray-50"
-            }`}
-            onClick={() => onToggle(dosen.id)}
-        >
-            <div className="flex items-center space-x-3">
-                <img
-                    src={dosen.avatarUrl}
-                    alt={dosen.detail}
-                    className="w-10 h-10 rounded-full object-cover"
-                />
-                <div>
-                    <div className="text-sm font-medium text-gray-900">
-                        {dosen.name}
-                    </div>
-                    <div className="text-sm text-gray-600">{dosen.detail}</div>
-                </div>
-            </div>
+export default function InviteReviewer({ book, availableReviewers }) {
+    const [search, setSearch] = useState("");
+    const [processingId, setProcessingId] = useState(null);
 
-            <div
-                className={`w-6 h-6 flex items-center justify-center border-2 rounded-full transition duration-150 ${
-                    isSelected ? "bg-black border-black" : "border-gray-300"
-                }`}
-            >
-                {isSelected && <Check className="w-4 h-4 text-white stroke-[3px]" />}
-            </div>
-        </div>
+    // Filter dosen
+    const filteredReviewers = availableReviewers.filter(
+        (user) =>
+            user.name.toLowerCase().includes(search.toLowerCase()) ||
+            user.email.toLowerCase().includes(search.toLowerCase())
     );
-});
 
-DosenRow.displayName = "DosenRow";
-
-export default function UndangDosen({ bukuId, dosenList = mockDosenList }) {
-    const [searchQuery, setSearchQuery] = useState("");
-    const [selectedDosenIds, setSelectedDosenIds] = useState([]);
-
-    const handleGoBack = () => {
-        router.visit(`/app/regis-semi/${bukuId}/detail`);
-    };
-
-    const handleToggleDosen = (id) => {
-        setSelectedDosenIds(prevIds =>
-            prevIds.includes(id)
-                ? prevIds.filter(dosenId => dosenId !== id)
-                : [...prevIds, id]
+    // Handler Undang
+    const handleInvite = (userId) => {
+        setProcessingId(userId);
+        router.post(
+            route("regis-semi.store-invite", book.id),
+            {
+                user_id: userId,
+            },
+            {
+                onSuccess: () => {
+                    setProcessingId(null);
+                    toast.success("Undangan berhasil dikirim");
+                },
+                onError: () => {
+                    setProcessingId(null);
+                    toast.error("Gagal mengundang reviewer");
+                },
+                preserveScroll: true,
+            }
         );
     };
 
-    const handleSendInvitation = () => {
-        if (selectedDosenIds.length === 0) {
-            alert("Harap pilih minimal satu dosen untuk diundang.");
-            return;
-        }
-
-        // Kirim data ke backend menggunakan Inertia
-        router.post(`/buku/${bukuId}/undang-dosen`, {
-            dosen_ids: selectedDosenIds
-        }, {
-            onSuccess: () => {
-                alert(`Undangan berhasil dikirim ke ${selectedDosenIds.length} dosen!`);
-                router.visit(`/buku/${bukuId}`);
-            },
-            onError: (errors) => {
-                console.error('Error:', errors);
-                alert('Gagal mengirim undangan. Silakan coba lagi.');
-            }
-        });
-    };
-
-    const filteredDosen = dosenList.filter(
-        (dosen) =>
-            dosen.detail.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-
     return (
         <AppLayout>
-            <div className="w-full px-6 pt-2 pb-6">
-                
-                {/* Header */}
-                <div className="flex items-center space-x-3 mb-3">
+            <Head title={`Undang Reviewer - ${book.title}`} />
+
+            <div className="max-w-5xl mx-auto p-4 md:px-8 space-y-6 pb-20">
+                {/* Header & Back Button */}
+                <div className="flex items-center gap-4">
                     <Button
-                        onClick={handleGoBack}
-                        className="flex items-center bg-black text-white hover:bg-gray-800 font-medium text-sm px-3 py-2 h-auto"
+                        variant="ghost"
+                        size="icon"
+                        // [PERBAIKAN DI SINI: Gunakan regis-semi.show]
+                        onClick={() =>
+                            router.visit(route("regis-semi.show", book.id))
+                        }
                     >
-                        <ChevronLeft className="w-4 h-4 mr-1" /> Kembali
+                        <ArrowLeft className="h-5 w-5" />
                     </Button>
-                    <h1 className="text-xl font-semibold text-gray-900">
-                        Undang Dosen
-                    </h1>
-                </div>
-                
-                {/* Search Bar */}
-                <div className="relative mb-3">
-                    <Input
-                        placeholder="Type to search..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pr-24"
-                    />
-                    <button className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white border border-gray-300 rounded-md px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-50 transition">
-                        Search
-                    </button>
+                    <div>
+                        <h1 className="text-2xl font-bold tracking-tight">
+                            Pilih Reviewer
+                        </h1>
+                        <p className="text-sm text-muted-foreground">
+                            Cari dosen yang kompeten untuk menilai buku:{" "}
+                            <span className="font-medium text-foreground">
+                                "{book.title}"
+                            </span>
+                        </p>
+                    </div>
                 </div>
 
-                {/* Dosen List */}
-                <Card className="mb-24">
-                    <CardContent className="p-0 divide-y divide-gray-200">
-                        {filteredDosen.length > 0 ? (
-                            filteredDosen.map((dosen) => (
-                                <DosenRow
-                                    key={dosen.id}
-                                    dosen={dosen}
-                                    isSelected={selectedDosenIds.includes(dosen.id)}
-                                    onToggle={handleToggleDosen}
-                                />
-                            ))
-                        ) : (
-                            <div className="p-6 text-center text-gray-500">
-                                Tidak ada dosen ditemukan. Coba kata kunci lain.
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    {/* Kolom Kiri: Search & List */}
+                    <div className="lg:col-span-2 space-y-4">
+                        <div className="relative">
+                            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                placeholder="Cari nama dosen atau NIDN..."
+                                className="pl-10 h-12 text-base"
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                            />
+                        </div>
 
-                {/* Floating Button */}
-                <div className="fixed bottom-6 right-6 z-50">
-                    <Button
-                        onClick={handleSendInvitation}
-                        disabled={selectedDosenIds.length === 0}
-                        className={`px-6 py-3 text-sm rounded-lg font-medium shadow-lg transition duration-200 ${
-                            selectedDosenIds.length > 0
-                                ? "bg-white border-2 border-gray-900 text-gray-900 hover:bg-gray-50"
-                                : "bg-gray-200 text-gray-400 cursor-not-allowed border-2 border-gray-200"
-                        }`}
-                    >
-                        Kirim Link Google Drive
-                    </Button>
+                        <div className="space-y-3">
+                            {filteredReviewers.length > 0 ? (
+                                filteredReviewers.map((reviewer) => (
+                                    <Card
+                                        key={reviewer.id}
+                                        className="hover:border-primary/50 transition-colors"
+                                    >
+                                        <CardContent className="p-4 flex items-center justify-between">
+                                            <div className="flex items-center gap-4">
+                                                <Avatar className="h-10 w-10">
+                                                    <AvatarImage
+                                                        src={`https://ui-avatars.com/api/?name=${reviewer.name}&background=random`}
+                                                    />
+                                                    <AvatarFallback>
+                                                        {reviewer.initial}
+                                                    </AvatarFallback>
+                                                </Avatar>
+                                                <div>
+                                                    <h4 className="font-semibold text-sm md:text-base">
+                                                        {reviewer.name}
+                                                    </h4>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {reviewer.email}
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            {reviewer.is_invited ? (
+                                                <Button
+                                                    variant="secondary"
+                                                    disabled
+                                                    className="gap-2 bg-green-100 text-green-700 hover:bg-green-100"
+                                                >
+                                                    <CheckCircle2 className="h-4 w-4" />{" "}
+                                                    Terundang
+                                                </Button>
+                                            ) : (
+                                                <Button
+                                                    size="sm"
+                                                    onClick={() =>
+                                                        handleInvite(
+                                                            reviewer.id
+                                                        )
+                                                    }
+                                                    disabled={
+                                                        processingId ===
+                                                        reviewer.id
+                                                    }
+                                                >
+                                                    {processingId ===
+                                                    reviewer.id ? (
+                                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                                    ) : (
+                                                        <>
+                                                            <UserPlus className="mr-2 h-4 w-4" />{" "}
+                                                            Undang
+                                                        </>
+                                                    )}
+                                                </Button>
+                                            )}
+                                        </CardContent>
+                                    </Card>
+                                ))
+                            ) : (
+                                <div className="text-center py-12 text-muted-foreground">
+                                    <p>
+                                        Tidak ditemukan dosen dengan nama "
+                                        {search}".
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Kolom Kanan: Info */}
+                    <div className="space-y-6">
+                        <Card className="bg-muted/30 border-dashed">
+                            <CardHeader>
+                                <CardTitle className="text-base">
+                                    Informasi
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="text-sm space-y-2 text-muted-foreground">
+                                <p>
+                                    • Reviewer akan mendapatkan notifikasi email
+                                    setelah diundang.
+                                </p>
+                                <p>
+                                    • Anda dapat mengundang lebih dari satu
+                                    reviewer.
+                                </p>
+                            </CardContent>
+                        </Card>
+                    </div>
                 </div>
             </div>
         </AppLayout>

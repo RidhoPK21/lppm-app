@@ -76,19 +76,31 @@ Route::middleware(['throttle:req-limit', 'handle.inertia'])->group(function () {
         */
 
         // 1. REGISTRASI SEMINAR / JURNAL
-        Route::prefix('regis-semi')->name('regis-semi.')->group(function () {
-            Route::get('/', [RegisSemiController::class, 'index'])->name('index');
-            Route::post('/change', [RegisSemiController::class, 'postChange'])->name('change');
-            Route::post('/delete', [RegisSemiController::class, 'postDelete'])->name('delete');
-            Route::post('/delete-selected', [RegisSemiController::class, 'postDeleteSelected'])->name('delete-selected');
-            
-            // Detail & Undangan (Pastikan parameter {id} konsisten)
-        Route::get('/{id}/detail', [RegisSemiController::class, 'show'])->name('detail');               Route::get('/{id}/result', [RegisSemiController::class, 'result'])->name('result');
-            Route::get('/{id}/invite', [RegisSemiController::class, 'invite'])->name('invite');
-            
-            // Route khusus (perbaiki URL agar rapi)
-            Route::get('/{id}/link-google-drive', [RegisSemiController::class, 'showInvite'])->name('link-google-drive');
-        });
+        // 1. REGISTRASI SEMINAR / JURNAL
+        // [UBAH 1] Tambahkan 'app.' pada name agar konsisten dengan fitur Penghargaan
+        // routes/web.php
+
+Route::prefix('regis-semi')->name('regis-semi.')->group(function () {
+    
+    Route::get('/', [RegisSemiController::class, 'index'])->name('index');
+    Route::post('/change', [RegisSemiController::class, 'postChange'])->name('change');
+    Route::post('/delete', [RegisSemiController::class, 'postDelete'])->name('delete');
+    Route::post('/delete-selected', [RegisSemiController::class, 'postDeleteSelected'])->name('delete-selected');
+    
+    // Halaman Detail
+    Route::get('/{id}/detail', [RegisSemiController::class, 'show'])->name('show');
+    
+    // --- TAMBAHAN PENTING (Agar Tombol Berfungsi) ---
+    Route::post('/{id}/approve', [RegisSemiController::class, 'approve'])->name('approve');
+    Route::post('/{id}/reject', [RegisSemiController::class, 'reject'])->name('reject');
+    // ------------------------------------------------
+    
+    Route::get('/{id}/result', [RegisSemiController::class, 'result'])->name('result');
+    Route::get('/{id}/invite', [RegisSemiController::class, 'invite'])->name('invite');
+    Route::post('/{id}/invite', [RegisSemiController::class, 'storeInvite'])->name('store-invite');
+    
+    Route::get('/{id}/link-google-drive', [RegisSemiController::class, 'showInvite'])->name('link-google-drive');
+});
 
         Route::post('/submit/{id}', [PenghargaanBukuController::class, 'submit'])->name('submit');
         // 2. PENGHARGAAN & PUBLIKASI

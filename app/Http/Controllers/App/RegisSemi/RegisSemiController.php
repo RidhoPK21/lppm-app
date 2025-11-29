@@ -9,6 +9,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
+use App\Models\User;
+use App\Models\BookReviewer;
 
 class RegisSemiController extends Controller
 {
@@ -41,32 +43,72 @@ class RegisSemiController extends Controller
         ]);
     }
 
-    // Menampilkan detail buku untuk diperiksa LPPM
     public function show($id)
-    {
-        $book = BookSubmission::with(['authors', 'user', 'reviewers'])->findOrFail($id);
+{
+    // HAPUS pemanggilan 'reviewers' agar tidak error 500
+    $book = BookSubmission::with(['authors', 'user'])->findOrFail($id);
 
-        return Inertia::render('app/RegisSemi/Detail', [
-            'pageName' => 'Detail Verifikasi Buku',
-            'book' => [
-                'id' => $book->id,
-                'title' => $book->title,
-                'isbn' => $book->isbn,
-                'publisher' => $book->publisher,
-                'publisher_level' => $book->publisher_level,
-                'year' => $book->publication_year,
-                'total_pages' => $book->total_pages,
-                'drive_link' => json_decode($book->drive_link), // Decode JSON link
-                'status' => $book->status,
-                'status_label' => $this->formatStatusLabel($book->status),
-                'dosen' => $book->user->name,
-                'authors' => $book->authors,
-                'reviewers' => $book->reviewers,
-                'approved_amount' => $book->approved_amount,
-            ]
+    return Inertia::render('app/RegisSemi/Detail', [
+        'pageName' => 'Detail Verifikasi Buku',
+        'book' => [
+            'id' => $book->id,
+            'title' => $book->title,
+            'isbn' => $book->isbn,
+            'publisher' => $book->publisher,
+            'drive_link' => json_decode($book->drive_link),
+            'status_label' => $book->status,
+            // Gunakan tanda tanya (?) agar tidak error jika user terhapus
+            'dosen' => $book->user->name ?? 'Dosen Tidak Ditemukan', 
+        ]
+    ]);
+}
+
+public function invite($id)
+    {
+        $book = BookSubmission::findOrFail($id);
+
+        // Ambil semua User (Dosen) KECUALI pengusul buku itu sendiri
+        // Idealnya difilter berdasarkan role 'DOSEN' atau 'REVIEWER' dari tabel hak akses
+        $users = User::where('id', '!=', $book->user_id)
+            ->orderBy('name', 'asc')
+            ->get()
+            ->map(function ($user) use ($book) {
+                // Cek apakah user ini sudah pernah diundang sebelumnya
+                $isInvited = BookReviewer::where('book_submission_id', $book->id)
+                    ->where('user_id', $user->id)
+                    ->exists();
+
+                return [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'initial' => substr($user->name, 0, 2), // Untuk Avatar
+                    'is_invited' => $isInvited // Status apakah sudah diundang
+                ];
+            });
+
+        return Inertia::render('app/RegisSemi/Invite', [
+            'book' => $book,
+            'availableReviewers' => $users
         ]);
     }
 
+    // 2. PROSES SIMPAN UNDANGAN
+    public function storeInvite(Request $request, $id)
+    {
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+        ]);
+
+        // Simpan ke tabel book_reviewers
+        BookReviewer::create([
+            'book_submission_id' => $id,
+            'user_id' => $request->user_id,
+            'status' => 'PENDING', // Status awal
+        ]);
+
+        return redirect()->back()->with('success', 'Reviewer berhasil diundang.');
+    }
     // Action: Ketua LPPM Menyetujui Pengajuan
     public function approve(Request $request, $id)
     {
@@ -92,7 +134,7 @@ class RegisSemiController extends Controller
             ]);
         });
 
-        return redirect()->route('app.regis-semi.index')
+        return redirect()->route('regis-semi.index')
             ->with('success', 'Pengajuan berhasil disetujui dan diteruskan ke HRD.');
     }
 
@@ -116,7 +158,7 @@ class RegisSemiController extends Controller
             'note' => $request->note
         ]);
 
-        return redirect()->route('app.regis-semi.index')
+        return redirect()->route('regis-semi.index')
             ->with('success', 'Pengajuan dikembalikan ke Dosen.');
     }
 

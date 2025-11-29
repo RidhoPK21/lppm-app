@@ -89,7 +89,7 @@ export default function Index({ submissions = [] }) {
 
     // [INTEGRASI NAVIGASI] Mengarahkan ke detail asli
     const handleBukuClick = (id) => {
-        router.visit(route("app.regis-semi.show", id));
+        router.visit(route("regis-semi.show", id));
     };
 
     return (

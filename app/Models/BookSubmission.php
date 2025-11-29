@@ -47,4 +47,11 @@ class BookSubmission extends Model
     {
         return $this->hasMany(SubmissionLog::class, 'book_submission_id');
     }
+
+    public function reviewers(): HasMany
+    {
+        // Pastikan Anda sudah punya model BookReviewer
+        // Jika belum punya, lihat langkah ke-2 di bawah
+        return $this->hasMany(BookReviewer::class, 'book_submission_id');
+    }
 }
