@@ -83,31 +83,29 @@ Route::middleware(['throttle:req-limit', 'handle.inertia'])->group(function () {
             Route::post('/delete-selected', [RegisSemiController::class, 'postDeleteSelected'])->name('delete-selected');
             
             // Detail & Undangan (Pastikan parameter {id} konsisten)
-            Route::get('/{id}/detail', [RegisSemiController::class, 'show'])->name('detail');
-            Route::get('/{id}/result', [RegisSemiController::class, 'result'])->name('result');
+        Route::get('/{id}/detail', [RegisSemiController::class, 'show'])->name('detail');               Route::get('/{id}/result', [RegisSemiController::class, 'result'])->name('result');
             Route::get('/{id}/invite', [RegisSemiController::class, 'invite'])->name('invite');
             
             // Route khusus (perbaiki URL agar rapi)
             Route::get('/{id}/link-google-drive', [RegisSemiController::class, 'showInvite'])->name('link-google-drive');
         });
 
+        Route::post('/submit/{id}', [PenghargaanBukuController::class, 'submit'])->name('submit');
         // 2. PENGHARGAAN & PUBLIKASI
         Route::prefix('penghargaan')->name('app.penghargaan.')->group(function () {
             
-            // A. PENGHARGAAN BUKU (Full Feature)
+            // A. Buku
             Route::prefix('buku')->name('buku.')->group(function () {
-                // Halaman Utama (List Buku)
                 Route::get('/', [PenghargaanBukuController::class, 'index'])->name('index');
-                
-                // Langkah 1: Isi Form
                 Route::get('/ajukan', [PenghargaanBukuController::class, 'create'])->name('create');
                 Route::post('/store', [PenghargaanBukuController::class, 'store'])->name('store');
                 
-                // Langkah 2: Upload Dokumen
                 Route::get('/upload/{id}', [PenghargaanBukuController::class, 'uploadDocs'])->name('upload');
                 Route::post('/upload/{id}', [PenghargaanBukuController::class, 'storeUpload'])->name('store-upload');
+                
+                // [BARIS INI YANG HILANG SEBELUMNYA]
+                Route::post('/submit/{id}', [PenghargaanBukuController::class, 'submit'])->name('submit'); 
 
-                // [BARU] Halaman Detail Buku
                 Route::get('/detail/{id}', [PenghargaanBukuController::class, 'show'])->name('detail');
             });
 

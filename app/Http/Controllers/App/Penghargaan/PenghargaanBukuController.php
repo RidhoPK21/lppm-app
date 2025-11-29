@@ -80,7 +80,7 @@ class PenghargaanBukuController extends Controller
                 'publisher_level' => $validated['level_penerbit'],
                 'book_type' => $bookType,
                 'total_pages' => $validated['jumlah_halaman'],
-                'file_path' => null,
+                // 'file_path' => null, // SUDAH DIHAPUS
                 'status' => 'DRAFT',
             ]);
 
@@ -163,45 +163,72 @@ class PenghargaanBukuController extends Controller
         ]);
     }
 
-    // [PERUBAHAN UTAMA ADA DI SINI]
+    // [PERBAIKAN] Method ini HANYA MENYIMPAN data link, status TETAP DRAFT
     public function storeUpload(Request $request, $id)
     {
-        $userId = '12e091b8-f227-4a58-8061-dc4a100c60f1';
+        $userId = '12e091b8-f227-4a58-8061-dc4a100c60f1'; // Ganti Auth::id() nanti
 
-        // [UPDATE VALIDASI] Semua 5 link WAJIB diisi
+        // Validasi format link (tidak perlu 'required' dulu kalau mau simpan parsial, 
+        // tapi kalau formnya mewajibkan semua diisi sekaligus, 'required' oke)
         $request->validate([
-            'links' => 'required|array|size:5', // Harus array dengan tepat 5 item
-            'links.*' => 'required|url',        // Semua item harus diisi dan format URL
-        ], [
-            'links.*.required' => 'Link dokumen ini wajib diisi.',
-            'links.*.url' => 'Format link harus valid (http/https).',
+            'links' => 'required|array',
+            'links.*' => 'nullable|url', // Boleh kosong kalau baru simpan draft
         ]);
 
         $book = BookSubmission::findOrFail($id);
 
-        // Karena semua wajib, tidak perlu filter kosong
+        // Simpan link sebagai JSON
+        // Kita filter yang tidak null agar rapi, atau simpan null juga boleh
         $linksJson = json_encode($request->links);
 
         $book->update([
             'drive_link' => $linksJson,
+            // Status JANGAN diubah jadi SUBMITTED dulu
+            'status' => 'DRAFT' 
+        ]);
+
+        // Redirect ke halaman DETAIL, bukan Index
+        return redirect()->route('app.penghargaan.buku.detail', $book->id)
+            ->with('success', 'Dokumen berhasil disimpan sebagai draft. Silakan periksa kembali sebelum dikirim.');
+    }
+
+    // [BARU] Method untuk Finalisasi Pengiriman
+    public function submit($id)
+    {
+        $book = BookSubmission::findOrFail($id);
+        
+        if ($book->status !== 'DRAFT') {
+            return back()->with('error', 'Pengajuan sudah dikirim atau diproses.');
+        }
+
+        // Validasi Kelengkapan Dokumen di sisi Server (Double Check)
+        $links = json_decode($book->drive_link, true);
+        
+        // Cek apakah array links ada dan isinya minimal 1 (atau 5 sesuai aturan)
+        // Asumsi aturan: Wajib 5 link terisi semua
+        if (!$links || count(array_filter($links)) < 5) {
+            return back()->with('error', 'Dokumen belum lengkap. Harap lengkapi semua link dokumen sebelum mengirim.');
+        }
+
+        $book->update([
             'status' => 'SUBMITTED'
         ]);
 
         SubmissionLog::create([
             'book_submission_id' => $book->id,
-            'user_id' => $userId,
+            'user_id' => '12e091b8-f227-4a58-8061-dc4a100c60f1', // Ganti Auth
             'action' => 'SUBMIT',
-            'note' => 'Mengunggah 5 dokumen persyaratan dan mengirim pengajuan.'
+            'note' => 'Pengajuan dikirim final oleh dosen.'
         ]);
 
         return redirect()->route('app.penghargaan.buku.index')
-            ->with('success', 'Data berhasil disimpan. Pengajuan Anda sedang diverifikasi.');
+            ->with('success', 'Pengajuan BERHASIL dikirim ke LPPM.');
     }
 
     private function formatStatus($status)
     {
         return match ($status) {
-            'DRAFT' => 'Draft (Belum Lengkap)',
+            'DRAFT' => 'Draft', // [UBAH] Jangan hardcode "Belum Lengkap" di sini
             'SUBMITTED' => 'Menunggu Verifikasi Staff',
             'VERIFIED_STAFF' => 'Menunggu Review Ketua',
             'APPROVED_CHIEF' => 'Disetujui LPPM',

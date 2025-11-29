@@ -24,7 +24,7 @@ class BookSubmission extends Model
         'publisher_level',
         'book_type',
         'total_pages',
-        'file_path',
+       // 'file_path',
         'drive_link',
         'status',
         'approved_amount'

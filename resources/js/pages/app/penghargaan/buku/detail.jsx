@@ -1,6 +1,6 @@
 import React from "react";
 import AppLayout from "@/layouts/app-layout";
-import { Head, Link } from "@inertiajs/react";
+import { Head, Link, router } from "@inertiajs/react";
 import { Button } from "@/components/ui/button";
 import {
     Card,
@@ -16,9 +16,10 @@ import {
     FileText,
     CheckCircle,
     Send,
-    MessageSquare,
     File,
     Clock,
+    ExternalLink,
+    AlertCircle,
 } from "lucide-react";
 import { route } from "ziggy-js";
 
@@ -29,16 +30,57 @@ export default function DetailBukuPage({ book }) {
         { title: "Detail", url: "#" },
     ];
 
-    // Helper warna status
-    const getStatusColor = (status) => {
-        if (!status) return "outline";
-        const s = status.toLowerCase();
-        if (s.includes("draft")) return "secondary";
-        if (s.includes("menunggu") || s.includes("submitted")) return "warning";
-        if (s.includes("disetujui") || s.includes("approved")) return "default";
-        if (s.includes("ditolak") || s.includes("rejected"))
-            return "destructive";
-        return "outline";
+    // --- VALIDASI KELENGKAPAN DOKUMEN ---
+    let links = [];
+    try {
+        links = book.drive_link ? JSON.parse(book.drive_link) : [];
+    } catch (e) {
+        console.error("Gagal parse JSON link:", e);
+        links = [];
+    }
+
+    // Syarat: Array tidak kosong dan minimal 5 link terisi string tidak kosong
+    const isDocumentsComplete =
+        Array.isArray(links) &&
+        links.filter((l) => l && l.trim() !== "").length >= 5;
+
+    // Cek apakah status masih Draft (dari database labelnya 'Draft')
+    const isDraft = book.status === "Draft" || book.status === "DRAFT";
+
+    // --- LOGIKA LABEL STATUS DINAMIS ---
+    let displayStatus = book.status;
+    let statusVariant = "outline";
+
+    if (isDraft) {
+        if (isDocumentsComplete) {
+            displayStatus = "Draft (Siap Kirim)";
+            statusVariant = "success"; // Atau 'default' (biasanya hitam/hijau di shadcn)
+        } else {
+            displayStatus = "Draft (Belum Lengkap)";
+            statusVariant = "secondary"; // Abu-abu
+        }
+    } else {
+        // Logika warna untuk status selain draft
+        const s = book.status.toLowerCase();
+        if (s.includes("menunggu") || s.includes("submitted"))
+            statusVariant = "warning";
+        else if (s.includes("disetujui") || s.includes("approved"))
+            statusVariant = "default";
+        else if (s.includes("ditolak") || s.includes("rejected"))
+            statusVariant = "destructive";
+        else if (s.includes("selesai") || s.includes("paid"))
+            statusVariant = "success";
+    }
+
+    // --- HANDLER KIRIM ---
+    const handleSubmit = () => {
+        if (
+            confirm(
+                "Apakah Anda yakin data sudah benar? Pengajuan akan dikirim ke LPPM."
+            )
+        ) {
+            router.post(route("app.penghargaan.buku.submit", { id: book.id }));
+        }
     };
 
     return (
@@ -68,10 +110,10 @@ export default function DetailBukuPage({ book }) {
                         </div>
                     </div>
                     <Badge
-                        variant={getStatusColor(book.status)}
+                        variant={statusVariant}
                         className="text-sm px-3 py-1"
                     >
-                        {book.status}
+                        {displayStatus}
                     </Badge>
                 </div>
 
@@ -157,61 +199,46 @@ export default function DetailBukuPage({ book }) {
                             <CardHeader>
                                 <CardTitle>Dokumen Pendukung</CardTitle>
                                 <CardDescription>
-                                    Berkas yang telah diunggah.
+                                    Berkas yang telah diunggah (Wajib 5
+                                    Dokumen).
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
-                                {book.drive_link ? (
+                                {links.length > 0 ? (
                                     <div className="space-y-2">
-                                        {(() => {
-                                            try {
-                                                const links = JSON.parse(
-                                                    book.drive_link
-                                                );
-                                                return Array.isArray(links) ? (
-                                                    links.map((link, idx) => (
+                                        {links.map((link, idx) => (
+                                            <div
+                                                key={idx}
+                                                className="flex items-center p-3 rounded-md border hover:bg-muted transition-colors group"
+                                            >
+                                                <File className="h-5 w-5 text-blue-500 mr-3" />
+                                                <div className="flex-1 truncate">
+                                                    <p className="text-sm font-medium text-blue-600">
+                                                        Dokumen {idx + 1}
+                                                        {!link && (
+                                                            <span className="text-red-500 ml-2 text-xs">
+                                                                (Belum Diunggah)
+                                                            </span>
+                                                        )}
+                                                    </p>
+                                                    {link ? (
                                                         <a
-                                                            key={idx}
                                                             href={link}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
-                                                            className="flex items-center p-3 rounded-md border hover:bg-muted transition-colors group"
+                                                            className="text-xs text-muted-foreground truncate hover:underline flex items-center gap-1"
                                                         >
-                                                            <File className="h-5 w-5 text-blue-500 mr-3" />
-                                                            <div className="flex-1 truncate">
-                                                                <p className="text-sm font-medium text-blue-600 group-hover:underline">
-                                                                    Dokumen{" "}
-                                                                    {idx + 1}
-                                                                </p>
-                                                                <p className="text-xs text-muted-foreground truncate">
-                                                                    {link}
-                                                                </p>
-                                                            </div>
+                                                            {link}{" "}
+                                                            <ExternalLink className="h-3 w-3" />
                                                         </a>
-                                                    ))
-                                                ) : (
-                                                    <a
-                                                        href={book.drive_link}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="text-blue-600 hover:underline"
-                                                    >
-                                                        Buka Link Drive
-                                                    </a>
-                                                );
-                                            } catch (e) {
-                                                return (
-                                                    <a
-                                                        href={book.drive_link}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="text-blue-600 hover:underline"
-                                                    >
-                                                        Buka Link Drive
-                                                    </a>
-                                                );
-                                            }
-                                        })()}
+                                                    ) : (
+                                                        <p className="text-xs text-red-400 italic">
+                                                            Wajib diisi
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
                                     </div>
                                 ) : (
                                     <div className="text-center py-8 border-2 border-dashed rounded-lg bg-muted/5">
@@ -228,7 +255,7 @@ export default function DetailBukuPage({ book }) {
                     <div className="space-y-6">
                         <Card>
                             <CardHeader>
-                                <CardTitle>Status Terkini</CardTitle>
+                                <CardTitle>Status Pengajuan</CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <div className="space-y-6">
@@ -251,17 +278,30 @@ export default function DetailBukuPage({ book }) {
                                         </div>
                                     </div>
 
-                                    {/* Tampilkan status saat ini */}
                                     <div className="flex gap-3">
                                         <div className="mt-0.5">
-                                            <Clock className="h-5 w-5 text-yellow-500" />
+                                            {isDraft ? (
+                                                <AlertCircle
+                                                    className={`h-5 w-5 ${
+                                                        isDocumentsComplete
+                                                            ? "text-green-500"
+                                                            : "text-yellow-500"
+                                                    }`}
+                                                />
+                                            ) : (
+                                                <Clock className="h-5 w-5 text-yellow-500" />
+                                            )}
                                         </div>
                                         <div>
                                             <p className="font-medium text-sm text-foreground">
-                                                Status: {book.status}
+                                                Status: {displayStatus}
                                             </p>
                                             <p className="text-xs text-muted-foreground">
-                                                Proses sedang berlangsung.
+                                                {isDraft
+                                                    ? isDocumentsComplete
+                                                        ? "Dokumen lengkap. Klik tombol di bawah untuk mengirim."
+                                                        : "Mohon lengkapi dokumen terlebih dahulu."
+                                                    : "Sedang diproses oleh LPPM."}
                                             </p>
                                         </div>
                                     </div>
@@ -269,27 +309,53 @@ export default function DetailBukuPage({ book }) {
                             </CardContent>
 
                             <CardFooter className="flex flex-col gap-3 border-t pt-4">
-                                {/* Tombol 1: Kirim (Lanjut Upload) - Selalu Muncul */}
-                                <Link
-                                    href={route("app.penghargaan.buku.upload", {
-                                        id: book.id,
-                                    })}
-                                    className="w-full"
-                                >
-                                    <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
-                                        <Send className="mr-2 h-4 w-4" />
-                                        Kirim (Lanjut Upload)
-                                    </Button>
-                                </Link>
+                                {/* TOMBOL 1: Edit/Lengkapi Dokumen (Hanya Muncul Jika DRAFT) */}
+                                {isDraft && (
+                                    <Link
+                                        href={route(
+                                            "app.penghargaan.buku.upload",
+                                            { id: book.id }
+                                        )}
+                                        className="w-full"
+                                    >
+                                        <Button
+                                            variant={
+                                                isDocumentsComplete
+                                                    ? "outline"
+                                                    : "default"
+                                            }
+                                            className={`w-full ${
+                                                isDocumentsComplete
+                                                    ? "border-blue-600 text-blue-600 hover:bg-blue-50"
+                                                    : "bg-blue-600 hover:bg-blue-700 text-white"
+                                            }`}
+                                        >
+                                            <FileText className="mr-2 h-4 w-4" />
+                                            {isDocumentsComplete
+                                                ? "Edit Dokumen"
+                                                : "Lengkapi Dokumen"}
+                                        </Button>
+                                    </Link>
+                                )}
 
-                                {/* Tombol 2: Review Pengajuan - Selalu Muncul */}
-                                <Button
-                                    variant="outline"
-                                    className="w-full border-dashed border-2 hover:bg-gray-50"
-                                >
-                                    <MessageSquare className="mr-2 h-4 w-4 text-muted-foreground" />
-                                    Review Pengajuan
-                                </Button>
+                                {/* TOMBOL 2: KIRIM PENGAJUAN (Hanya Muncul Jika DRAFT & LENGKAP) */}
+                                {isDraft && isDocumentsComplete && (
+                                    <Button
+                                        onClick={handleSubmit}
+                                        className="w-full bg-green-600 hover:bg-green-700 text-white shadow-md"
+                                    >
+                                        <Send className="mr-2 h-4 w-4" />
+                                        Kirim Pengajuan ke LPPM
+                                    </Button>
+                                )}
+
+                                {/* INFO: Jika Sudah Dikirim */}
+                                {!isDraft && (
+                                    <div className="w-full p-3 bg-blue-50 text-blue-800 text-center rounded-md text-sm font-medium border border-blue-200">
+                                        <CheckCircle className="inline-block w-4 h-4 mr-2 mb-0.5" />
+                                        Pengajuan berhasil dikirim ke LPPM.
+                                    </div>
+                                )}
                             </CardFooter>
                         </Card>
                     </div>
