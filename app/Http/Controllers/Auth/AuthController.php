@@ -6,7 +6,9 @@ use App\Helper\ApiHelper;
 use App\Helper\ToolsHelper;
 use App\Http\Api\UserApi;
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 class AuthController extends Controller
@@ -42,12 +44,14 @@ class AuthController extends Controller
             return redirect()->route('auth.totp');
         }
 
+        // Login ke Laravel
+        $this->loginLaravelUser($response->data->user);
+
         return redirect()->route('home');
     }
 
     public function postLogin(Request $request)
     {
-        // Validasi input
         $request->validate([
             'username' => 'required|string|max:50',
             'password' => 'required|string',
@@ -69,6 +73,11 @@ class AuthController extends Controller
 
         ToolsHelper::setAuthToken($response->data->token);
 
+        $resUser = UserApi::getMe($response->data->token);
+        if ($resUser && isset($resUser->data->user)) {
+            $this->loginLaravelUser($resUser->data->user);
+        }
+
         return redirect()->route('auth.totp');
     }
 
@@ -77,6 +86,7 @@ class AuthController extends Controller
     public function logout()
     {
         ToolsHelper::setAuthToken('');
+        Auth::logout();
 
         return Inertia::render('auth/logout-page');
     }
@@ -93,7 +103,7 @@ class AuthController extends Controller
         $resLoginInfo = UserApi::getLoginInfo($authToken);
         if (! $resLoginInfo || $resLoginInfo->status != 'success') {
             ToolsHelper::setAuthToken('');
-
+            Auth::logout();
             return redirect()->route('auth.logout');
         }
 
@@ -102,14 +112,12 @@ class AuthController extends Controller
             return redirect()->route('home');
         }
 
-        // Ambil informasi TOTP
         $totpSetup = UserApi::postTotpSetup($authToken);
         $qrCode = null;
         if ($totpSetup && $totpSetup->status == 'success') {
             $qrCode = $totpSetup->data->qrCode;
         }
 
-        // dd($resLoginInfo);
         $data = [
             'authToken' => $authToken,
             'qrCode' => $qrCode,
@@ -127,11 +135,10 @@ class AuthController extends Controller
 
         $request->validate([
             'kodeOTP' => 'required|string|size:6',
-        ],
-            [
-                'kodeOTP.required' => 'Kode verifikasi wajib diisi.',
-                'kodeOTP.size' => 'Kode verifikasi harus terdiri dari 6 digit.',
-            ]);
+        ], [
+            'kodeOTP.required' => 'Kode verifikasi wajib diisi.',
+            'kodeOTP.size' => 'Kode verifikasi harus terdiri dari 6 digit.',
+        ]);
 
         $response = UserApi::postTotpVerify($authToken, $request->kodeOTP);
         if (! $response || $response->status != 'success') {
@@ -143,7 +150,7 @@ class AuthController extends Controller
         return redirect()->route('home');
     }
 
-    // // SSO Callback
+    // SSO Callback
     public function ssoCallback(Request $request)
     {
         $code = $request->query('code');
@@ -163,9 +170,30 @@ class AuthController extends Controller
             return redirect()->route('auth.login')->with('error', 'Gagal mendapatkan token akses dari SSO');
         }
 
-        // Simpan token akses di sesi atau cookie
         ToolsHelper::setAuthToken($response->access_token);
+
+        $resUser = UserApi::getMe($response->access_token);
+        if ($resUser && isset($resUser->data->user)) {
+            $this->loginLaravelUser($resUser->data->user);
+        }
 
         return redirect()->route('home');
     }
+
+    // ================= Helper: Login Laravel =================
+   private function loginLaravelUser($apiUser)
+{
+    $user = User::updateOrCreate(
+        ['email' => $apiUser->email],  // cek berdasarkan email
+        [
+            'id' => $apiUser->id,       // update id jika ada perubahan
+            'name' => $apiUser->name,
+            'password' => bcrypt('dummy-password'), // tidak dipakai tapi wajib ada
+        ]
+    );
+
+    Auth::login($user);
+}
+
+
 }

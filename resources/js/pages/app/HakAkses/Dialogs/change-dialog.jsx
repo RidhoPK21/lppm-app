@@ -42,7 +42,8 @@ export function HakAksesChangeDialog({
 }) {
     const { optionRoles = [] } = usePage().props;
 
-    const defaultRoles = ["Todo", "Lppm Ketua", "Dosen", "Hrd", "Lppm Staff"];
+    // PERBAIKAN: Konsisten menggunakan "Lppm Staff" dengan spasi
+    const defaultRoles = ["Todo", "Lppm Ketua", "Lppm Staff", "Dosen", "Hrd", "Admin", ];
     const roles = optionRoles.length > 0 ? optionRoles : defaultRoles;
 
     const [isOpenSelectUser, setIsOpenSelectUser] = useState(false);
@@ -57,20 +58,25 @@ export function HakAksesChangeDialog({
         hakAkses: [],
     });
 
+    // Inisialisasi data ketika dialog dibuka
     useEffect(() => {
         if (dataEdit && dataEdit.userName) {
             setData("hakAkses", dataEdit.hakAkses || []);
-            setData("userId", dataEdit.userId || "");
+            setDataUserId(dataEdit.userId || "");
         } else {
             setData("hakAkses", []);
-            setData("userId", "");
+            setDataUserId("");
         }
     }, [dataEdit]);
 
+    // Sinkronisasi userId ke form data
     useEffect(() => {
-        setData("userId", dataUserId);
+        if (dataUserId) {
+            setData("userId", dataUserId);
+        }
     }, [dataUserId]);
 
+    // Fetch user berdasarkan search
     useEffect(() => {
         const fetchUsers = async () => {
             if (!debouncedSearchUser.trim()) return;
@@ -121,6 +127,7 @@ export function HakAksesChangeDialog({
         fetchUsers();
     }, [debouncedSearchUser]);
 
+    // Reset state saat dialog ditutup
     useEffect(() => {
         if (!openDialog) {
             setSearchUser("");
@@ -131,6 +138,11 @@ export function HakAksesChangeDialog({
     }, [openDialog]);
 
     const handleSubmit = () => {
+        // Pastikan userId tidak kosong sebelum submit
+        if (!data.userId) {
+            alert("Silahkan pilih pengguna terlebih dahulu.");
+            return;
+        }
         post(route("hak-akses.change-post"), data);
     };
 
@@ -170,7 +182,7 @@ export function HakAksesChangeDialog({
                                     >
                                         {dataUserId
                                             ? users.find(
-                                                  (u) => u.value == dataUserId
+                                                  (u) => u.value === dataUserId
                                               )?.label || "Memuat..."
                                             : "Cari pengguna..."}
                                         <ChevronsUpDownIcon className="opacity-50" />
@@ -205,10 +217,7 @@ export function HakAksesChangeDialog({
                                                         value={itemUser.label}
                                                         onSelect={() => {
                                                             setDataUserId(
-                                                                itemUser.value ===
-                                                                    dataUserId
-                                                                    ? ""
-                                                                    : itemUser.value
+                                                                itemUser.value
                                                             );
                                                             setIsOpenSelectUser(
                                                                 false

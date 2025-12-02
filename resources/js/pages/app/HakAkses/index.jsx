@@ -1,9 +1,6 @@
 import { Badge } from "@/components/ui/badge";
-
 import { Button } from "@/components/ui/button";
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-
 import { Checkbox } from "@/components/ui/checkbox";
 
 import {
@@ -14,13 +11,11 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
 import {
     InputGroup,
     InputGroupAddon,
     InputGroupInput,
 } from "@/components/ui/input-group";
-
 import {
     Table,
     TableBody,
@@ -29,13 +24,9 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-
 import AppLayout from "@/layouts/app-layout";
-
 import { router, usePage } from "@inertiajs/react";
-
 import * as Icon from "@tabler/icons-react";
-
 import {
     flexRender,
     getCoreRowModel,
@@ -44,71 +35,48 @@ import {
     getSortedRowModel,
     useReactTable,
 } from "@tanstack/react-table";
-
 import { ChevronDown } from "lucide-react";
-
 import * as React from "react";
-
 import { toast } from "sonner";
+import { HakAksesChangeDialog } from "./Dialogs/change-dialog";
 
-import HakAksesChangeDialog from "./Dialogs/change-dialog";
-
-import HakAksesDeleteDialog from "./Dialogs/delete-dialog";
-
-import HakAksesDeleteSelectedDialog from "./Dialogs/delete-selected-dialog";
+import  HakAksesDeleteDialog  from "./Dialogs/delete-dialog";
+import  HakAksesDeleteSelectedDialog  from "./Dialogs/delete-selected-dialog";
 
 export default function Index() {
     const { aksesList, flash } = usePage().props;
-
     const [search, setSearch] = React.useState("");
-
     const [dataAkses, setDataAkses] = React.useState(aksesList);
-
     const [titleChangeDialog, setTitleChangeDialog] =
         React.useState("Tambah Hak Akses");
 
     const [sorting, setSorting] = React.useState([]);
-
     const [columnFilters, setColumnFilters] = React.useState([]);
-
     const [columnVisibility, setColumnVisibility] = React.useState({});
-
     const [rowSelection, setRowSelection] = React.useState({});
 
     // Data Edit
-
     const [isChangeDialogOpen, setIsChangeDialogOpen] = React.useState(false);
-
     const [dataEdit, setDataEdit] = React.useState(null);
 
     // Data Delete
-
     const [dataDelete, setDataDelete] = React.useState(null);
-
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
 
     // Data Delete Selected
-
     const [dataDeleteSelected, setDataDeleteSelected] = React.useState(null);
-
     const [isDeleteSelectedDialogOpen, setIsDeleteSelectedDialogOpen] =
         React.useState(false);
 
     // Tampilkan notifikasi jika ada pesan flash
-
     React.useEffect(() => {
         if (flash.success) {
             router.reload({ only: ["aksesList"] });
-
             setIsChangeDialogOpen(false);
-
             setIsDeleteDialogOpen(false);
-
             setIsDeleteSelectedDialogOpen(false);
-
             toast.success(flash.success);
         }
-
         if (flash.error) {
             toast.error(flash.error);
         }
@@ -117,13 +85,11 @@ export default function Index() {
     React.useEffect(() => {
         if (search === "") {
             setDataAkses(aksesList);
-
             return;
         }
 
         const filteredData = aksesList.filter((item) => {
             const user = item.user;
-
             const searchLower = search.toLowerCase();
 
             return (
@@ -134,18 +100,14 @@ export default function Index() {
                 )
             );
         });
-
         setDataAkses(filteredData);
     }, [search, aksesList]);
 
     // Definisi kolom untuk tabel Hak Akses
-
     const columns = [
         // Kolom Pilih
-
         {
             id: "Pilih Baris",
-
             header: ({ table }) => (
                 <Checkbox
                     checked={
@@ -158,7 +120,6 @@ export default function Index() {
                     aria-label="Pilih semua baris"
                 />
             ),
-
             cell: ({ row }) => (
                 <Checkbox
                     checked={row.getIsSelected()}
@@ -166,19 +127,13 @@ export default function Index() {
                     aria-label="Pilih baris"
                 />
             ),
-
             enableSorting: false,
-
             enableHiding: false,
         },
-
         //  Kolom Identitas
-
         {
             id: "Identitas",
-
             accessorKey: "user",
-
             header: ({ column }) => (
                 <Button
                     variant="ghost"
@@ -198,29 +153,22 @@ export default function Index() {
                     )}
                 </Button>
             ),
-
             cell: ({ row }) => (
                 <div>
                     <span className="text-gray-400">
                         @{row.original.user.username}
                     </span>
-
                     <br />
-
                     <span className="font-medium">
                         {row.original.user.name}
                     </span>
                 </div>
             ),
         },
-
         // Kolom Akses
-
         {
             id: "Hak Akses",
-
             accessorKey: "data_akses",
-
             header: ({ column }) => (
                 <Button
                     variant="ghost"
@@ -240,7 +188,6 @@ export default function Index() {
                     )}
                 </Button>
             ),
-
             cell: ({ row }) => (
                 <div className="text-left">
                     {row.original.data_akses.map((akses) => (
@@ -255,41 +202,30 @@ export default function Index() {
                 </div>
             ),
         },
-
         // Kolom Tindakan
-
         {
             id: "Tindakan",
-
             header: "Tindakan",
-
             cell: ({ row }) => {
                 return (
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="ghost" className="h-8 w-8 p-0">
                                 <span className="sr-only">Open menu</span>
-
                                 <Icon.IconDotsVertical />
                             </Button>
                         </DropdownMenuTrigger>
-
                         <DropdownMenuContent align="end">
                             <DropdownMenuItem
                                 className="text-yellow-500"
                                 onClick={() => {
                                     setDataEdit({
                                         id: row.original.id,
-
                                         userId: row.original.user_id,
-
                                         userName: `@${row.original.user.username} - ${row.original.user.name}`,
-
                                         hakAkses: row.original.data_akses,
                                     });
-
                                     setTitleChangeDialog("Ubah Hak Akses");
-
                                     setIsChangeDialogOpen(true);
                                 }}
                             >
@@ -299,22 +235,16 @@ export default function Index() {
                                 />
                                 Ubah
                             </DropdownMenuItem>
-
                             <DropdownMenuSeparator />
-
                             <DropdownMenuItem
                                 className="text-red-500"
                                 onClick={() => {
                                     setDataDelete({
                                         id: row.original.id,
-
                                         userId: row.original.user_id,
-
                                         userName: row.original.user.username,
-
                                         hakAkses: row.original.data_akses,
                                     });
-
                                     setIsDeleteDialogOpen(true);
                                 }}
                             >
@@ -332,35 +262,21 @@ export default function Index() {
     ];
 
     // Inisialisasi tabel dengan useReactTable
-
     const table = useReactTable({
         data: dataAkses,
-
         columns,
-
         onSortingChange: setSorting,
-
         onColumnFiltersChange: setColumnFilters,
-
         getCoreRowModel: getCoreRowModel(),
-
         getPaginationRowModel: getPaginationRowModel(),
-
         getSortedRowModel: getSortedRowModel(),
-
         getFilteredRowModel: getFilteredRowModel(),
-
         onColumnVisibilityChange: setColumnVisibility,
-
         onRowSelectionChange: setRowSelection,
-
         state: {
             sorting,
-
             columnFilters,
-
             columnVisibility,
-
             rowSelection,
         },
     });
@@ -371,32 +287,27 @@ export default function Index() {
                 <CardHeader>
                     <CardTitle className="flex items-center">
                         {/* Judul */}
-
                         <div className="flex-1">
                             <div className="flex items-center">
                                 <Icon.IconLock className="inline mr-2" />
-
                                 <span>Hak Akses</span>
                             </div>
                         </div>
 
                         <div className="flex items-center space-x-2">
                             {/* Search Input */}
-
                             <InputGroup>
                                 <InputGroupInput
                                     placeholder="Cari..."
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
                                 />
-
                                 <InputGroupAddon>
                                     <Icon.IconSearch />
                                 </InputGroupAddon>
                             </InputGroup>
 
                             {/* Dropdown filter table */}
-
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button
@@ -406,27 +317,20 @@ export default function Index() {
                                         Kolom <ChevronDown />
                                     </Button>
                                 </DropdownMenuTrigger>
-
                                 <DropdownMenuContent align="end">
                                     <DropdownMenuCheckboxItem
                                         onSelect={(e) => e.preventDefault()}
                                         className="capitalize font-medium"
                                         checked={table
-
                                             .getAllColumns()
-
                                             .filter((col) => col.getCanHide())
-
                                             .every((col) => col.getIsVisible())}
                                         onCheckedChange={(value) => {
                                             table
-
                                                 .getAllColumns()
-
                                                 .filter((col) =>
                                                     col.getCanHide()
                                                 )
-
                                                 .forEach((col) =>
                                                     col.toggleVisibility(
                                                         !!value
@@ -436,13 +340,9 @@ export default function Index() {
                                     >
                                         Pilih Semua
                                     </DropdownMenuCheckboxItem>
-
                                     {table
-
                                         .getAllColumns()
-
                                         .filter((column) => column.getCanHide())
-
                                         .map((column) => (
                                             <DropdownMenuCheckboxItem
                                                 onSelect={(e) =>
@@ -464,14 +364,11 @@ export default function Index() {
                             </DropdownMenu>
 
                             {/* Tombol Tambah */}
-
                             <Button
                                 variant="outline"
                                 onClick={() => {
                                     setDataEdit(null);
-
                                     setTitleChangeDialog("Tambah Hak Akses");
-
                                     setIsChangeDialogOpen(true);
                                 }}
                             >
@@ -480,10 +377,8 @@ export default function Index() {
                         </div>
                     </CardTitle>
                 </CardHeader>
-
                 <CardContent>
                     {/* Tombol Aksi Ketika Row Dipilih  */}
-
                     {table.getFilteredSelectedRowModel().rows.length > 0 && (
                         <>
                             <div className="text-right mb-2">
@@ -493,26 +388,19 @@ export default function Index() {
                                     className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
                                     onClick={() => {
                                         const selectedIds = table
-
                                             .getFilteredSelectedRowModel()
-
                                             .rows.map(
                                                 (row) => row.original.user_id
                                             );
-
                                         setDataDeleteSelected({
                                             userIds: selectedIds,
-
                                             userNames: table
-
                                                 .getFilteredSelectedRowModel()
-
                                                 .rows.map(
                                                     (row) =>
                                                         `@${row.original.user.username} - ${row.original.user.name}`
                                                 ),
                                         });
-
                                         setIsDeleteSelectedDialogOpen(true);
                                     }}
                                 >
@@ -529,7 +417,6 @@ export default function Index() {
                     )}
 
                     {/* Table */}
-
                     <div className="overflow-hidden rounded-md border">
                         <Table>
                             <TableHeader className="bg-primary">
@@ -545,7 +432,6 @@ export default function Index() {
                                                     : flexRender(
                                                           header.column
                                                               .columnDef.header,
-
                                                           header.getContext()
                                                       )}
                                             </TableHead>
@@ -553,7 +439,6 @@ export default function Index() {
                                     </TableRow>
                                 ))}
                             </TableHeader>
-
                             <TableBody>
                                 {table.getRowModel().rows?.length ? (
                                     table.getRowModel().rows.map((row) => (
@@ -565,15 +450,12 @@ export default function Index() {
                                             }
                                         >
                                             {row
-
                                                 .getVisibleCells()
-
                                                 .map((cell) => (
                                                     <TableCell key={cell.id}>
                                                         {flexRender(
                                                             cell.column
                                                                 .columnDef.cell,
-
                                                             cell.getContext()
                                                         )}
                                                     </TableCell>
@@ -606,7 +488,6 @@ export default function Index() {
             </Card>
 
             {/* Dialog Change */}
-
             <HakAksesChangeDialog
                 dataEdit={dataEdit}
                 dialogTitle={titleChangeDialog}
@@ -615,7 +496,6 @@ export default function Index() {
             />
 
             {/* Dialog Delete */}
-
             <HakAksesDeleteDialog
                 dataDelete={dataDelete}
                 openDialog={isDeleteDialogOpen}
@@ -623,7 +503,6 @@ export default function Index() {
             />
 
             {/* Dialog Delete Selected */}
-
             <HakAksesDeleteSelectedDialog
                 dataDelete={dataDeleteSelected}
                 openDialog={isDeleteSelectedDialogOpen}

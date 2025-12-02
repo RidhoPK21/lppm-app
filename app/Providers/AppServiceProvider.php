@@ -22,12 +22,15 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Paksa HTTPS jika environment remote atau konfigurasi force_https true
         if (app()->environment('remote') || config('sdi.force_https')) {
             URL::forceScheme('https');
         }
 
+        // Rate limiter
         RateLimiter::for('req-limit', function ($request) {
-            return Limit::perMinutes(5, 300)  // 300 requests per 5 minutes
+            // 300 requests per 5 minutes → 60 requests per minute
+            return Limit::perMinute(60)
                 ->by($request->ip())
                 ->response(function ($request, array $headers) {
                     return response()->json([

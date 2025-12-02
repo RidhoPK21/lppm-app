@@ -29,10 +29,25 @@ export default function LoginPage() {
         password: "",
     });
 
-    const handleSubmit = (event) => {
-        event.preventDefault();
-        post(route("auth.login-post"));
-    };
+   const handleSubmit = (event) => {
+  event.preventDefault();
+  post(route("auth.login-post"), {
+    onSuccess: (page) => {
+      // Simpan token ke localStorage
+      const authToken = page.props?.authToken;
+      if (authToken) {
+        localStorage.setItem(AUTH_TOKEN_KEY, authToken);
+
+        // Redirect ke home agar Inertia memuat data auth terbaru
+        router.get(route("home"));
+      }
+    },
+    onError: (errors) => {
+      console.error("Login gagal:", errors);
+    },
+  });
+};
+
 
     useEffect(() => {
         if (typeof window !== "undefined") {

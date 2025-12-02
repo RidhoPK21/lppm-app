@@ -18,194 +18,146 @@ import {
     SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { useTheme } from "@/providers/theme-provider";
-
 import { usePage } from "@inertiajs/react";
-
 import * as Icon from "@tabler/icons-react";
 import { Moon, Sun, HandCoins } from "lucide-react";
 import { Toaster } from "sonner";
 import { route } from "ziggy-js";
 
 export default function AppLayout({ children }) {
-    const { auth, appName, pageName } = usePage().props;
+    const { auth, appName, pageName } = usePage().props || {};
     const { theme, colorTheme, toggleTheme, setColorTheme } = useTheme();
+
     const colorThemes = [
-        "blue",
-        "green",
-        "default",
-        "orange",
-        "red",
-        "rose",
-        "violet",
-        "yellow",
+        "blue", "green", "default", "orange", "red", "rose", "violet", "yellow"
     ];
 
-    const navData = [
-        {
-            title: "Main",
-            items: [
-                {
-                    title: "Beranda",
-                    url: route("home"),
-                    icon: Icon.IconHome,
-                },
-                {
-                    title: "Todo",
-                    url: route("todo"),
-                    icon: Icon.IconChecklist,
-                },
-            ],
-        },
-        // ============================================================
-        //  SUBSIDEBAR #1 — PENGAJUAN DANA (SUDAH ADA)
-        // ============================================================
-        // ============================================================
-        //  PENGAJUAN DANA  (COLLAPSIBLE)
-        // ============================================================
-        {
-            title: "Registrasi",
-            collapsible: true,
-            groupIcon: HandCoins,
-            items: [
-                {
-                    title: "Seminar",
-                   url: route("regis-semi.index"),
-                    icon: Icon.IconNotebook,
-                },
-                {
-                    title: "Jurnal",
-                   url: route("regis-semi.index"),
-                    icon: Icon.IconBook,
-                },
-            ],
-        },
+    const rolesUser = Array.isArray(auth?.roles) ? auth.roles : [];
+    const aksesUser = Array.isArray(auth?.akses) ? auth.akses : [];
 
-        // ============================================================
-        //  PENGHARGAAN (COLLAPSIBLE)
-        // ============================================================
-        {
-            title: "Penghargaan",
-            collapsible: true,
-            groupIcon: Icon.IconAward, // <<=== INI ICON UTAMA MENU PENGHARGAAN
+    // Jika roles/akses kosong, tampilkan semua menu
+    const hasRole = (role) => {
+        if (rolesUser.length === 0 && aksesUser.length === 0) return true;
+        return rolesUser.includes(role) || aksesUser.includes(role);
+    };
+
+    // KHUSUS: Menu untuk Lppm Staff (dengan spasi)
+    const navDataLppmStaff = [
+        { 
+            title: "Main", 
             items: [
-                {
-                    title: "Penghargaan Buku",
-                     url: route("app.penghargaan.buku.index"),
-                    icon: Icon.IconBook2,
-                },
-                {
-                    title: "Penghargaan Jurnal",
-                    url: route("regis-semi.index"),
-                    icon: Icon.IconFileCertificate,
-                },
-                {
-                    title: "Penghargaan Seminar",
-                     url: route("regis-semi.index"),
-                    icon: Icon.IconPresentation,
-                },
-            ],
-        }, {
+                { title: "Beranda", url: route("home"), icon: Icon.IconHome },
+                { title: "Todo", url: route("todo"), icon: Icon.IconChecklist },
+            ] 
+        },
+        {
             title: "Registrasi Masuk",
             collapsible: true,
-           // <<=== INI ICON UTAMA MENU PENGHARGAAN
             items: [
-                {
-                    title: "Registrasi Buku Masuk",
-                     url: route("regis-semi.index"),
-                    icon: Icon.IconBook2,
-                },
-                {
-                    title: "Registrasi Jurnal Masuk",
-                    url: route("regis-semi.index"),
-                    icon: Icon.IconFileCertificate,
-                },
-                {
-                    title: "Registrasi Seminar Masuk",
-                     url: route("regis-semi.index"),
-                    icon: Icon.IconPresentation,
-                },
+                { title: "Registrasi Jurnal Masuk", url: route("regis-semi.index"), icon: Icon.IconFileCertificate },
+                { title: "Registrasi Seminar Masuk", url: route("regis-semi.index"), icon: Icon.IconPresentation },
             ],
-        }, {
+        },
+        {
             title: "Penghargaan Masuk",
             collapsible: true,
-          // <<=== INI ICON UTAMA MENU PENGHARGAAN
             items: [
-                {
-                    title: "Penghargaan Buku Masuk",
-                     url: route("regis-semi.index"),
-                    icon: Icon.IconBook2,
-                },
-                {
-                    title: "Penghargaan Jurnal Masuk",
-                    url: route("regis-semi.index"),
-                    icon: Icon.IconFileCertificate,
-                },
-                {
-                    title: "Penghargaan Seminar Masuk",
-                     url: route("regis-semi.index"),
-                    icon: Icon.IconPresentation,
-                },
+                // PERBAIKAN: Mengarahkan "Penghargaan Buku Masuk" ke route("regis-semi.index") sesuai permintaan
+                { title: "Penghargaan Buku Masuk", url: route("regis-semi.index"), icon: Icon.IconBook2 }, 
+                { title: "Penghargaan Jurnal Masuk", url: route("regis-semi.index"), icon: Icon.IconFileCertificate },
+                { title: "Penghargaan Seminar Masuk", url: route("regis-semi.index"), icon: Icon.IconPresentation },
             ],
         },
         {
             title: "Admin",
             items: [
-                {
-                    title: "Hak Akses",
-                    url: route("hak-akses"),
-                    icon: Icon.IconLock,
-                },
+                { title: "Hak Akses", url: route("hak-akses"), icon: Icon.IconLock },
             ],
         },
-
-        // ------------------------------------------
-        //   INI BLOK BARU → MENU LPPM + SUBMENU UI jangan di otak atik dl
-        // -------
     ];
+
+    // Menu default untuk role lainnya
+    const navDataDefault = [
+        { 
+            title: "Main", 
+            items: [
+                { title: "Beranda", url: route("home"), icon: Icon.IconHome },
+                { title: "Todo", url: route("todo"), icon: Icon.IconChecklist },
+            ] 
+        },
+
+        ...((hasRole("Dosen") || hasRole("Lppm Ketua") ) ? [{
+            title: "Registrasi",
+            collapsible: true,
+            groupIcon: HandCoins,
+            items: [
+                { title: "Seminar", url: route("regis-semi.index"), icon: Icon.IconNotebook },
+                { title: "Jurnal", url: route("regis-semi.index"), icon: Icon.IconBook },
+            ],
+        }] : []),
+
+        ...((hasRole("Dosen") || hasRole("Lppm Ketua") ) ? [{
+            title: "Penghargaan",
+            collapsible: true,
+            groupIcon: Icon.IconAward,
+            items: [
+                { title: "Penghargaan Buku", url: route("app.penghargaan.buku.index"), icon: Icon.IconBook2 },
+                { title: "Penghargaan Jurnal", url: route("regis-semi.index"), icon: Icon.IconFileCertificate },
+                { title: "Penghargaan Seminar", url: route("regis-semi.index"), icon: Icon.IconPresentation },
+            ],
+        }] : []),
+
+        ...(hasRole("Lppm Ketua") ? [{
+            title: "Registrasi Masuk",
+            collapsible: true,
+            items: [
+                { title: "Registrasi Jurnal Masuk", url: route("regis-semi.index"), icon: Icon.IconFileCertificate },
+                { title: "Registrasi Seminar Masuk", url: route("regis-semi.index"), icon: Icon.IconPresentation },
+            ],
+        }] : []),
+
+        // Memastikan "Penghargaan Buku Masuk" di navDataDefault juga mengarah ke regis-semi.index, sesuai permintaan.
+        ...(hasRole("Lppm Ketua") || hasRole("Lppm Staff") ? [{
+            title: "Penghargaan Masuk",
+            collapsible: true,
+            items: [
+                { title: "Penghargaan Buku Masuk", url: route("regis-semi.index"), icon: Icon.IconBook2 }, // Sudah benar
+                { title: "Penghargaan Jurnal Masuk", url: route("regis-semi.index"), icon: Icon.IconFileCertificate },
+                { title: "Penghargaan Seminar Masuk", url: route("regis-semi.index"), icon: Icon.IconPresentation },
+            ],
+        }] : []),
+
+        // Tampilkan Hak Akses untuk SEMUA role
+{
+    title: "Admin",
+    items: [
+        { title: "Hak Akses", url: route("hak-akses"), icon: Icon.IconLock },
+    ],
+}
+
+    ];
+
+    // Tentukan navData berdasarkan role - PERBAIKAN: Gunakan "Lppm Staff" dengan spasi
+    const navData = hasRole("Lppm Staff") ? navDataLppmStaff : navDataDefault;
 
     return (
         <>
-            <SidebarProvider
-                style={{
-                    "--sidebar-width": "calc(var(--spacing) * 72)",
-                    "--header-height": "calc(var(--spacing) * 12)",
-                }}
-            >
-                <AppSidebar
-                    active={pageName}
-                    user={auth}
-                    navData={navData}
-                    appName={appName}
-                    variant="inset"
-                />
+            <SidebarProvider style={{ "--sidebar-width": "calc(var(--spacing) * 72)", "--header-height": "calc(var(--spacing) * 12)" }}>
+                <AppSidebar active={pageName} user={auth} navData={navData} appName={appName} variant="inset" />
                 <SidebarInset>
-                    <header className="flex h-(--header-height) shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height) sticky top-0 z-50 bg-background/95 backdrop-blur-sm">
+                    <header className="flex h-(--header-height) shrink-0 items-center gap-2 border-b sticky top-0 z-50 bg-background/95 backdrop-blur-sm">
                         <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
                             <SidebarTrigger className="-ml-1" />
-                            <Separator
-                                orientation="vertical"
-                                className="mx-2 data-[orientation=vertical]:h-4"
-                            />
-                            <h1 className="text-base font-medium">
-                                {pageName}
-                            </h1>
+                            <Separator orientation="vertical" className="mx-2 data-[orientation=vertical]:h-4" />
+                            <h1 className="text-base font-medium">{pageName || "Halaman"}</h1>
                             <div className="ml-auto flex items-center gap-2">
-
-                                 <Button variant="ghost" size="icon" asChild>
+                                <Button variant="ghost" size="icon" asChild>
                                     <Link href={route("notifications.index")}>
                                         <Bell className="h-4 w-4" />
-                                        <span className="sr-only">
-                                            Notifikasi
-                                        </span>
+                                        <span className="sr-only">Notifikasi</span>
                                     </Link>
                                 </Button>
-
-
-                                <Select
-                                    className="capitalize"
-                                    value={colorTheme}
-                                    onValueChange={setColorTheme}
-                                >
+                                <Select className="capitalize" value={colorTheme} onValueChange={setColorTheme}>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Pilih Tema" />
                                     </SelectTrigger>
@@ -213,27 +165,13 @@ export default function AppLayout({ children }) {
                                         <SelectGroup>
                                             <SelectLabel>Tema</SelectLabel>
                                             {colorThemes.map((item) => (
-                                                <SelectItem
-                                                    key={`theme-${item}`}
-                                                    value={item}
-                                                >
-                                                    {item}
-                                                </SelectItem>
+                                                <SelectItem key={`theme-${item}`} value={item}>{item}</SelectItem>
                                             ))}
                                         </SelectGroup>
                                     </SelectContent>
                                 </Select>
-
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={toggleTheme}
-                                >
-                                    {theme === "light" ? (
-                                        <Sun className="h-4 w-4" />
-                                    ) : (
-                                        <Moon className="h-4 w-4" />
-                                    )}
+                                <Button variant="ghost" size="icon" onClick={toggleTheme}>
+                                    {theme === "light" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
                                 </Button>
                             </div>
                         </div>
