@@ -2,19 +2,15 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Model;
 
 class BookSubmission extends Model
 {
     use HasFactory;
 
-    // PENTING: Definisikan nama tabel secara eksplisit agar sesuai dengan lppm-models
     protected $table = 'book_submissions';
 
-    // Izinkan mass assignment untuk kolom-kolom ini
     protected $fillable = [
         'user_id',
         'title',
@@ -24,34 +20,39 @@ class BookSubmission extends Model
         'publisher_level',
         'book_type',
         'total_pages',
-       // 'file_path',
         'drive_link',
+        'pdf_path', // 🔥 TAMBAHKAN INI
+        'approved_amount',
+        'payment_date',
+        'reject_note',
         'status',
-        'approved_amount'
     ];
 
-    // Relasi: Satu buku dimiliki satu User (Dosen)
-    public function user(): BelongsTo
-    {
-        return $this->belongsTo(User::class);
-    }
+    protected $casts = [
+        'publication_year' => 'integer',
+        'total_pages' => 'integer',
+        'approved_amount' => 'decimal:2',
+        'payment_date' => 'date',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
 
-    // Relasi: Satu buku punya banyak Penulis
-    public function authors(): HasMany
+    // Relasi dengan BookAuthor
+    public function authors()
     {
         return $this->hasMany(BookAuthor::class, 'book_submission_id');
     }
 
-    // Relasi: Satu buku punya banyak Log History
-    public function logs(): HasMany
+
+     public function user()
     {
-        return $this->hasMany(SubmissionLog::class, 'book_submission_id');
+        return $this->belongsTo(User::class, 'user_id');
     }
 
-    public function reviewers(): HasMany
+    
+    // Relasi dengan SubmissionLog
+    public function logs()
     {
-        // Pastikan Anda sudah punya model BookReviewer
-        // Jika belum punya, lihat langkah ke-2 di bawah
-        return $this->hasMany(BookReviewer::class, 'book_submission_id');
+        return $this->hasMany(SubmissionLog::class, 'book_submission_id');
     }
 }

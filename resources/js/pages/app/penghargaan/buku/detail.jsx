@@ -20,10 +20,11 @@ import {
     Clock,
     ExternalLink,
     AlertCircle,
+    Download,
 } from "lucide-react";
 import { route } from "ziggy-js";
 
-export default function DetailBukuPage({ book }) {
+export default function DetailBukuPage({ book, user }) {
     const breadcrumbs = [
         { title: "Penghargaan", url: "#" },
         { title: "Buku", url: route("app.penghargaan.buku.index") },
@@ -39,13 +40,15 @@ export default function DetailBukuPage({ book }) {
         links = [];
     }
 
-    // Syarat: Array tidak kosong dan minimal 5 link terisi string tidak kosong
     const isDocumentsComplete =
         Array.isArray(links) &&
-        links.filter((l) => l && l.trim() !== "").length >= 5;
+        links.filter((l) => {
+            const url = typeof l === "string" ? l : l?.url;
+            return url && url.trim() !== "";
+        }).length >= 5;
 
-    // Cek apakah status masih Draft (dari database labelnya 'Draft')
     const isDraft = book.status === "Draft" || book.status === "DRAFT";
+    const hasPdf = book.pdf_path && book.pdf_path.trim() !== "";
 
     // --- LOGIKA LABEL STATUS DINAMIS ---
     let displayStatus = book.status;
@@ -54,13 +57,12 @@ export default function DetailBukuPage({ book }) {
     if (isDraft) {
         if (isDocumentsComplete) {
             displayStatus = "Draft (Siap Kirim)";
-            statusVariant = "success"; // Atau 'default' (biasanya hitam/hijau di shadcn)
+            statusVariant = "success";
         } else {
             displayStatus = "Draft (Belum Lengkap)";
-            statusVariant = "secondary"; // Abu-abu
+            statusVariant = "secondary";
         }
     } else {
-        // Logika warna untuk status selain draft
         const s = book.status.toLowerCase();
         if (s.includes("menunggu") || s.includes("submitted"))
             statusVariant = "warning";
@@ -81,6 +83,25 @@ export default function DetailBukuPage({ book }) {
         ) {
             router.post(route("app.penghargaan.buku.submit", { id: book.id }));
         }
+    };
+
+    const handleReviewFile = () => {
+        window.open(route("app.penghargaan.buku.preview-pdf", { id: book.id }), "_blank");
+    };
+
+    const handleDownloadPdf = () => {
+        window.location.href = route("app.penghargaan.buku.download-pdf", { id: book.id });
+    };
+
+    const getLinkUrl = (link) => {
+        if (!link) return null;
+        return typeof link === "string" ? link : link.url;
+    };
+
+    const getLinkName = (link, index) => {
+        if (!link) return null;
+        if (typeof link === "string") return `Dokumen ${index + 1}`;
+        return link.name || `Dokumen ${index + 1}`;
     };
 
     return (
@@ -116,7 +137,7 @@ export default function DetailBukuPage({ book }) {
                         {displayStatus}
                     </Badge>
                 </div>
-
+                
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Kolom Kiri: Informasi Utama */}
                     <div className="lg:col-span-2 space-y-6">
@@ -206,39 +227,44 @@ export default function DetailBukuPage({ book }) {
                             <CardContent>
                                 {links.length > 0 ? (
                                     <div className="space-y-2">
-                                        {links.map((link, idx) => (
-                                            <div
-                                                key={idx}
-                                                className="flex items-center p-3 rounded-md border hover:bg-muted transition-colors group"
-                                            >
-                                                <File className="h-5 w-5 text-blue-500 mr-3" />
-                                                <div className="flex-1 truncate">
-                                                    <p className="text-sm font-medium text-blue-600">
-                                                        Dokumen {idx + 1}
-                                                        {!link && (
-                                                            <span className="text-red-500 ml-2 text-xs">
-                                                                (Belum Diunggah)
-                                                            </span>
-                                                        )}
-                                                    </p>
-                                                    {link ? (
-                                                        <a
-                                                            href={link}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="text-xs text-muted-foreground truncate hover:underline flex items-center gap-1"
-                                                        >
-                                                            {link}{" "}
-                                                            <ExternalLink className="h-3 w-3" />
-                                                        </a>
-                                                    ) : (
-                                                        <p className="text-xs text-red-400 italic">
-                                                            Wajib diisi
+                                        {links.map((link, idx) => {
+                                            const url = getLinkUrl(link);
+                                            const name = getLinkName(link, idx);
+                                            
+                                            return (
+                                                <div
+                                                    key={idx}
+                                                    className="flex items-center p-3 rounded-md border hover:bg-muted transition-colors group"
+                                                >
+                                                    <File className="h-5 w-5 text-blue-500 mr-3" />
+                                                    <div className="flex-1 truncate">
+                                                        <p className="text-sm font-medium text-blue-600">
+                                                            {name}
+                                                            {!url && (
+                                                                <span className="text-red-500 ml-2 text-xs">
+                                                                    (Belum Diunggah)
+                                                                </span>
+                                                            )}
                                                         </p>
-                                                    )}
+                                                        {url ? (
+                                                            <a
+                                                                href={url}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="text-xs text-muted-foreground truncate hover:underline flex items-center gap-1"
+                                                            >
+                                                                {url}{" "}
+                                                                <ExternalLink className="h-3 w-3" />
+                                                            </a>
+                                                        ) : (
+                                                            <p className="text-xs text-red-400 italic">
+                                                                Wajib diisi
+                                                            </p>
+                                                        )}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        ))}
+                                            );
+                                        })}
                                     </div>
                                 ) : (
                                     <div className="text-center py-8 border-2 border-dashed rounded-lg bg-muted/5">
@@ -309,7 +335,31 @@ export default function DetailBukuPage({ book }) {
                             </CardContent>
 
                             <CardFooter className="flex flex-col gap-3 border-t pt-4">
-                                {/* TOMBOL 1: Edit/Lengkapi Dokumen (Hanya Muncul Jika DRAFT) */}
+                                {/* TOMBOL 1: Review File (Muncul jika dokumen lengkap) */}
+                                {isDraft && isDocumentsComplete && (
+                                    <Button
+                                        onClick={handleReviewFile}
+                                        variant="outline"
+                                        className="w-full border-purple-600 text-purple-600 hover:bg-purple-50"
+                                    >
+                                        <FileText className="mr-2 h-4 w-4" />
+                                        Review File PDF
+                                    </Button>
+                                )}
+
+                                {/* TOMBOL 2: Download PDF (Muncul jika sudah submit dan ada PDF) */}
+                                {!isDraft && hasPdf && (
+                                    <Button
+                                        onClick={handleDownloadPdf}
+                                        variant="outline"
+                                        className="w-full border-blue-600 text-blue-600 hover:bg-blue-50"
+                                    >
+                                        <Download className="mr-2 h-4 w-4" />
+                                        Download Surat Permohonan
+                                    </Button>
+                                )}
+
+                                {/* TOMBOL 3: Edit/Lengkapi Dokumen */}
                                 {isDraft && (
                                     <Link
                                         href={route(
@@ -318,27 +368,14 @@ export default function DetailBukuPage({ book }) {
                                         )}
                                         className="w-full"
                                     >
-                                        <Button
-                                            variant={
-                                                isDocumentsComplete
-                                                    ? "outline"
-                                                    : "default"
-                                            }
-                                            className={`w-full ${
-                                                isDocumentsComplete
-                                                    ? "border-blue-600 text-blue-600 hover:bg-blue-50"
-                                                    : "bg-blue-600 hover:bg-blue-700 text-white"
-                                            }`}
-                                        >
+                                        <Button variant="outline" className="w-full">
                                             <FileText className="mr-2 h-4 w-4" />
-                                            {isDocumentsComplete
-                                                ? "Edit Dokumen"
-                                                : "Lengkapi Dokumen"}
+                                            {isDocumentsComplete ? "Edit Dokumen" : "Lengkapi Dokumen"}
                                         </Button>
                                     </Link>
                                 )}
 
-                                {/* TOMBOL 2: KIRIM PENGAJUAN (Hanya Muncul Jika DRAFT & LENGKAP) */}
+                                {/* TOMBOL 4: KIRIM PENGAJUAN */}
                                 {isDraft && isDocumentsComplete && (
                                     <Button
                                         onClick={handleSubmit}

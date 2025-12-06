@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Controllers\App\RegisSemi;
-
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Models\BookSubmission;
 use App\Models\SubmissionLog;
@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use App\Models\User;
 use App\Models\BookReviewer;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class RegisSemiController extends Controller
 {
@@ -94,40 +96,150 @@ public function indexHRD()
     }
 
     public function show($id)
-    {
-        $book = BookSubmission::with(['authors', 'user'])->findOrFail($id);
+{
+    $book = BookSubmission::with(['authors', 'user'])->findOrFail($id);
 
-        return Inertia::render('app/RegisSemi/Detail', [
-           
-            'book' => [
-                'id' => $book->id,
-                'title' => $book->title,
-                'isbn' => $book->isbn,
-                'publisher' => $book->publisher,
-                'drive_link' => json_decode($book->drive_link),
-                'status_label' => $book->status,
-                'dosen' => $book->user->name ?? 'Dosen Tidak Ditemukan',
-            ]
-        ]);
+    // Debug: Tampilkan isi pdf_path
+    Log::info('PDF Path Debug:', [
+        'book_id' => $book->id,
+        'pdf_path' => $book->pdf_path,
+        'pdf_path_type' => gettype($book->pdf_path),
+        'pdf_path_is_null' => is_null($book->pdf_path),
+        'pdf_path_empty' => empty($book->pdf_path),
+    ]);
+
+    return Inertia::render('app/RegisSemi/Detail', [
+        'book' => [
+            'id' => $book->id,
+            'title' => $book->title,
+            'isbn' => $book->isbn,
+            'publisher' => $book->publisher,
+            'drive_link' => json_decode($book->drive_link),
+            'pdf_path' => $book->pdf_path, 
+            'status_label' => $book->status,
+            'dosen' => $book->user->name ?? 'Dosen Tidak Ditemukan',
+        ]
+    ]);
+}
+
+public function previewPdf($id)
+{
+    $book = BookSubmission::findOrFail($id);
+    
+    Log::info('Preview PDF', [
+        'book_id' => $book->id,
+        'pdf_path' => $book->pdf_path,
+        'storage_path' => $book->pdf_path ? 'public/' . $book->pdf_path : null
+    ]);
+    
+    // Cek jika Google Drive URL
+    if (filter_var($book->pdf_path, FILTER_VALIDATE_URL)) {
+        return redirect()->away($book->pdf_path);
     }
+    
+    // Jika file lokal
+    if (!$book->pdf_path) {
+        abort(404, 'File PDF tidak ditemukan di database.');
+    }
+    
+    // PERBAIKAN: Gunakan path lengkap dari database
+    $storagePath = $book->pdf_path;
+    
+    // Tapi jika storage butuh awalan 'public/', tambahkan
+    if (!Storage::exists($storagePath) && Storage::exists('public/' . $storagePath)) {
+        $storagePath = 'public/' . $storagePath;
+    }
+    
+    if (!Storage::exists($storagePath)) {
+        // Coba beberapa kemungkinan path
+        $possiblePaths = [
+            $book->pdf_path,
+            'public/' . $book->pdf_path,
+            str_replace('pdfs/', 'public/pdfs/', $book->pdf_path),
+            'pdfs/book-submissions/' . basename($book->pdf_path),
+            'public/pdfs/book-submissions/' . basename($book->pdf_path)
+        ];
+        
+        foreach ($possiblePaths as $path) {
+            if (Storage::exists($path)) {
+                $storagePath = $path;
+                break;
+            }
+        }
+        
+        if (!Storage::exists($storagePath)) {
+            Log::error('PDF not found in any location', [
+                'book_id' => $book->id,
+                'pdf_path' => $book->pdf_path,
+                'tried_paths' => $possiblePaths
+            ]);
+            abort(404, 'File PDF tidak ditemukan di storage.');
+        }
+    }
+    
+    $fullPath = storage_path('app/' . $storagePath);
+    
+    if (!file_exists($fullPath)) {
+        abort(404, 'File tidak ditemukan di server.');
+    }
+    
+    return response()->file($fullPath, [
+        'Content-Type' => 'application/pdf',
+        'Content-Disposition' => 'inline; filename="' . basename($fullPath) . '"'
+    ]);
+}
+
+public function downloadPdf($id)
+{
+    $book = BookSubmission::findOrFail($id);
+    
+    if (!$book->pdf_path) {
+        abort(404, 'File PDF tidak ditemukan.');
+    }
+    
+    // Cek jika pdf_path adalah URL Google Drive
+    if (filter_var($book->pdf_path, FILTER_VALIDATE_URL)) {
+        // Jika Google Drive, redirect ke URL
+        return redirect()->away($book->pdf_path);
+    }
+    
+    // Jika file lokal di storage
+    $storagePath = 'public/' . $book->pdf_path;
+    
+    if (!Storage::exists($storagePath)) {
+        abort(404, 'File tidak ditemukan di server.');
+    }
+    
+    return Storage::download($storagePath, 'buku_' . $book->id . '_' . Str::slug($book->title) . '.pdf');
+}
 
     public function showStaff($id)
-    {
-        $book = BookSubmission::with(['authors', 'user'])->findOrFail($id);
+{
+    $book = BookSubmission::with(['authors', 'user'])->findOrFail($id);
 
-        return Inertia::render('app/RegisSemi/Staff', [
-            
-            'book' => [
-                'id' => $book->id,
-                'title' => $book->title,
-                'isbn' => $book->isbn,
-                'publisher' => $book->publisher,
-                'drive_link' => json_decode($book->drive_link),
-                'status_label' => $book->status,
-                'dosen' => $book->user->name ?? 'Dosen Tidak Ditemukan',
-            ]
-        ]);
-    }
+    // Debug: Tampilkan isi pdf_path
+    Log::info('PDF Path Debug Staff:', [
+        'book_id' => $book->id,
+        'pdf_path' => $book->pdf_path,
+        'pdf_path_type' => gettype($book->pdf_path),
+        'pdf_path_is_null' => is_null($book->pdf_path),
+        'pdf_path_empty' => empty($book->pdf_path),
+    ]);
+
+    return Inertia::render('app/RegisSemi/Staff', [
+        
+        'book' => [
+            'id' => $book->id,
+            'title' => $book->title,
+            'isbn' => $book->isbn,
+            'publisher' => $book->publisher,
+            'drive_link' => json_decode($book->drive_link),
+            'pdf_path' => $book->pdf_path, // ← TAMBAHKAN INI!
+            'status_label' => $book->status,
+            'dosen' => $book->user->name ?? 'Dosen Tidak Ditemukan',
+        ]
+    ]);
+}
 
     public function invite($id)
     {

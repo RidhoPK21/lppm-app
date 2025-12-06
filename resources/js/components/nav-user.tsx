@@ -21,11 +21,12 @@ import {
     useSidebar,
 } from "@/components/ui/sidebar";
 import { route } from "ziggy-js";
+import { router } from "@inertiajs/react";
 
 export function NavUser({ user }: any) {
     const { isMobile } = useSidebar();
 
-    if (!user) return null; // mencegah crash
+    if (!user) return null;
 
     return (
         <SidebarMenu>
@@ -51,6 +52,7 @@ export function NavUser({ user }: any) {
                             <IconDotsVertical className="ml-auto size-4" />
                         </SidebarMenuButton>
                     </DropdownMenuTrigger>
+
                     <DropdownMenuContent
                         className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
                         side={isMobile ? "bottom" : "right"}
@@ -60,44 +62,36 @@ export function NavUser({ user }: any) {
                         <DropdownMenuLabel className="p-0 font-normal">
                             <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                                 <Avatar className="h-8 w-8 rounded-lg">
-                                    <AvatarImage
-                                        src={user.photo}
-                                        alt={user.name}
-                                    />
+                                    <AvatarImage src={user.photo} alt={user.name} />
                                     <AvatarFallback className="rounded-lg">
                                         {user.name.slice(0, 2).toUpperCase()}
                                     </AvatarFallback>
                                 </Avatar>
                                 <div className="grid flex-1 text-left text-sm leading-tight">
-                                    <span className="truncate font-medium">
-                                        {user.name}
-                                    </span>
+                                    <span className="truncate font-medium">{user.name}</span>
                                     <span className="text-muted-foreground truncate text-xs">
                                         {user.username}
                                     </span>
                                 </div>
                             </div>
                         </DropdownMenuLabel>
+
                         <DropdownMenuSeparator />
+
+                        {/* === PENGATURAN AKUN (SUDAH ARAH KE FILE profile.jsx) === */}
                         <DropdownMenuGroup>
                             <DropdownMenuItem
-                                onClick={() => {
-                                    window.open(
-                                        "https://sdi.del.ac.id/app/profile",
-                                        "_blank",
-                                        "noopener,noreferrer"
-                                    );
-                                }}
+                                onClick={() => router.visit("/app/profile")}
                             >
                                 <IconUserCircle />
                                 Pengaturan Akun
                             </DropdownMenuItem>
                         </DropdownMenuGroup>
+
                         <DropdownMenuSeparator />
+
                         <DropdownMenuItem
-                            onClick={() =>
-                                window.open(route("auth.logout"), "_self")
-                            }
+                            onClick={() => window.open(route("auth.logout"), "_self")}
                         >
                             <IconLogout />
                             Keluar

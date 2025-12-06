@@ -47,9 +47,7 @@ const BukuItem = ({ id, judul, penulis, status, tanggal, onClick }) => (
                                 : "text-gray-500"
                         }`}
                     >
-                        {status === "belum disetujui"
-                            ? "belum disetujui"
-                            : status}
+                        {status === "belum disetujui" ? "belum disetujui" : status}
                     </span>
                 </div>
                 <div className="text-gray-500 text-xs mt-2">{tanggal}</div>
@@ -59,13 +57,7 @@ const BukuItem = ({ id, judul, penulis, status, tanggal, onClick }) => (
 );
 
 // --- Dropdown/Select Komponen Reusable ---
-const SelectDropdown = ({
-    label,
-    options,
-    className = "",
-    onChange,
-    value,
-}) => (
+const SelectDropdown = ({ label, options, className = "", onChange, value }) => (
     <DropdownMenu>
         <DropdownMenuTrigger asChild>
             <div
@@ -80,9 +72,7 @@ const SelectDropdown = ({
                 <DropdownMenuItem
                     key={option}
                     onSelect={() => onChange(option)}
-                    className={
-                        value === option ? "bg-gray-100 font-medium" : ""
-                    }
+                    className={value === option ? "bg-gray-100 font-medium" : ""}
                 >
                     {option}
                 </DropdownMenuItem>
@@ -118,9 +108,13 @@ export default function Index({ submissions = [] }) {
             if (!searchTerm) return true;
 
             const targetField =
-                searchBy === "Dosen" ? item.nama_dosen : item.judul;
+                searchBy === "Dosen"
+                    ? item.nama_dosen
+                    : item.judul;
 
-            return targetField.toLowerCase().includes(searchTerm);
+            return targetField
+                .toLowerCase()
+                .includes(searchTerm);
         })
         .sort((a, b) => {
             if (sortBy === "Terbaru") {
@@ -132,6 +126,7 @@ export default function Index({ submissions = [] }) {
             return 0;
         });
 
+
     return (
         <AppLayout>
             <Card className="h-full border-none shadow-none pt-0">
@@ -142,7 +137,7 @@ export default function Index({ submissions = [] }) {
                         <CardTitle className="text-3xl font-normal text-gray-800 pt-4">
                             Buku
                         </CardTitle>
-
+                        
                         {/* Tombol Ajukan Penghargaan Buku */}
                         <div className="mt-4">
                             <Button
@@ -154,7 +149,7 @@ export default function Index({ submissions = [] }) {
                             </Button>
                         </div>
                     </div>
-
+                    
                     {/* SEARCH & FILTER (Hapus margin bawah pada div ini) */}
                     <div className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-4 items-center">
                         <div className="flex-1 flex border border-gray-300 rounded-md overflow-hidden h-10 w-full bg-white">
@@ -198,17 +193,14 @@ export default function Index({ submissions = [] }) {
                 </CardHeader>
 
                 {/* Content (List Buku) - Ubah pt-4 menjadi pt-2 atau pt-0 untuk merapatkan ke Search/Filter */}
-                <CardContent className="p-0 px-4 pt-2">
-                    {" "}
-                    {/* Mengurangi padding atas di CardContent */}
+                <CardContent className="p-0 px-4 pt-2"> {/* Mengurangi padding atas di CardContent */}
+                    
                     {/* Daftar Buku */}
                     <div className="space-y-3">
                         {/* Jika data kosong */}
                         {filteredSubmissions.length === 0 && (
                             <div className="text-center py-10 text-gray-500">
-                                {search ||
-                                searchBy !== "Search by" ||
-                                sortBy !== "Sort by"
+                                {search || searchBy !== "Search by" || sortBy !== "Sort by"
                                     ? "Data pengajuan tidak ditemukan dengan kriteria tersebut."
                                     : "Belum ada pengajuan penghargaan yang masuk."}
                             </div>

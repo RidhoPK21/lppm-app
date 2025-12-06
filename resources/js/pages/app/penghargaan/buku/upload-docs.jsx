@@ -1,6 +1,6 @@
 import React from "react";
 import AppLayout from "@/layouts/app-layout";
-import { Head, useForm, Link } from "@inertiajs/react";
+import { Head, useForm, Link, router } from "@inertiajs/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,7 +13,7 @@ import {
     CardFooter,
 } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Info, ArrowRight } from "lucide-react";
+import { Info, ArrowRight, FileText } from "lucide-react";
 import { route } from "ziggy-js";
 
 export default function UploadDocsPage({ bookId, bookTitle }) {
@@ -44,9 +44,17 @@ export default function UploadDocsPage({ bookId, bookTitle }) {
         setData("links", newLinks);
     }
 
+    // Cek apakah semua link sudah diisi
+    const allLinksValid = data.links.every(link => link && link.trim() !== "");
+
     function handleSubmit(e) {
         e.preventDefault();
-        post(route("app.penghargaan.buku.store-upload", { id: bookId }));
+        post(route("app.penghargaan.buku.store-upload", { id: bookId }), {
+            onSuccess: () => {
+                // Setelah berhasil simpan, redirect ke detail page
+                // PDF sudah otomatis di-generate di backend
+            }
+        });
     }
 
     return (
@@ -61,7 +69,8 @@ export default function UploadDocsPage({ bookId, bookTitle }) {
                         Anda sedang melengkapi dokumen untuk buku: <br />
                         <strong>"{bookTitle}"</strong>. <br />
                         Silakan lampirkan link Google Drive untuk setiap dokumen
-                        persyaratan di bawah ini.
+                        persyaratan di bawah ini. <br />
+                       
                     </AlertDescription>
                 </Alert>
 
@@ -121,15 +130,32 @@ export default function UploadDocsPage({ bookId, bookTitle }) {
 
                             <Button
                                 type="submit"
-                                disabled={processing}
+                                disabled={processing || !allLinksValid}
                                 className="bg-black text-white hover:bg-gray-800"
                             >
-                                <ArrowRight className="mr-2 h-4 w-4" />
-                                Simpan & Ajukan
+                                {processing ? (
+                                    <>
+                                       
+                                        Menyimpan & Generate PDF...
+                                    </>
+                                ) : (
+                                    <>
+                                        <FileText className="mr-2 h-4 w-4" />
+                                        Simpan 
+                                    </>
+                                )}
                             </Button>
                         </CardFooter>
                     </form>
                 </Card>
+
+                {!allLinksValid && (
+                    <Alert className="bg-yellow-50 border-yellow-200">
+                        <AlertDescription>
+                            ⚠️ Harap isi semua 5 link dokumen untuk melanjutkan.
+                        </AlertDescription>
+                    </Alert>
+                )}
             </div>
         </AppLayout>
     );

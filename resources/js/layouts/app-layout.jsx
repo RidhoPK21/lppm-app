@@ -28,14 +28,7 @@ export default function AppLayout({ children }) {
     const { theme, colorTheme, toggleTheme, setColorTheme } = useTheme();
 
     const colorThemes = [
-        "blue",
-        "green",
-        "default",
-        "orange",
-        "red",
-        "rose",
-        "violet",
-        "yellow",
+        "blue", "green", "default", "orange", "red", "rose", "violet", "yellow"
     ];
 
     const rolesUser = Array.isArray(auth?.roles) ? auth.roles : [];
@@ -51,21 +44,13 @@ export default function AppLayout({ children }) {
         {
             title: "Main",
             items: [
-                {
-                    title: "Beranda",
-                    url: route("hrd.home"),
-                    icon: Icon.IconHome,
-                },
-            ],
+                { title: "Beranda", url: route("hrd.home"), icon: Icon.IconHome },
+            ]
         },
         {
             title: "Admin",
             items: [
-                {
-                    title: "Hak Akses",
-                    url: route("hak-akses"),
-                    icon: Icon.IconLock,
-                },
+                { title: "Hak Akses", url: route("hak-akses"), icon: Icon.IconLock },
             ],
         },
     ];
@@ -77,53 +62,29 @@ export default function AppLayout({ children }) {
             items: [
                 { title: "Beranda", url: route("home"), icon: Icon.IconHome },
                 { title: "Todo", url: route("todo"), icon: Icon.IconChecklist },
-            ],
+            ]
         },
         {
             title: "Registrasi Masuk",
             collapsible: true,
             items: [
-                {
-                    title: "Registrasi Jurnal Masuk",
-                    url: route("regis-semi.index"),
-                    icon: Icon.IconFileCertificate,
-                },
-                {
-                    title: "Registrasi Seminar Masuk",
-                    url: route("regis-semi.index"),
-                    icon: Icon.IconPresentation,
-                },
+                { title: "Registrasi Jurnal Masuk", url: route("regis-semi.index"), icon: Icon.IconFileCertificate },
+                { title: "Registrasi Seminar Masuk", url: route("regis-semi.index"), icon: Icon.IconPresentation },
             ],
         },
         {
             title: "Penghargaan Masuk",
             collapsible: true,
             items: [
-                {
-                    title: "Penghargaan Buku Masuk",
-                    url: route("regis-semi.indexx"),
-                    icon: Icon.IconBook2,
-                },
-                {
-                    title: "Penghargaan Jurnal Masuk",
-                    url: route("regis-semi.index"),
-                    icon: Icon.IconFileCertificate,
-                },
-                {
-                    title: "Penghargaan Seminar Masuk",
-                    url: route("regis-semi.index"),
-                    icon: Icon.IconPresentation,
-                },
+                { title: "Penghargaan Buku Masuk", url: route("regis-semi.indexx"), icon: Icon.IconBook2 },
+                { title: "Penghargaan Jurnal Masuk", url: route("regis-semi.index"), icon: Icon.IconFileCertificate },
+                { title: "Penghargaan Seminar Masuk", url: route("regis-semi.index"), icon: Icon.IconPresentation },
             ],
         },
         {
             title: "Admin",
             items: [
-                {
-                    title: "Hak Akses",
-                    url: route("hak-akses"),
-                    icon: Icon.IconLock,
-                },
+                { title: "Hak Akses", url: route("hak-akses"), icon: Icon.IconLock },
             ],
         },
     ];
@@ -135,136 +96,69 @@ export default function AppLayout({ children }) {
             items: [
                 { title: "Beranda", url: route("home"), icon: Icon.IconHome },
                 { title: "Todo", url: route("todo"), icon: Icon.IconChecklist },
-            ],
+            ]
         },
 
         // Registrasi
-        ...(hasRole("Dosen") || hasRole("Lppm Ketua")
-            ? [
-                  {
-                      title: "Registrasi",
-                      collapsible: true,
-                      groupIcon: HandCoins,
-                      items: [
-                          {
-                              title: "Seminar",
-                              url: route("regis-semi.index"),
-                              icon: Icon.IconNotebook,
-                          },
-                          {
-                              title: "Jurnal",
-                              url: route("regis-semi.index"),
-                              icon: Icon.IconBook,
-                          },
-                      ],
-                  },
-              ]
-            : []),
+        ...((hasRole("Dosen") || hasRole("Lppm Ketua")) ? [{
+            title: "Registrasi",
+            collapsible: true,
+            groupIcon: HandCoins,
+            items: [
+                { title: "Seminar", url: route("regis-semi.index"), icon: Icon.IconNotebook },
+                { title: "Jurnal", url: route("regis-semi.index"), icon: Icon.IconBook },
+            ],
+        }] : []),
 
         // Penghargaan
-        ...(hasRole("Dosen") || hasRole("Lppm Ketua")
-            ? [
-                  {
-                      title: "Penghargaan",
-                      collapsible: true,
-                      groupIcon: Icon.IconAward,
-                      items: [
-                          {
-                              title: "Penghargaan Buku",
-                              url: route("app.penghargaan.buku.index"),
-                              icon: Icon.IconBook2,
-                          },
-                          {
-                              title: "Penghargaan Jurnal",
-                              url: route("regis-semi.index"),
-                              icon: Icon.IconFileCertificate,
-                          },
-                          {
-                              title: "Penghargaan Seminar",
-                              url: route("regis-semi.index"),
-                              icon: Icon.IconPresentation,
-                          },
-                      ],
-                  },
-              ]
-            : []),
+        ...((hasRole("Dosen") || hasRole("Lppm Ketua")) ? [{
+            title: "Penghargaan",
+            collapsible: true,
+             groupIcon: Icon.IconAward,
+            items: [
+                { title: "Penghargaan Buku", url: route("app.penghargaan.buku.index"), icon: Icon.IconBook2 },
+                { title: "Penghargaan Jurnal", url: route("regis-semi.index"), icon: Icon.IconFileCertificate },
+                { title: "Penghargaan Seminar", url: route("regis-semi.index"), icon: Icon.IconPresentation },
+            ],
+        }] : []),
 
         // Registrasi Masuk
-        ...(hasRole("Lppm Ketua")
-            ? [
-                  {
-                      title: "Registrasi Masuk",
-                      collapsible: true,
-                      items: [
-                          {
-                              title: "Registrasi Jurnal Masuk",
-                              url: route("regis-semi.index"),
-                              icon: Icon.IconFileCertificate,
-                          },
-                          {
-                              title: "Registrasi Seminar Masuk",
-                              url: route("regis-semi.index"),
-                              icon: Icon.IconPresentation,
-                          },
-                      ],
-                  },
-              ]
-            : []),
+        ...(hasRole("Lppm Ketua") ? [{
+            title: "Registrasi Masuk",
+            collapsible: true,
+            items: [
+                { title: "Registrasi Jurnal Masuk", url: route("regis-semi.index"), icon: Icon.IconFileCertificate },
+                { title: "Registrasi Seminar Masuk", url: route("regis-semi.index"), icon: Icon.IconPresentation },
+            ],
+        }] : []),
 
         // Penghargaan Masuk
-        ...(hasRole("Lppm Ketua")
-            ? [
-                  {
-                      title: "Penghargaan Masuk",
-                      collapsible: true,
-                      items: [
-                          {
-                              title: "Penghargaan Buku Masuk",
-                              url: route("regis-semi.index"),
-                              icon: Icon.IconBook2,
-                          },
-                          {
-                              title: "Penghargaan Jurnal Masuk",
-                              url: route("regis-semi.index"),
-                              icon: Icon.IconFileCertificate,
-                          },
-                          {
-                              title: "Penghargaan Seminar Masuk",
-                              url: route("regis-semi.index"),
-                              icon: Icon.IconPresentation,
-                          },
-                      ],
-                  },
-              ]
-            : []),
+        ...(hasRole("Lppm Ketua") ? [{
+            title: "Penghargaan Masuk",
+            collapsible: true,
+            items: [
+                { title: "Penghargaan Buku Masuk", url: route("regis-semi.index"), icon: Icon.IconBook2 },
+                { title: "Penghargaan Jurnal Masuk", url: route("regis-semi.index"), icon: Icon.IconFileCertificate },
+                { title: "Penghargaan Seminar Masuk", url: route("regis-semi.index"), icon: Icon.IconPresentation },
+            ],
+        }] : []),
 
         {
             title: "Admin",
             items: [
-                {
-                    title: "Hak Akses",
-                    url: route("hak-akses"),
-                    icon: Icon.IconLock,
-                },
+                { title: "Hak Akses", url: route("hak-akses"), icon: Icon.IconLock },
             ],
         },
     ];
 
     // Tentukan navData berdasarkan role
-    const navData = hasRole("Hrd")
-        ? navDataHrd
-        : hasRole("Lppm Staff")
-        ? navDataLppmStaff
-        : navDataDefault;
+    const navData = hasRole("Hrd") ? navDataHrd :
+        hasRole("Lppm Staff") ? navDataLppmStaff :
+            navDataDefault;
 
     return (
         <>
-            <SidebarProvider
-                style={{
-                    "--sidebar-width": "calc(var(--spacing) * 72)",
-                    "--header-height": "calc(var(--spacing) * 12)",
-                }}
-            >
+            <SidebarProvider style={{ "--sidebar-width": "calc(var(--spacing) * 72)", "--header-height": "calc(var(--spacing) * 12)" }}>
                 <AppSidebar
                     active={pageName}
                     user={auth}
@@ -276,14 +170,13 @@ export default function AppLayout({ children }) {
                 <SidebarInset>
                     <header className="flex h-(--header-height) items-center gap-2 border-b sticky top-0 z-50 bg-background/95 backdrop-blur-sm">
                         <div className="flex w-full items-center gap-2 px-4 lg:px-6">
+
                             <SidebarTrigger />
 
-                            <Separator
-                                orientation="vertical"
-                                className="mx-2 h-4"
-                            />
+                            <Separator orientation="vertical" className="mx-2 h-4" />
 
                             <div className="ml-auto flex items-center gap-2">
+
                                 {/* Notifikasi */}
                                 <Button variant="ghost" size="icon" asChild>
                                     <Link href={route("notifications.index")}>
@@ -292,10 +185,7 @@ export default function AppLayout({ children }) {
                                 </Button>
 
                                 {/* Theme color */}
-                                <Select
-                                    value={colorTheme}
-                                    onValueChange={setColorTheme}
-                                >
+                                <Select value={colorTheme} onValueChange={setColorTheme}>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Pilih Tema" />
                                     </SelectTrigger>
@@ -303,10 +193,7 @@ export default function AppLayout({ children }) {
                                         <SelectGroup>
                                             <SelectLabel>Tema</SelectLabel>
                                             {colorThemes.map((item) => (
-                                                <SelectItem
-                                                    key={item}
-                                                    value={item}
-                                                >
+                                                <SelectItem key={item} value={item}>
                                                     {item}
                                                 </SelectItem>
                                             ))}
@@ -315,20 +202,13 @@ export default function AppLayout({ children }) {
                                 </Select>
 
                                 {/* Dark Mode */}
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={toggleTheme}
-                                >
-                                    {theme === "light" ? (
-                                        <Sun className="h-4 w-4" />
-                                    ) : (
-                                        <Moon className="h-4 w-4" />
-                                    )}
+                                <Button variant="ghost" size="icon" onClick={toggleTheme}>
+                                    {theme === "light" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
                                 </Button>
 
                                 {/* ✅ USER MENU (NavUser) */}
                                 <NavUser user={auth?.user} />
+
                             </div>
                         </div>
                     </header>

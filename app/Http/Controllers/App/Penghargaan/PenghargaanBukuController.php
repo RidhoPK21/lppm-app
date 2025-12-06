@@ -6,28 +6,20 @@ use App\Http\Controllers\Controller;
 use App\Models\BookSubmission;
 use App\Models\BookAuthor;
 use App\Models\SubmissionLog;
+use App\Models\Profile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class PenghargaanBukuController extends Controller
 {
-    // Helper untuk mendapatkan User ID (Login atau .env)
-    private function getUserId()
-    {
-        $id = Auth::id() ?? env('DEV_DEFAULT_USER_ID');
-        
-        if (!$id) {
-            abort(403, 'User ID tidak ditemukan. Pastikan Anda login atau set DEV_DEFAULT_USER_ID di file .env');
-        }
-        
-        return $id;
-    }
-
     public function index()
     {
-       $userId = Auth::id();
+        $userId = Auth::id();
 
         $books = BookSubmission::with('authors')
             ->where('user_id', $userId)
@@ -64,7 +56,7 @@ class PenghargaanBukuController extends Controller
 
     public function store(Request $request)
     {
-       $userId = Auth::id();
+        $userId = Auth::id();
 
         $validated = $request->validate([
             'judul' => 'required|string|max:255',
@@ -91,7 +83,6 @@ class PenghargaanBukuController extends Controller
                 'publisher_level' => $validated['level_penerbit'],
                 'book_type' => $bookType,
                 'total_pages' => $validated['jumlah_halaman'],
-                'file_path' => null,
                 'status' => 'DRAFT',
             ]);
 
@@ -137,10 +128,18 @@ class PenghargaanBukuController extends Controller
         }
     }
 
-    public function show($id)
+    public function show($id, Request $request)
     {
         $book = BookSubmission::with('authors')->findOrFail($id);
-
+        
+        // Ambil user_id dari book submission
+        $userId = $book->user_id;
+        
+        // Query database profiles langsung
+        $profile = DB::table('profiles')
+            ->where('user_id', $userId)
+            ->first();
+        
         return Inertia::render('app/penghargaan/buku/detail', [
             'book' => [
                 'id' => $book->id,
@@ -153,10 +152,18 @@ class PenghargaanBukuController extends Controller
                 'total_pages' => $book->total_pages,
                 'status' => $this->formatStatus($book->status),
                 'drive_link' => $book->drive_link,
+                'pdf_path' => $book->pdf_path,
                 'created_at' => $book->created_at,
                 'authors' => $book->authors->map(function($a) {
                     return ['name' => $a->name, 'role' => $a->role];
                 }),
+            ],
+            'user' => [
+                'name' => $profile->name ?? '-',
+                'NIDN' => $profile->nidn ?? '-',
+                'ProgramStudi' => $profile->prodi ?? '-',
+                'SintaID' => $profile->sinta_id ?? '-',
+                'ScopusID' => $profile->scopus_id ?? '-',
             ]
         ]);
     }
@@ -173,26 +180,60 @@ class PenghargaanBukuController extends Controller
 
     public function storeUpload(Request $request, $id)
     {
-       $userId = Auth::id(); // Ganti Auth::id() nanti
+        $userId = Auth::id();
 
         $request->validate([
-            'links' => 'required|array|size:5',
-            'links.*' => 'required|url',
+            'links' => 'required|array',
+            'links.*' => 'nullable|url',
         ]);
 
-        $book = BookSubmission::findOrFail($id);
+        DB::beginTransaction();
 
-        $book->update([
-            'drive_link' => json_encode($request->links),
-            'status' => 'DRAFT' // Tetap DRAFT agar direview dulu
-        ]);
+        try {
+            $book = BookSubmission::findOrFail($id);
+            $linksJson = json_encode($request->links);
 
-        // Redirect ke detail agar bisa review surat
-        return redirect()->route('app.penghargaan.buku.detail', $book->id)
-            ->with('success', 'Dokumen disimpan. Silakan review formulir sebelum mengirim.');
+            // Update drive_link
+            $book->update([
+                'drive_link' => $linksJson,
+                'status' => 'DRAFT'
+            ]);
+
+            // 🔥 GENERATE DAN SIMPAN PDF OTOMATIS DI SINI
+            Log::info('Starting PDF generation', ['book_id' => $book->id]);
+            
+            $pdfPath = $this->generateAndSavePdf($book);
+
+            Log::info('PDF generated successfully', [
+                'book_id' => $book->id,
+                'pdf_path' => $pdfPath,
+                'file_exists' => Storage::exists($pdfPath)
+            ]);
+
+            SubmissionLog::create([
+                'book_submission_id' => $book->id,
+                'user_id' => $userId,
+                'action' => 'UPLOAD_DOCUMENTS',
+                'note' => 'Dokumen pendukung diunggah dan PDF surat permohonan di-generate di: ' . $pdfPath
+            ]);
+
+            DB::commit();
+
+            return redirect()->route('app.penghargaan.buku.detail', $book->id)
+                ->with('success', 'Dokumen dan PDF berhasil disimpan! Silakan review PDF sebelum mengirim.');
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            Log::error('Failed to save documents and generate PDF', [
+                'book_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return back()->with('error', 'Gagal menyimpan dokumen: ' . $e->getMessage());
+        }
     }
 
-    public function submit(Request $request, $id)
+    public function submit($id)
     {
         $userId = $this->getUserId();
         $book = BookSubmission::findOrFail($id);
@@ -201,29 +242,286 @@ class PenghargaanBukuController extends Controller
             return back()->with('error', 'Pengajuan sudah dikirim atau diproses.');
         }
 
-        // Validasi Dokumen
         $links = json_decode($book->drive_link, true);
+        
         if (!$links || count(array_filter($links)) < 5) {
             return back()->with('error', 'Dokumen belum lengkap.');
         }
 
-        $book->update([
-            'status' => 'SUBMITTED'
-        ]);
+        DB::beginTransaction();
 
-        SubmissionLog::create([
-            'book_submission_id' => $book->id,
-            'user_id' => Auth::id(),
-            'action' => 'SUBMIT',
-            'note' => 'Pengajuan dikirim final oleh dosen.'
-        ]);
+        try {
+            // Cek apakah PDF sudah ada, jika belum generate
+            if (!$book->pdf_path || !Storage::exists($book->pdf_path)) {
+                $pdfPath = $this->generateAndSavePdf($book);
+                Log::info('PDF re-generated on submit', [
+                    'book_id' => $book->id,
+                    'pdf_path' => $pdfPath
+                ]);
+            }
 
-        return redirect()->route('app.penghargaan.buku.index')
-            ->with('success', 'Pengajuan BERHASIL dikirim ke LPPM.');
+            // Update status
+            $book->update([
+                'status' => 'SUBMITTED'
+            ]);
+
+            SubmissionLog::create([
+                'book_submission_id' => $book->id,
+                'user_id' => Auth::id(),
+                'action' => 'SUBMIT',
+                'note' => 'Pengajuan dikirim final oleh dosen.'
+            ]);
+
+            DB::commit();
+
+            return redirect()->route('app.penghargaan.buku.index')
+                ->with('success', 'Pengajuan BERHASIL dikirim ke LPPM.');
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            Log::error('Failed to submit', [
+                'book_id' => $book->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return back()->with('error', 'Gagal mengirim pengajuan: ' . $e->getMessage());
+        }
+    }
+
+    public function previewPdf($id, Request $request)
+{
+    $book = BookSubmission::with('authors')->findOrFail($id);
+    
+    Log::info('Preview PDF requested', [
+        'book_id' => $book->id,
+        'pdf_path' => $book->pdf_path,
+        'file_exists' => $book->pdf_path ? Storage::exists('public/' . $book->pdf_path) : false // 🔴 PERUBAHAN: tambah 'public/'
+    ]);
+    
+    // Cek apakah PDF sudah tersimpan
+    if ($book->pdf_path && Storage::exists('public/' . $book->pdf_path)) {
+        // Jika sudah ada, gunakan PDF yang tersimpan
+        $fullPath = storage_path('app/public/' . $book->pdf_path);
+        
+        Log::info('Serving stored PDF', ['full_path' => $fullPath]);
+        
+        if (file_exists($fullPath)) {
+            return response()->file($fullPath);
+        }
     }
     
+    // Jika belum ada atau file tidak ditemukan, generate ulang dan simpan
+    Log::warning('PDF not found in storage, regenerating...', ['book_id' => $book->id]);
     
+    try {
+        $pdfPath = $this->generateAndSavePdf($book);
+        
+        $fullPath = storage_path('app/public/' . $pdfPath);
+        
+        if (file_exists($fullPath)) {
+            return response()->file($fullPath);
+        }
+    } catch (\Exception $e) {
+        Log::error('Failed to regenerate PDF', [
+            'book_id' => $book->id,
+            'error' => $e->getMessage()
+        ]);
+    }
+    
+    // Fallback: generate on-the-fly tanpa simpan
+    $userId = $book->user_id;
+    
+    $profile = DB::table('profiles')
+        ->where('user_id', $userId)
+        ->first();
+    
+    $links = json_decode($book->drive_link, true) ?? [];
+    
+    $documentLabels = [
+        'Berita Acara Serah Terima Buku ke Perpustakaan',
+        'Hasil Scan Penerbitan Buku',
+        'Hasil Review oleh Penerbit',
+        'Surat Pernyataan (Penerbitan Tidak Didanai oleh Institusi + Bukti Biaya Penerbitan)'
+    ];
+    
+    $userData = (object) [
+        'name' => $profile->name ?? '-',
+        'NIDN' => $profile->nidn ?? '-',
+        'ProgramStudi' => $profile->prodi ?? '-',
+        'SintaID' => $profile->sinta_id ?? '-',
+        'ScopusID' => $profile->scopus_id ?? '-',
+    ];
+    
+    $data = [
+        'book' => $book,
+        'user' => $userData,
+        'links' => $links,
+        'documentLabels' => $documentLabels,
+        'date' => now()->format('d-m-Y'),
+        'authors' => $book->authors->pluck('name')->toArray()
+    ];
+    
+    $pdf = Pdf::loadView('pdf.book-submission', $data);
+    
+    return $pdf->stream('Surat_Permohonan_Penghargaan_Buku_' . $book->id . '.pdf');
+}
 
+    /**
+     * Generate PDF dan simpan ke storage
+     */
+  /**
+ * Generate PDF dan simpan ke storage
+ */
+private function generateAndSavePdf($book)
+{
+    try {
+        // Reload book with authors untuk memastikan data lengkap
+        $book->load('authors');
+        
+        Log::info('Generating PDF for book', [
+            'book_id' => $book->id,
+            'title' => $book->title
+        ]);
+        
+        // Ambil user_id dari book submission
+        $userId = $book->user_id;
+        
+        // Query database profiles
+        $profile = DB::table('profiles')
+            ->where('user_id', $userId)
+            ->first();
+        
+        // Parse links
+        $links = json_decode($book->drive_link, true) ?? [];
+        
+        // Prepare document labels
+        $documentLabels = [
+            'Berita Acara Serah Terima Buku ke Perpustakaan',
+            'Hasil Scan Penerbitan Buku',
+            'Hasil Review oleh Penerbit',
+            'Surat Pernyataan (Penerbitan Tidak Didanai oleh Institusi + Bukti Biaya Penerbitan)'
+        ];
+        
+        // Siapkan data user untuk PDF
+        $userData = (object) [
+            'name' => $profile->name ?? '-',
+            'NIDN' => $profile->nidn ?? '-',
+            'ProgramStudi' => $profile->prodi ?? '-',
+            'SintaID' => $profile->sinta_id ?? '-',
+            'ScopusID' => $profile->scopus_id ?? '-',
+        ];
+        
+        // Prepare data for PDF
+        $data = [
+            'book' => $book,
+            'user' => $userData,
+            'links' => $links,
+            'documentLabels' => $documentLabels,
+            'date' => now()->format('d-m-Y'),
+            'authors' => $book->authors->pluck('name')->toArray()
+            
+        ];
+        
+        Log::info('PDF data prepared', ['has_authors' => count($data['authors'])]);
+        
+        // Generate PDF
+        $pdf = Pdf::loadView('pdf.book-submission', $data);
+        
+        // Generate filename dengan timestamp
+        $filename = 'book_submission_' . $book->id . '_' . time() . '.pdf';
+        $directory = 'public/pdfs/book-submissions'; // 🔴 PERUBAHAN: Simpan ke 'public' bukan root
+        $path = $directory . '/' . $filename;
+        
+        Log::info('Saving PDF to storage', ['path' => $path]);
+        
+        // Pastikan direktori ada
+        if (!Storage::exists($directory)) {
+            Storage::makeDirectory($directory);
+            Log::info('Created directory', ['directory' => $directory]);
+        }
+        
+        // Simpan PDF ke storage
+        $pdfOutput = $pdf->output();
+        $saved = Storage::put($path, $pdfOutput);
+        
+        Log::info('Storage put result', ['saved' => $saved, 'path' => $path]);
+        
+        // Verify file exists
+        if (!Storage::exists($path)) {
+            throw new \Exception('Failed to save PDF file to storage. Path: ' . $path);
+        }
+        
+        $fileSize = Storage::size($path);
+        Log::info('PDF file verified', [
+            'path' => $path,
+            'size' => $fileSize,
+            'full_path' => storage_path('app/' . $path)
+        ]);
+        
+        // Simpan path relatif untuk di database (tanpa 'public/')
+        $dbPath = 'pdfs/book-submissions/' . $filename;
+        
+        // Update database dengan path PDF
+        $updated = DB::table('book_submissions')
+            ->where('id', $book->id)
+            ->update([
+                'pdf_path' => $dbPath, // 🔴 PERUBAHAN: Simpan path tanpa 'public/'
+                'updated_at' => now()
+            ]);
+        
+        Log::info('Database update result', [
+            'updated' => $updated,
+            'db_path' => $dbPath,
+            'storage_path' => $path
+        ]);
+        
+        // Verify update
+        $verifyPath = DB::table('book_submissions')
+            ->where('id', $book->id)
+            ->value('pdf_path');
+        
+        if (!$verifyPath) {
+            throw new \Exception('Failed to update pdf_path in database');
+        }
+        
+        Log::info('PDF generation completed successfully', [
+            'book_id' => $book->id,
+            'pdf_path' => $dbPath,
+            'db_verified' => $verifyPath
+        ]);
+        
+        return $dbPath; // 🔴 PERUBAHAN: Return path tanpa 'public/'
+        
+    } catch (\Exception $e) {
+        Log::error('PDF generation failed', [
+            'book_id' => $book->id,
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+        throw $e;
+    }
+}
+
+    /**
+     * Download PDF yang sudah tersimpan
+     */
+    public function downloadPdf($id)
+{
+    $book = BookSubmission::findOrFail($id);
+    
+    if (!$book->pdf_path) {
+        return back()->with('error', 'File PDF tidak ditemukan.');
+    }
+    
+    // 🔴 PERUBAHAN: Gunakan path dengan 'public/'
+    $storagePath = 'public/' . $book->pdf_path;
+    
+    if (!Storage::exists($storagePath)) {
+        return back()->with('error', 'File PDF tidak ditemukan di server.');
+    }
+    
+    return Storage::download($storagePath, 'Surat_Permohonan_Buku_' . $book->id . '.pdf');
+}
 
     // --- FITUR BARU: GENERATE FORMULIR 8 ---
     public function generateFormulir8(Request $request, $id)

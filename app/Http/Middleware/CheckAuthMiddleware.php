@@ -6,6 +6,7 @@ use App\Helper\ToolsHelper;
 use App\Http\Api\UserApi;
 use App\Models\HakAksesModel;
 use App\Models\User;
+use App\Models\Profile;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -27,20 +28,24 @@ class CheckAuthMiddleware
             return redirect()->route('auth.login');
         }
 
-        // Ambil user dari API
         $apiUser = $response->data->user;
 
         // Update atau buat user di Laravel
         $user = User::updateOrCreate(
-           ['email' => $apiUser->email],
-  
+            ['email' => $apiUser->email],
             [
-                'name'      => $apiUser->name ?? null,
-                'email'     => $apiUser->email ?? null,
-                'username'  => $apiUser->username ?? null,
-                'photo'     => $apiUser->photo ?? null,
-                'password'  => bcrypt('dummy'), // Tidak dipakai
+                'name' => $apiUser->name ?? null,
+                'email' => $apiUser->email ?? null,
+                'username' => $apiUser->username ?? null,
+                'photo' => $apiUser->photo ?? null,
+                'password' => bcrypt('dummy'),
             ]
+        );
+
+        // Pastikan profile ada untuk user ini
+        Profile::firstOrCreate(
+            ['user_id' => $user->id],
+            ['name' => $user->name]
         );
 
         // Login Laravel
@@ -48,11 +53,10 @@ class CheckAuthMiddleware
             Auth::login($user);
         }
 
-        // Ambil hak akses lokal database
+        // Ambil hak akses
         $akses = HakAksesModel::where('user_id', $apiUser->id)->first();
         $apiUser->akses = $akses ? explode(',', $akses->akses) : [];
 
-        // Simpan API user ke request
         $request->attributes->set('auth', $apiUser);
 
         return $next($request);
