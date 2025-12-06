@@ -14,28 +14,27 @@ import { router } from "@inertiajs/react"; // [AKTIFKAN INI]
 
 /**
  * Komponen untuk menampilkan setiap item buku dalam daftar
- * (TAMPILAN TIDAK BERUBAH, TETAP SEPERTI CARD DOSEN)
  */
 const BukuItem = ({ id, judul, penulis, status, tanggal, onClick }) => (
     <div
-        className="bg-white rounded-lg shadow-md mb-2 cursor-pointer hover:shadow-lg transition-shadow"
+        className="bg-white rounded-lg shadow-sm border border-gray-200 mb-3 cursor-pointer hover:shadow-md transition-shadow"
         onClick={() => onClick(id)}
     >
         <div className="flex items-stretch p-4">
             {/* Ikon Segitiga Putih dalam Lingkaran Hitam */}
-            <div className="mr-4 flex items-center justify-center w-10 h-10 rounded-full bg-black">
-                <Icon.IconTriangle size={20} fill="white" />
+            <div className="mr-4 flex items-center justify-center w-8 h-8 rounded-full bg-black flex-shrink-0">
+                <Icon.IconTriangle size={16} fill="white" />
             </div>
 
             {/* Detail Buku */}
             <div className="flex-1 min-w-0 flex flex-col justify-center">
-                <div className="font-semibold text-lg truncate">{judul}</div>
+                <div className="font-medium text-base truncate">{judul}</div>
                 <div className="text-sm text-gray-500 truncate">{penulis}</div>
             </div>
 
             {/* Status dan Tanggal */}
-            <div className="text-right ml-4 flex flex-col justify-between h-full">
-                <div className="text-gray-500 text-sm">
+            <div className="text-right ml-4 flex flex-col justify-between items-end">
+                <div className="text-gray-500 text-sm whitespace-nowrap">
                     Status :{" "}
                     <span
                         className={`capitalize font-normal ${
@@ -45,26 +44,34 @@ const BukuItem = ({ id, judul, penulis, status, tanggal, onClick }) => (
                                 ? "text-blue-600"
                                 : status === "Ditolak/Revisi"
                                 ? "text-red-600"
-                                : "text-orange-500"
+                                : "text-gray-500"
                         }`}
                     >
-                        {status}
+                        {status === "belum disetujui"
+                            ? "belum disetujui"
+                            : status}
                     </span>
                 </div>
-                <div className="text-gray-500 text-xs">{tanggal}</div>
+                <div className="text-gray-500 text-xs mt-2">{tanggal}</div>
             </div>
         </div>
     </div>
 );
 
 // --- Dropdown/Select Komponen Reusable ---
-const SelectDropdown = ({ label, options, className = "", onChange }) => (
+const SelectDropdown = ({
+    label,
+    options,
+    className = "",
+    onChange,
+    value,
+}) => (
     <DropdownMenu>
         <DropdownMenuTrigger asChild>
             <div
                 className={`flex items-center justify-between border border-gray-300 rounded-md bg-white text-sm px-3 h-10 cursor-pointer ${className}`}
             >
-                {label}
+                <span className="text-gray-700">{label}</span>
                 <ChevronDown className="h-4 w-4 ml-2 opacity-50" />
             </div>
         </DropdownMenuTrigger>
@@ -73,6 +80,9 @@ const SelectDropdown = ({ label, options, className = "", onChange }) => (
                 <DropdownMenuItem
                     key={option}
                     onSelect={() => onChange(option)}
+                    className={
+                        value === option ? "bg-gray-100 font-medium" : ""
+                    }
                 >
                     {option}
                 </DropdownMenuItem>
@@ -92,86 +102,130 @@ export default function Index({ submissions = [] }) {
         router.visit(route("regis-semi.show", id));
     };
 
+    // [INTEGRASI NAVIGASI] Mengarahkan ke halaman pengajuan baru (asumsi rute 'regis-semi.create' untuk pengajuan baru)
+    const handleAjukanBukuClick = () => {
+        router.visit(route("regis-semi.create")); // Asumsi rute untuk pengajuan baru
+    };
+
+    // Data dropdown
+    const searchByOptions = ["Judul", "Dosen"];
+    const sortByOptions = ["Terbaru", "Judul"];
+
+    // Filtered data (Logic tidak berubah)
+    const filteredSubmissions = submissions
+        .filter((item) => {
+            const searchTerm = search.toLowerCase();
+            if (!searchTerm) return true;
+
+            const targetField =
+                searchBy === "Dosen" ? item.nama_dosen : item.judul;
+
+            return targetField.toLowerCase().includes(searchTerm);
+        })
+        .sort((a, b) => {
+            if (sortBy === "Terbaru") {
+                return b.id - a.id;
+            }
+            if (sortBy === "Judul") {
+                return a.judul.localeCompare(b.judul);
+            }
+            return 0;
+        });
+
     return (
         <AppLayout>
-            <Card className="h-full border-none shadow-none">
-                <CardHeader className="p-0 space-y-4">
-                    <CardTitle className="text-2xl font-normal px-4">
-                        Daftar Penghargaan Masuk
-                    </CardTitle>
+            <Card className="h-full border-none shadow-none pt-0">
+                {/* Header (Judul, Tombol, dan Search/Filter) */}
+                <CardHeader className="p-0 px-4 space-y-4">
+                    {/* Judul dan Tombol */}
+                    <div className="flex flex-col mb-4">
+                        <CardTitle className="text-3xl font-normal text-gray-800 pt-4">
+                            Buku
+                        </CardTitle>
 
-                    {/* SEARCH & FILTER (VISUAL TETAP SAMA) */}
-                    <div className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2 items-center px-4">
-                        <div className="flex-1 flex border border-gray-300 rounded-md overflow-hidden h-10 w-full">
+                        {/* Tombol Ajukan Penghargaan Buku */}
+                        <div className="mt-4">
+                            <Button
+                                variant="default"
+                                className="bg-white text-gray-700 hover:bg-gray-50 border border-gray-300 shadow-none font-normal text-sm px-4 py-2 h-auto rounded-lg"
+                                onClick={handleAjukanBukuClick}
+                            >
+                                Ajukan Penghargaan Buku
+                            </Button>
+                        </div>
+                    </div>
+
+                    {/* SEARCH & FILTER (Hapus margin bawah pada div ini) */}
+                    <div className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-4 items-center">
+                        <div className="flex-1 flex border border-gray-300 rounded-md overflow-hidden h-10 w-full bg-white">
                             <input
                                 type="text"
-                                placeholder="Cari judul atau nama dosen..."
+                                placeholder="Type to search"
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
-                                className="flex-1 p-2 focus:outline-none placeholder:text-gray-400 text-sm border-none"
+                                className="flex-1 p-2 focus:outline-none placeholder:text-gray-400 text-sm border-none bg-transparent"
                             />
                             <Button
                                 variant="default"
-                                className="h-full px-4 bg-gray-100 text-gray-800 hover:bg-gray-200 rounded-l-none border-l border-gray-300 shadow-none font-normal text-sm"
+                                className="h-full px-4 bg-white text-gray-800 hover:bg-gray-50 rounded-l-none border-l-0 shadow-none font-normal text-sm"
                             >
                                 Search
                             </Button>
                         </div>
 
-                        <div className="w-full md:w-[150px]">
+                        <div className="w-full md:w-[150px] flex-shrink-0">
                             <SelectDropdown
                                 label={searchBy}
-                                options={["Judul", "Dosen"]}
+                                value={searchBy}
+                                options={searchByOptions}
                                 className="w-full h-10"
                                 onChange={setSearchBy}
                             />
                         </div>
 
-                        <div className="w-full md:w-[120px]">
+                        <div className="w-full md:w-[120px] flex-shrink-0">
                             <SelectDropdown
                                 label={sortBy}
-                                options={["Terbaru", "Judul"]}
+                                value={sortBy}
+                                options={sortByOptions}
                                 className="w-full h-10"
                                 onChange={setSortBy}
                             />
                         </div>
                     </div>
-
-                    <hr className="mt-4 mb-0" />
+                    {/* Garis pemisah. Dibiarkan di sini untuk memisahkan header/filter dari daftar */}
+                    <hr className="mt-4 mb-0 border-gray-200" />
                 </CardHeader>
 
-                <CardContent className="p-0 px-4">
+                {/* Content (List Buku) - Ubah pt-4 menjadi pt-2 atau pt-0 untuk merapatkan ke Search/Filter */}
+                <CardContent className="p-0 px-4 pt-2">
+                    {" "}
+                    {/* Mengurangi padding atas di CardContent */}
+                    {/* Daftar Buku */}
                     <div className="space-y-3">
                         {/* Jika data kosong */}
-                        {submissions.length === 0 && (
+                        {filteredSubmissions.length === 0 && (
                             <div className="text-center py-10 text-gray-500">
-                                Belum ada pengajuan penghargaan yang masuk.
+                                {search ||
+                                searchBy !== "Search by" ||
+                                sortBy !== "Sort by"
+                                    ? "Data pengajuan tidak ditemukan dengan kriteria tersebut."
+                                    : "Belum ada pengajuan penghargaan yang masuk."}
                             </div>
                         )}
 
                         {/* [INTEGRASI REAL DATA] Mapping data dari database */}
-                        {submissions
-                            .filter((item) => {
-                                const searchTerm = search.toLowerCase();
-                                const targetField =
-                                    searchBy === "Dosen"
-                                        ? item.nama_dosen
-                                        : item.judul;
-                                return targetField
-                                    .toLowerCase()
-                                    .includes(searchTerm);
-                            })
-                            .map((item) => (
-                                <BukuItem
-                                    key={item.id}
-                                    id={item.id}
-                                    judul={item.judul}
-                                    penulis={item.nama_dosen} // Di panel LPPM, kita tampilkan Nama Dosen Pengaju
-                                    status={item.status_label} // Menggunakan label yang sudah diformat di Controller
-                                    tanggal={item.tanggal_pengajuan}
-                                    onClick={handleBukuClick}
-                                />
-                            ))}
+                        {filteredSubmissions.map((item) => (
+                            <BukuItem
+                                key={item.id}
+                                id={item.id}
+                                judul={item.judul}
+                                penulis={item.nama_dosen}
+                                status={item.status_label}
+                                tanggal={item.tanggal_pengajuan}
+                                onClick={handleBukuClick}
+                            />
+                        ))}
                     </div>
                 </CardContent>
             </Card>

@@ -63,6 +63,9 @@ export default function DetailRegisSemi({ book }) {
     if (!book) return <div>Loading data...</div>;
     const links = Array.isArray(book.drive_link) ? book.drive_link : [];
 
+    // Tautan pertama (dianggap sebagai tautan folder utama)
+    const documentLink = links.length > 0 ? links[0] : null;
+
     // --- LOGIKA TOMBOL NAVIGASI ---
     const handleAction = (action) => {
         if (action === "back") {
@@ -71,6 +74,8 @@ export default function DetailRegisSemi({ book }) {
             router.visit(route("regis-semi.invite", book.id));
         } else if (action === "result") {
             router.visit(route("regis-semi.result", book.id));
+        } else if (action === "open-document" && documentLink) {
+            window.open(documentLink, "_blank");
         }
     };
 
@@ -219,10 +224,12 @@ export default function DetailRegisSemi({ book }) {
 
                 {/* --- 5 TOMBOL UTAMA --- */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {/* 1. Buka Dokumen */}
+                    {/* 1. Buka Dokumen - Perubahan: Menambahkan onClick dan disabled */}
                     <Button
                         variant="secondary"
                         className="h-12 border border-gray-200"
+                        onClick={() => handleAction("open-document")}
+                        disabled={!documentLink}
                     >
                         <FileText className="mr-2 h-5 w-5" /> Buka Folder
                         Dokumen
@@ -316,7 +323,14 @@ export default function DetailRegisSemi({ book }) {
                                 className="bg-green-600 hover:bg-green-700"
                                 disabled={isSubmitting || !amount}
                             >
-                                {isSubmitting ? "Menyimpan..." : "Setujui"}
+                                {isSubmitting ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Menyimpan...
+                                    </>
+                                ) : (
+                                    "Setujui"
+                                )}
                             </Button>
                         </DialogFooter>
                     </form>
@@ -363,9 +377,14 @@ export default function DetailRegisSemi({ book }) {
                                 variant="destructive"
                                 disabled={isSubmitting || !rejectNote}
                             >
-                                {isSubmitting
-                                    ? "Mengirim..."
-                                    : "Kirim Penolakan"}
+                                {isSubmitting ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Mengirim...
+                                    </>
+                                ) : (
+                                    "Kirim Penolakan"
+                                )}
                             </Button>
                         </DialogFooter>
                     </form>

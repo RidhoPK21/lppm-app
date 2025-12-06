@@ -5,38 +5,55 @@ namespace App\Http\Middleware;
 use App\Helper\ToolsHelper;
 use App\Http\Api\UserApi;
 use App\Models\HakAksesModel;
+use App\Models\User;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
 class CheckAuthMiddleware
 {
-    /**
-     * Handle an incoming request.
-     *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
-     */
     public function handle(Request $request, Closure $next): Response
     {
         $authToken = ToolsHelper::getAuthToken();
+
         if (empty($authToken)) {
-            // Jika token auth tidak diset, redirect ke halaman login
             return redirect()->route('auth.login');
         }
 
         $response = UserApi::getMe($authToken);
 
-        if (! isset($response->data->user)) {
-            // Jika user tidak ditemukan, redirect ke halaman login
+        if (!isset($response->data->user)) {
             return redirect()->route('auth.login');
         }
 
-        // Dapatkan hak akses user
-        $auth = $response->data->user;
-        $akses = HakAksesModel::where('user_id', $auth->id)->first();
-        $auth->akses = isset($akses->akses) ? explode(',', $akses->akses) : [];
+        // Ambil user dari API
+        $apiUser = $response->data->user;
 
-        $request->attributes->set('auth', $auth);
+        // Update atau buat user di Laravel
+        $user = User::updateOrCreate(
+           ['email' => $apiUser->email],
+  
+            [
+                'name'      => $apiUser->name ?? null,
+                'email'     => $apiUser->email ?? null,
+                'username'  => $apiUser->username ?? null,
+                'photo'     => $apiUser->photo ?? null,
+                'password'  => bcrypt('dummy'), // Tidak dipakai
+            ]
+        );
+
+        // Login Laravel
+        if (!Auth::check() || Auth::id() !== $user->id) {
+            Auth::login($user);
+        }
+
+        // Ambil hak akses lokal database
+        $akses = HakAksesModel::where('user_id', $apiUser->id)->first();
+        $apiUser->akses = $akses ? explode(',', $akses->akses) : [];
+
+        // Simpan API user ke request
+        $request->attributes->set('auth', $apiUser);
 
         return $next($request);
     }

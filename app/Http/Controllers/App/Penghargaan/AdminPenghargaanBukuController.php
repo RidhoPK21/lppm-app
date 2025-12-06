@@ -15,26 +15,24 @@ class AdminPenghargaanBukuController extends Controller
         $search = $request->input('search');
 
         $query = BookSubmission::with(['user', 'authors'])
-            // HANYA ambil yang statusnya BUKAN Draft (artinya sudah dikirim dosen)
-            ->where('status', '!=', 'DRAFT');
+            ->where('status', '!=', 'DRAFT'); // Ambil semua pengajuan aktif
 
         if ($search) {
             $query->where(function($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
-                  ->orWhere('isbn', 'like', "%{$search}%");
+                  ->orWhereHas('user', function($q2) use ($search) {
+                      $q2->where('name', 'like', "%{$search}%");
+                  });
             });
         }
 
         // Urutkan dari yang terbaru masuk
         $submissions = $query->orderBy('updated_at', 'desc')->get();
 
-        // Mapping data agar bersih saat masuk ke React
+        // Mapping data agar sesuai dengan frontend
         $mappedSubmissions = $submissions->map(function ($book) {
-            // Ambil nama penulis pertama
             $firstAuthor = $book->authors->where('role', 'FIRST_AUTHOR')->first();
             $authorName = $firstAuthor ? $firstAuthor->name : ($book->authors->first()->name ?? '-');
-            
-            // Hitung sisa penulis
             $countOthers = $book->authors->count() - 1;
             if ($countOthers > 0) {
                 $authorName .= " + {$countOthers} lainnya";
@@ -43,13 +41,13 @@ class AdminPenghargaanBukuController extends Controller
             return [
                 'id' => $book->id,
                 'judul' => $book->title,
-                'pengusul' => $book->user->name ?? 'Unknown',
+                'nama_dosen' => $book->user->name ?? 'Unknown', // Sesuai frontend React
                 'penulis_display' => $authorName,
                 'isbn' => $book->isbn,
-                'tanggal_masuk' => $book->updated_at->format('d M Y'),
+                'tanggal_pengajuan' => $book->updated_at->format('d M Y'),
                 'status' => $book->status,
                 'status_label' => $this->formatStatusLabel($book->status),
-                'status_color' => $this->getStatusColor($book->status), // Untuk warna Badge
+                'status_color' => $this->getStatusColor($book->status),
             ];
         });
 
@@ -65,7 +63,7 @@ class AdminPenghargaanBukuController extends Controller
     {
         return match ($status) {
             'SUBMITTED' => 'bg-blue-100 text-blue-800 border-blue-200',
-            'VERIFIED_STAFF' => 'bg-yellow-100 text-yellow-800 border-yellow-200', // Menunggu Ketua
+            'VERIFIED_STAFF' => 'bg-yellow-100 text-yellow-800 border-yellow-200',
             'APPROVED_CHIEF' => 'bg-green-100 text-green-800 border-green-200',
             'REJECTED', 'REVISION_REQUIRED' => 'bg-red-100 text-red-800 border-red-200',
             'PAID' => 'bg-gray-100 text-gray-800 border-gray-200',
@@ -73,6 +71,7 @@ class AdminPenghargaanBukuController extends Controller
         };
     }
 
+    // Helper Label Status untuk Frontend
     private function formatStatusLabel($status)
     {
         return match ($status) {

@@ -13,10 +13,21 @@ use Inertia\Inertia;
 
 class PenghargaanBukuController extends Controller
 {
-    // ... Method index, create, store, uploadDocs (TIDAK BERUBAH) ...
+    // Helper untuk mendapatkan User ID (Login atau .env)
+    private function getUserId()
+    {
+        $id = Auth::id() ?? env('DEV_DEFAULT_USER_ID');
+        
+        if (!$id) {
+            abort(403, 'User ID tidak ditemukan. Pastikan Anda login atau set DEV_DEFAULT_USER_ID di file .env');
+        }
+        
+        return $id;
+    }
+
     public function index()
     {
-        $userId = '12e091b8-f227-4a58-8061-dc4a100c60f1';
+       $userId = Auth::id();
 
         $books = BookSubmission::with('authors')
             ->where('user_id', $userId)
@@ -53,7 +64,7 @@ class PenghargaanBukuController extends Controller
 
     public function store(Request $request)
     {
-        $userId = '12e091b8-f227-4a58-8061-dc4a100c60f1';
+       $userId = Auth::id();
 
         $validated = $request->validate([
             'judul' => 'required|string|max:255',
@@ -80,28 +91,30 @@ class PenghargaanBukuController extends Controller
                 'publisher_level' => $validated['level_penerbit'],
                 'book_type' => $bookType,
                 'total_pages' => $validated['jumlah_halaman'],
-                // 'file_path' => null, // SUDAH DIHAPUS
+                'file_path' => null,
                 'status' => 'DRAFT',
             ]);
 
             $authors = explode(',', $validated['penulis']);
             $dosenName = 'Dosen Pengaju (Anda)';
 
+            // [FIX ENUM] Ubah FIRST_AUTHOR -> FIRST
             BookAuthor::create([
                 'book_submission_id' => $book->id,
                 'user_id' => $userId,
                 'name' => $dosenName,
-                'role' => 'FIRST_AUTHOR',
+                'role' => 'FIRST', 
                 'affiliation' => 'Institut Teknologi Del'
             ]);
 
             foreach ($authors as $authorName) {
                 $cleanName = trim($authorName);
                 if (!empty($cleanName)) {
+                    // [FIX ENUM] Ubah CO_AUTHOR -> MEMBER
                     BookAuthor::create([
                         'book_submission_id' => $book->id,
                         'name' => $cleanName,
-                        'role' => 'CO_AUTHOR',
+                        'role' => 'MEMBER', 
                         'affiliation' => 'External/Other'
                     ]);
                 }
@@ -126,13 +139,8 @@ class PenghargaanBukuController extends Controller
 
     public function show($id)
     {
-        // Ambil buku beserta relasi penulis
         $book = BookSubmission::with('authors')->findOrFail($id);
 
-        // Opsional: Format data sebelum dikirim ke view agar lebih rapi (seperti di index)
-        // Tapi mengirim model langsung juga bisa, asal di frontend dihandle.
-        // Di sini saya kirim object book yang sudah di-format sedikit.
-        
         return Inertia::render('app/penghargaan/buku/detail', [
             'book' => [
                 'id' => $book->id,
@@ -141,9 +149,9 @@ class PenghargaanBukuController extends Controller
                 'publisher' => $book->publisher,
                 'publication_year' => $book->publication_year,
                 'publisher_level' => $book->publisher_level,
-                'book_type' => $this->mapBookTypeToLabel($book->book_type), // Reuse helper
+                'book_type' => $this->mapBookTypeToLabel($book->book_type),
                 'total_pages' => $book->total_pages,
-                'status' => $this->formatStatus($book->status), // Reuse helper
+                'status' => $this->formatStatus($book->status),
                 'drive_link' => $book->drive_link,
                 'created_at' => $book->created_at,
                 'authors' => $book->authors->map(function($a) {
@@ -163,51 +171,40 @@ class PenghargaanBukuController extends Controller
         ]);
     }
 
-    // [PERBAIKAN] Method ini HANYA MENYIMPAN data link, status TETAP DRAFT
     public function storeUpload(Request $request, $id)
     {
-        $userId = '12e091b8-f227-4a58-8061-dc4a100c60f1'; // Ganti Auth::id() nanti
+       $userId = Auth::id(); // Ganti Auth::id() nanti
 
-        // Validasi format link (tidak perlu 'required' dulu kalau mau simpan parsial, 
-        // tapi kalau formnya mewajibkan semua diisi sekaligus, 'required' oke)
         $request->validate([
-            'links' => 'required|array',
-            'links.*' => 'nullable|url', // Boleh kosong kalau baru simpan draft
+            'links' => 'required|array|size:5',
+            'links.*' => 'required|url',
         ]);
 
         $book = BookSubmission::findOrFail($id);
 
-        // Simpan link sebagai JSON
-        // Kita filter yang tidak null agar rapi, atau simpan null juga boleh
-        $linksJson = json_encode($request->links);
-
         $book->update([
-            'drive_link' => $linksJson,
-            // Status JANGAN diubah jadi SUBMITTED dulu
-            'status' => 'DRAFT' 
+            'drive_link' => json_encode($request->links),
+            'status' => 'DRAFT' // Tetap DRAFT agar direview dulu
         ]);
 
-        // Redirect ke halaman DETAIL, bukan Index
+        // Redirect ke detail agar bisa review surat
         return redirect()->route('app.penghargaan.buku.detail', $book->id)
-            ->with('success', 'Dokumen berhasil disimpan sebagai draft. Silakan periksa kembali sebelum dikirim.');
+            ->with('success', 'Dokumen disimpan. Silakan review formulir sebelum mengirim.');
     }
 
-    // [BARU] Method untuk Finalisasi Pengiriman
-    public function submit($id)
+    public function submit(Request $request, $id)
     {
+        $userId = $this->getUserId();
         $book = BookSubmission::findOrFail($id);
         
         if ($book->status !== 'DRAFT') {
             return back()->with('error', 'Pengajuan sudah dikirim atau diproses.');
         }
 
-        // Validasi Kelengkapan Dokumen di sisi Server (Double Check)
+        // Validasi Dokumen
         $links = json_decode($book->drive_link, true);
-        
-        // Cek apakah array links ada dan isinya minimal 1 (atau 5 sesuai aturan)
-        // Asumsi aturan: Wajib 5 link terisi semua
         if (!$links || count(array_filter($links)) < 5) {
-            return back()->with('error', 'Dokumen belum lengkap. Harap lengkapi semua link dokumen sebelum mengirim.');
+            return back()->with('error', 'Dokumen belum lengkap.');
         }
 
         $book->update([
@@ -216,7 +213,7 @@ class PenghargaanBukuController extends Controller
 
         SubmissionLog::create([
             'book_submission_id' => $book->id,
-            'user_id' => '12e091b8-f227-4a58-8061-dc4a100c60f1', // Ganti Auth
+            'user_id' => Auth::id(),
             'action' => 'SUBMIT',
             'note' => 'Pengajuan dikirim final oleh dosen.'
         ]);
@@ -224,11 +221,39 @@ class PenghargaanBukuController extends Controller
         return redirect()->route('app.penghargaan.buku.index')
             ->with('success', 'Pengajuan BERHASIL dikirim ke LPPM.');
     }
+    
+    
+
+
+    // --- FITUR BARU: GENERATE FORMULIR 8 ---
+    public function generateFormulir8(Request $request, $id)
+    {
+        $book = BookSubmission::with('authors')->findOrFail($id);
+        
+        // Ambil data user dari request/auth/db fallback
+        $user = $request->attributes->get('auth') ?? Auth::user();
+        if(!$user) {
+             // Fallback terakhir: ambil dari owner buku
+             $user = \App\Models\User::find($book->user_id);
+        }
+
+        return view('exports.formulir-8', [
+            'book' => $book,
+            'user' => $user,
+            'date' => now()->translatedFormat('d F Y')
+        ]);
+    }
+
+    // --- FITUR LAMA: GENERATE SURAT PERNYATAAN (Opsional jika masih dipakai) ---
+    public function generateStatement(Request $request, $id)
+    {
+        return $this->generateFormulir8($request, $id); // Redirect logic ke formulir 8 saja
+    }
 
     private function formatStatus($status)
     {
         return match ($status) {
-            'DRAFT' => 'Draft', // [UBAH] Jangan hardcode "Belum Lengkap" di sini
+            'DRAFT' => 'Draft',
             'SUBMITTED' => 'Menunggu Verifikasi Staff',
             'VERIFIED_STAFF' => 'Menunggu Review Ketua',
             'APPROVED_CHIEF' => 'Disetujui LPPM',

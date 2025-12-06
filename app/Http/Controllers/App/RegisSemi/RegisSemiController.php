@@ -17,14 +17,11 @@ class RegisSemiController extends Controller
     // Menampilkan daftar pengajuan masuk (Inbox LPPM)
     public function index()
     {
-        // Ambil semua pengajuan yang SUDAH dikirim dosen (Bukan Draft)
-        // Diurutkan dari yang terbaru
-        $submissions = BookSubmission::with('user') // Eager load data dosen
+        $submissions = BookSubmission::with('user')
             ->where('status', '!=', 'DRAFT')
             ->orderBy('created_at', 'desc')
             ->get();
 
-        // Mapping data agar sesuai tampilan Frontend
         $mappedData = $submissions->map(function ($item) {
             return [
                 'id' => $item->id,
@@ -32,48 +29,114 @@ class RegisSemiController extends Controller
                 'nama_dosen' => $item->user->name ?? 'Unknown User',
                 'tanggal_pengajuan' => $item->created_at->format('d M Y'),
                 'status' => $item->status,
-                // Label status yang lebih ramah dibaca
                 'status_label' => $this->formatStatusLabel($item->status),
             ];
         });
 
         return Inertia::render('app/RegisSemi/Index', [
-            'pageName' => 'Daftar Penghargaan Masuk',
-            'submissions' => $mappedData, // Kirim data asli ke React
+           
+            'submissions' => $mappedData,
         ]);
     }
 
-    public function show($id)
-{
-    // HAPUS pemanggilan 'reviewers' agar tidak error 500
-    $book = BookSubmission::with(['authors', 'user'])->findOrFail($id);
+    // Di RegisSemiController.php, tambahkan method ini:
 
-    return Inertia::render('app/RegisSemi/Detail', [
-        'pageName' => 'Detail Verifikasi Buku',
-        'book' => [
-            'id' => $book->id,
-            'title' => $book->title,
-            'isbn' => $book->isbn,
-            'publisher' => $book->publisher,
-            'drive_link' => json_decode($book->drive_link),
-            'status_label' => $book->status,
-            // Gunakan tanda tanya (?) agar tidak error jika user terhapus
-            'dosen' => $book->user->name ?? 'Dosen Tidak Ditemukan', 
-        ]
+public function indexHRD()
+{
+    // Ambil hanya buku yang sudah disetujui Ketua LPPM
+    $submissions = BookSubmission::with('user')
+        ->where('status', 'APPROVED_CHIEF')
+        ->orderBy('created_at', 'desc')
+        ->get()
+        ->map(function ($item) {
+            return [
+                'id' => $item->id,
+                'judul' => $item->title,
+                'nama_dosen' => $item->user->name ?? 'Unknown User',
+                'tanggal_pengajuan' => $item->created_at->format('d M Y'),
+                'status' => $item->status,
+                'status_label' => $this->formatStatusLabel($item->status),
+            ];
+        });
+
+    return Inertia::render('app/home/kita-page', [
+        
+        'submissions' => $submissions,
     ]);
 }
 
-public function invite($id)
+    // Action: Staff LPPM Menolak/Minta Revisi (khusus Staff.jsx)
+    public function rejectStaff(Request $request, $id)
+    {
+        $request->validate([
+            'note' => 'required|string|max:500',
+        ]);
+
+        $book = BookSubmission::findOrFail($id);
+
+        DB::transaction(function () use ($book, $request) {
+            $book->update([
+                'status' => 'REJECTED',
+                'reject_note' => $request->note,
+            ]);
+
+            // ✅ PERBAIKAN: Pastikan user_id terisi (gunakan Auth::id() atau fallback ke user_id dari book)
+            SubmissionLog::create([
+                'book_submission_id' => $book->id,
+                'user_id' => Auth::id() ?? $book->user_id, // Fallback ke pengaju jika tidak ada auth
+                'action' => 'REJECT',
+                'note' => $request->note,
+            ]);
+        });
+
+        return redirect()->route('regis-semi.indexx')
+            ->with('success', 'Pengajuan dikembalikan ke Dosen (Staff).');
+    }
+
+    public function show($id)
+    {
+        $book = BookSubmission::with(['authors', 'user'])->findOrFail($id);
+
+        return Inertia::render('app/RegisSemi/Detail', [
+           
+            'book' => [
+                'id' => $book->id,
+                'title' => $book->title,
+                'isbn' => $book->isbn,
+                'publisher' => $book->publisher,
+                'drive_link' => json_decode($book->drive_link),
+                'status_label' => $book->status,
+                'dosen' => $book->user->name ?? 'Dosen Tidak Ditemukan',
+            ]
+        ]);
+    }
+
+    public function showStaff($id)
+    {
+        $book = BookSubmission::with(['authors', 'user'])->findOrFail($id);
+
+        return Inertia::render('app/RegisSemi/Staff', [
+            
+            'book' => [
+                'id' => $book->id,
+                'title' => $book->title,
+                'isbn' => $book->isbn,
+                'publisher' => $book->publisher,
+                'drive_link' => json_decode($book->drive_link),
+                'status_label' => $book->status,
+                'dosen' => $book->user->name ?? 'Dosen Tidak Ditemukan',
+            ]
+        ]);
+    }
+
+    public function invite($id)
     {
         $book = BookSubmission::findOrFail($id);
 
-        // Ambil semua User (Dosen) KECUALI pengusul buku itu sendiri
-        // Idealnya difilter berdasarkan role 'DOSEN' atau 'REVIEWER' dari tabel hak akses
         $users = User::where('id', '!=', $book->user_id)
             ->orderBy('name', 'asc')
             ->get()
             ->map(function ($user) use ($book) {
-                // Cek apakah user ini sudah pernah diundang sebelumnya
                 $isInvited = BookReviewer::where('book_submission_id', $book->id)
                     ->where('user_id', $user->id)
                     ->exists();
@@ -82,8 +145,8 @@ public function invite($id)
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
-                    'initial' => substr($user->name, 0, 2), // Untuk Avatar
-                    'is_invited' => $isInvited // Status apakah sudah diundang
+                    'initial' => substr($user->name, 0, 2),
+                    'is_invited' => $isInvited
                 ];
             });
 
@@ -93,42 +156,43 @@ public function invite($id)
         ]);
     }
 
-    // 2. PROSES SIMPAN UNDANGAN
     public function storeInvite(Request $request, $id)
     {
         $request->validate([
             'user_id' => 'required|exists:users,id',
         ]);
 
-        // Simpan ke tabel book_reviewers
         BookReviewer::create([
             'book_submission_id' => $id,
             'user_id' => $request->user_id,
-            'status' => 'PENDING', // Status awal
+            'status' => 'PENDING',
         ]);
 
         return redirect()->back()->with('success', 'Reviewer berhasil diundang.');
     }
-    // Action: Ketua LPPM Menyetujui Pengajuan
+
+    // ✅ PERBAIKAN UTAMA: Action Approve - Pastikan user_id terisi
     public function approve(Request $request, $id)
     {
         $request->validate([
-            'amount' => 'required|numeric|min:0', // Nominal wajib diisi
+            'amount' => 'required|numeric|min:0',
         ]);
 
         $book = BookSubmission::findOrFail($id);
 
         DB::transaction(function () use ($book, $request) {
-            // 1. Update Status & Nominal
             $book->update([
                 'status' => 'APPROVED_CHIEF',
                 'approved_amount' => $request->amount,
             ]);
 
-            // 2. Catat Log
+            // ✅ PERBAIKAN: Pastikan user_id TIDAK NULL
+            // Prioritas: 1) User login, 2) Fallback ke pengaju buku
+            $userId = Auth::id() ?? $book->user_id;
+
             SubmissionLog::create([
                 'book_submission_id' => $book->id,
-                'user_id' => '12e091b8-f227-4a58-8061-dc4a100c60f1', // Hardcode ID Ketua (Ganti Auth::id() nanti)
+                'user_id' => $userId, // Dijamin tidak null
                 'action' => 'APPROVE',
                 'note' => 'Pengajuan disetujui oleh Ketua LPPM. Menunggu pencairan HRD.'
             ]);
@@ -142,27 +206,30 @@ public function invite($id)
     public function reject(Request $request, $id)
     {
         $request->validate([
-            'note' => 'required|string|max:500', // Alasan penolakan wajib
+            'note' => 'required|string|max:500',
         ]);
 
         $book = BookSubmission::findOrFail($id);
 
-        $book->update([
-            'status' => 'REJECTED', // Atau 'REVISION_REQUIRED'
-        ]);
+        DB::transaction(function () use ($book, $request) {
+            $book->update([
+                'status' => 'REJECTED',
+                'reject_note' => $request->note,
+            ]);
 
-        SubmissionLog::create([
-            'book_submission_id' => $book->id,
-            'user_id' => '12e091b8-f227-4a58-8061-dc4a100c60f1',
-            'action' => 'REJECT',
-            'note' => $request->note
-        ]);
+            // ✅ PERBAIKAN: Pastikan user_id terisi
+            SubmissionLog::create([
+                'book_submission_id' => $book->id,
+                'user_id' => Auth::id() ?? $book->user_id,
+                'action' => 'REJECT',
+                'note' => $request->note
+            ]);
+        });
 
         return redirect()->route('regis-semi.index')
             ->with('success', 'Pengajuan dikembalikan ke Dosen.');
     }
 
-    // Helper untuk label status
     private function formatStatusLabel($status)
     {
         return match ($status) {
@@ -174,4 +241,62 @@ public function invite($id)
             default => $status,
         };
     }
+
+    public function indexBukuMasuk()
+    {
+        $submissions = BookSubmission::with('user')
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'id' => $item->id,
+                    'judul' => $item->title,
+                    'nama_dosen' => $item->user->name ?? '-',
+                    'status_label' => $this->formatStatus($item->status),
+                    'tanggal_pengajuan' => $item->created_at->format('d M Y, H:i'),
+                ];
+            });
+
+        return inertia('App/RegisSemi/Indexx', [
+            'submissions' => $submissions,
+            'pageName' => 'Penghargaan Buku Masuk'
+        ]);
+    }
+
+    private function formatStatus($status)
+    {
+        $statusMap = [
+            'Draft' => 'Draft',
+            'Submitted' => 'Menunggu Verifikasi',
+            'Approved' => 'Disetujui (Ke HRD)',
+            'Rejected' => 'Ditolak/Revisi',
+            'Paid' => 'Selesai (Cair)',
+        ];
+
+        return $statusMap[$status] ?? $status;
+    }
+
+
+    public function result()
+{
+    $submissions = BookSubmission::with('user')
+        ->where('status', 'PAID')
+        ->orderBy('created_at', 'desc')
+        ->get()
+        ->map(function ($item) {
+            return [
+                'id' => $item->id,
+                'judul' => $item->title,
+                'nama_dosen' => $item->user->name ?? '-',
+                'status_label' => $this->formatStatus($item->status),
+                'tanggal_pengajuan' => $item->created_at->format('d M Y, H:i'),
+            ];
+        });
+
+    return Inertia::render('App/RegisSemi/Result', [
+        'submissions' => $submissions,
+        'pageName' => 'Hasil Pengajuan Buku'
+    ]);
+}
+
 }
