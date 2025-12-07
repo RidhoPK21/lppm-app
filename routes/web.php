@@ -78,7 +78,7 @@ Route::middleware(['throttle:req-limit', 'handle.inertia'])->group(function () {
             Route::get('/{id}/detail-staff', [RegisSemiController::class, 'showStaff'])->name('show.staff');
 
              Route::get('/{id}/preview-pdf', [RegisSemiController::class, 'previewPdf'])->name('preview-pdf');
-    Route::get('/{id}/download-pdf', [RegisSemiController::class, 'downloadPdf'])->name('download-pdf');
+            Route::get('/{id}/download-pdf', [RegisSemiController::class, 'downloadPdf'])->name('download-pdf');
 
             // Tombol approve/reject
             Route::post('/{id}/approve', [RegisSemiController::class, 'approve'])->name('approve');

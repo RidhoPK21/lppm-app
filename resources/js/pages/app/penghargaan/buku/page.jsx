@@ -1,11 +1,9 @@
 import React, { useEffect, useState } from "react";
 import AppLayout from "@/layouts/app-layout";
-import { Head, Link, usePage } from "@inertiajs/react"; // Hapus router, gunakan Link
+import { Head, Link, usePage } from "@inertiajs/react";
 import { Button } from "@/components/ui/button";
-import { Plus, Search, BookOpen, User, FileText } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Plus, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
 import {
     Select,
     SelectContent,
@@ -15,12 +13,79 @@ import {
 } from "@/components/ui/select";
 import { route } from "ziggy-js";
 import Swal from "sweetalert2";
+// Import Icon dari Tabler untuk menyamakan gaya dengan RegisSemi
+import * as Icon from "@tabler/icons-react";
+
+// --- Komponen Item Buku (Gaya List seperti RegisSemi) ---
+const BukuItem = ({ href, judul, penulis, status, tahun, kategori }) => {
+    // Logika warna teks status agar sesuai dengan standar
+    let statusColorClass = "text-gray-500"; // Default (abu-abu)
+    const statusLower = status.toLowerCase();
+
+    if (
+        statusLower.includes("disetujui") ||
+        statusLower.includes("cair") ||
+        statusLower.includes("paid")
+    ) {
+        statusColorClass = "text-green-600";
+    } else if (
+        statusLower.includes("ditolak") ||
+        statusLower.includes("revisi")
+    ) {
+        statusColorClass = "text-red-600";
+    } else if (
+        statusLower.includes("menunggu") ||
+        statusLower.includes("submitted") ||
+        statusLower.includes("verified")
+    ) {
+        statusColorClass = "text-yellow-600"; // Kuning kecoklatan untuk status proses
+    }
+
+    return (
+        <Link href={href} className="block w-full group">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-3 cursor-pointer hover:shadow-md transition-shadow">
+                <div className="flex items-stretch p-4">
+                    {/* Ikon Segitiga Putih dalam Lingkaran Hitam (Ciri Khas RegisSemi) */}
+                    <div className="mr-4 flex items-center justify-center w-8 h-8 rounded-full bg-black flex-shrink-0 group-hover:scale-105 transition-transform">
+                        <Icon.IconTriangle size={16} fill="white" />
+                    </div>
+
+                    {/* Detail Buku (Judul, Penulis, Kategori) */}
+                    <div className="flex-1 min-w-0 flex flex-col justify-center">
+                        <div className="font-medium text-base truncate text-gray-900">
+                            {judul}
+                        </div>
+                        <div className="text-sm text-gray-500 truncate mt-0.5">
+                            {penulis} <span className="mx-1">•</span> {kategori}
+                        </div>
+                    </div>
+
+                    {/* Status dan Tahun */}
+                    <div className="text-right ml-4 flex flex-col justify-between items-end">
+                        <div className="text-gray-500 text-sm whitespace-nowrap">
+                            Status :{" "}
+                            <span
+                                className={`capitalize font-normal ${statusColorClass}`}
+                            >
+                                {status}
+                            </span>
+                        </div>
+                        <div className="text-gray-500 text-xs mt-2">
+                            Tahun: {tahun}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </Link>
+    );
+};
 
 export default function BukuPage({ buku }) {
     const { flash } = usePage().props;
     const [searchTerm, setSearchTerm] = useState("");
     const [sortBy, setSortBy] = useState("newest");
 
+    // Efek untuk notifikasi sukses (SweetAlert)
     useEffect(() => {
         if (flash.success) {
             Swal.fire({
@@ -40,14 +105,7 @@ export default function BukuPage({ buku }) {
         { title: "Buku", url: "#" },
     ];
 
-    const getStatusColor = (status) => {
-        if (status.includes("Draft")) return "secondary";
-        if (status.includes("Menunggu")) return "outline";
-        if (status.includes("Disetujui")) return "default";
-        if (status.includes("Ditolak")) return "destructive";
-        return "outline";
-    };
-
+    // Filter dan Sorting Data
     const filteredBooks = buku
         .filter(
             (item) =>
@@ -68,7 +126,7 @@ export default function BukuPage({ buku }) {
             <Head title="Penghargaan Buku" />
 
             <div className="flex flex-col space-y-6">
-                {/* Header & Actions */}
+                {/* Header & Tombol Aksi */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
                         <h1 className="text-2xl font-bold tracking-tight">
@@ -88,6 +146,7 @@ export default function BukuPage({ buku }) {
 
                 {/* Toolbar: Search & Sort */}
                 <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-white p-4 rounded-lg border shadow-sm">
+                    {/* Kolom Pencarian */}
                     <div className="relative w-full md:w-96">
                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
@@ -98,6 +157,8 @@ export default function BukuPage({ buku }) {
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
+
+                    {/* Kolom Sorting */}
                     <div className="flex items-center gap-3 w-full md:w-auto">
                         <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">
                             Urutkan:
@@ -120,100 +181,41 @@ export default function BukuPage({ buku }) {
                     </div>
                 </div>
 
-                {/* List Content (Stacked Cards) */}
-                {filteredBooks.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-20 text-center space-y-4 border-2 border-dashed rounded-lg bg-muted/10">
-                        <div className="bg-muted/50 p-4 rounded-full">
-                            <BookOpen className="h-10 w-10 text-muted-foreground" />
+                {/* Konten Daftar Buku (List View) */}
+                <div className="mt-6">
+                    {filteredBooks.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-20 text-center space-y-4 border-2 border-dashed rounded-lg bg-muted/10">
+                            <div className="bg-muted/50 p-4 rounded-full">
+                                <Icon.IconBook className="h-10 w-10 text-muted-foreground" />
+                            </div>
+                            <div className="space-y-1">
+                                <p className="text-lg font-medium">
+                                    Tidak ada buku ditemukan
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                    Coba ubah kata kunci pencarian atau ajukan
+                                    buku baru.
+                                </p>
+                            </div>
                         </div>
-                        <div className="space-y-1">
-                            <p className="text-lg font-medium">
-                                Tidak ada buku ditemukan
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                                Coba ubah kata kunci pencarian atau ajukan buku
-                                baru.
-                            </p>
+                    ) : (
+                        <div className="space-y-3">
+                            {filteredBooks.map((item) => (
+                                <BukuItem
+                                    key={item.id}
+                                    href={route("app.penghargaan.buku.detail", {
+                                        id: item.id,
+                                    })}
+                                    judul={item.judul}
+                                    penulis={item.penulis}
+                                    kategori={item.kategori}
+                                    status={item.status}
+                                    tahun={item.tahun}
+                                />
+                            ))}
                         </div>
-                    </div>
-                ) : (
-                    <div className="flex flex-col space-y-4">
-                        {filteredBooks.map((item) => (
-                            // [SOLUSI UTAMA] Bungkus Card dengan Link Inertia
-                            // block w-full: Agar Link mengisi lebar container
-                            // hover:opacity-75: Feedback visual saat di-hover
-                            <Link
-                                key={item.id}
-                                href={route("app.penghargaan.buku.detail", {
-                                    id: item.id,
-                                })}
-                                className="block w-full transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black rounded-lg"
-                            >
-                                <Card className="border-l-4 border-l-transparent hover:border-l-black hover:shadow-md transition-all relative overflow-hidden bg-white cursor-pointer">
-                                    <CardContent className="p-6">
-                                        <div className="flex flex-col gap-4">
-                                            {/* Header Card */}
-                                            <div className="flex justify-between items-start">
-                                                <div className="flex items-center gap-2">
-                                                    <Badge
-                                                        variant="outline"
-                                                        className="text-xs font-normal bg-gray-50"
-                                                    >
-                                                        {item.kategori}
-                                                    </Badge>
-                                                    <span className="text-xs text-muted-foreground">
-                                                        • {item.tahun}
-                                                    </span>
-                                                </div>
-                                                <Badge
-                                                    variant={getStatusColor(
-                                                        item.status
-                                                    )}
-                                                    className="shrink-0 ml-4"
-                                                >
-                                                    {item.status}
-                                                </Badge>
-                                            </div>
-
-                                            {/* Body Card */}
-                                            <div>
-                                                <h3 className="text-xl font-bold text-gray-900 leading-tight">
-                                                    {item.judul}
-                                                </h3>
-                                                <p className="text-sm text-muted-foreground mt-1">
-                                                    Penerbit: {item.penerbit}
-                                                </p>
-                                            </div>
-
-                                            {/* Footer Card */}
-                                            <div className="flex flex-wrap gap-3 text-sm text-gray-600 pt-2 border-t border-gray-100 mt-2">
-                                                <div className="flex items-center gap-1.5">
-                                                    <User className="h-3.5 w-3.5 text-muted-foreground" />
-                                                    <span className="truncate max-w-[200px]">
-                                                        {item.penulis}
-                                                    </span>
-                                                </div>
-                                                <div className="flex items-center gap-1.5">
-                                                    <FileText className="h-3.5 w-3.5 text-muted-foreground" />
-                                                    <span>
-                                                        ISBN: {item.isbn}
-                                                    </span>
-                                                </div>
-                                                <div className="flex items-center gap-1.5">
-                                                    <BookOpen className="h-3.5 w-3.5 text-muted-foreground" />
-                                                    <span>
-                                                        {item.jumlah_halaman}{" "}
-                                                        Hal
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            </Link>
-                        ))}
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
         </AppLayout>
     );

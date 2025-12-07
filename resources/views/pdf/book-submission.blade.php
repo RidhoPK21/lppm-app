@@ -20,46 +20,53 @@
             padding: 0;
         }
 
-        /* Header Kampus */
+        /* --- HEADER MENGGUNAKAN TABLE (DomPDF Compatible) --- */
         .header-container {
-            display: flex;
-            align-items: center;
-            padding-bottom: 5px;
             border-bottom: 3px solid #000;
-            margin-bottom: 10px;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .header-table {
+            width: 100%;
+            border-collapse: collapse;
         }
 
-        .logo-box {
-            margin-right: 12px;
-            width: 70px;
-            height: auto;
-            flex-shrink: 0;
-        }
+        .col-logo {
+    /* 1. Tetapkan lebar kolom yang cukup agar teks tidak bergeser */
+    width: 100px; 
+    
+    /* 2. Gunakan vertical-align middle agar sejajar vertikal */
+    vertical-align: middle;
+    
+    /* 3. KUNCI UTAMA: Rata KANAN. 
+       Ini akan memaksa gambar logo menempel ke sisi kanan kolom (mendekati teks) 
+       tanpa menggeser posisi kolom teks itu sendiri. */
+    text-align: right;
+    
+    /* 4. Atur jarak (gap) antara logo dan teks di sini */
+    padding-right: 10px; 
+}
 
-        .logo-box img {
-            max-width: 100%;
-            height: auto;
-            display: block;
-        }
-
-        .info-text {
-            line-height: 1.1;
-            flex-grow: 1;
+        .col-text {
+            vertical-align: middle;
             text-align: center;
         }
 
+        /* Style Teks Header */
         .title {
-            font-size: 15pt;
+            font-size: 14pt;
             font-weight: bold;
             margin: 0;
-            letter-spacing: 0.7px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .address, .contact {
-            font-size: 8pt;
-            margin: 0;
+            font-size: 9pt;
+            margin: 2px 0;
         }
-
+        
         .contact a {
             color: #000;
             text-decoration: none;
@@ -70,6 +77,7 @@
             text-align: left;
             margin: 10px 0 8px 0;
             font-size: 11pt;
+            font-weight: bold;
         }
 
         .form-date {
@@ -221,33 +229,42 @@
     </style>
 </head>
 <body>
-    <!-- HALAMAN 1 -->
-    <!-- Header Kampus -->
     <div class="header-container">
-        <div class="logo-box">
-            <img src="https://www.del.ac.id/wp-content/uploads/2023/07/logo-it-del.png" alt="Logo Institut Teknologi Del">
-        </div>
+        <table class="header-table">
+            <tr>
+                <td class="col-logo">
+                    <?php
+                        $imagePath = public_path('img/Logodel.png');
+                        if (file_exists($imagePath)) {
+                            $imageData = base64_encode(file_get_contents($imagePath));
+                            $src = 'data:image/png;base64,' . $imageData;
+                            // Width diatur agar pas di kolom
+// Cari baris ini di bagian bawah:
+                            echo '<img src="' . $src . '" alt="Logo IT Del" style="width: 100px; height: auto; margin-right: -60px;">';                        } else {
+                            echo '<div style="color:red; font-size:8pt; border:1px solid red;">Logo Not Found</div>';
+                        }
+                    ?>
+                </td>
 
-        <div class="info-text">
-            <h1 class="title">INSTITUT TEKNOLOGI DEL</h1>
-            <p class="address">Jl. Sisingamangaraja, Kec. Laguboti, Kab. Toba Samosir – 22381</p>
-            <p class="address">Sumatera Utara, Indonesia</p>
-            <p class="contact">Telp: (0632) 331234, Fax: (632) 331116</p>
-            <p class="contact">Website: <a href="http://www.del.ac.id">www.del.ac.id</a>, Email: lppm@del.ac.id</p>
-        </div>
+                <td class="col-text">
+                    <div class="title">INSTITUT TEKNOLOGI DEL</div>
+                    <div class="address">Jl. Sisingamangaraja, Kec. Laguboti, Kab. Toba Samosir – 22381</div>
+                    <div class="address">Sumatera Utara, Indonesia</div>
+                    <div class="contact">Telp: (0632) 331234, Fax: (632) 331116</div>
+                    <div class="contact">Website: <a href="http://www.del.ac.id">www.del.ac.id</a>, Email: lppm@del.ac.id</div>
+                </td>
+            </tr>
+        </table>
     </div>
 
-    <!-- Judul Formulir -->
     <div class="form-title">
         Formulir 8. Surat Permohonan Mendapatkan Penghargaan Buku
     </div>
 
-    <!-- Tanggal -->
     <div class="form-date">
         Laguboti, {{ $date }}
     </div>
 
-    <!-- Perihal dan Lampiran -->
     <div class="perihal-section">
         <table>
             <tr>
@@ -270,7 +287,6 @@
         </table>
     </div>
 
-    <!-- Kepada Yth -->
     <div class="kepada-yth">
         <strong>Kepada Yth.</strong><br>
         <strong>Ketua LPPM Institut Teknologi Del</strong><br>
@@ -278,7 +294,6 @@
         <span style="margin-left: 40px;"><strong>Tempat</strong></span>
     </div>
 
-    <!-- Konten Surat -->
     <div class="content-section">
         <p>Saya yang bertanda tangan di bawah ini:</p>
         
@@ -368,7 +383,6 @@
         <p>Demikian surat permohonan ini saya sampaikan, terima kasih.</p>
     </div>
 
-    <!-- Tanda Tangan -->
     <div class="signature-section">
         <div class="signature-text">Hormat Saya,</div>
         <div class="signed-indicator">
@@ -378,25 +392,33 @@
         <div class="signature-name">({{ $user->name ?? '...................................................' }})</div>
     </div>
 
-    <!-- HALAMAN 2 -->
     <div class="page-break"></div>
 
-    <!-- Header Kampus Halaman 2 -->
     <div class="header-container">
-        <div class="logo-box">
-            <img src="https://www.del.ac.id/wp-content/uploads/2023/07/logo-it-del.png" alt="Logo Institut Teknologi Del">
-        </div>
+        <table class="header-table">
+            <tr>
+                <td class="col-logo">
+                    <?php
+                        // Menggunakan variabel yang sama (file hanya dibaca sekali jika di-cache, tapi di blade PHP ini dieksekusi lagi)
+                        if (file_exists($imagePath)) {
+                            $imageData = base64_encode(file_get_contents($imagePath));
+                            $src = 'data:image/png;base64,' . $imageData;
+                            echo '<img src="' . $src . '" alt="Logo IT Del" style="width: 80px; height: auto;">';
+                        }
+                    ?>
+                </td>
 
-        <div class="info-text">
-            <h1 class="title">INSTITUT TEKNOLOGI DEL</h1>
-            <p class="address">Jl. Sisingamangaraja, Kec. Laguboti, Kab. Toba Samosir – 22381</p>
-            <p class="address">Sumatera Utara, Indonesia</p>
-            <p class="contact">Telp: (0632) 331234, Fax: (632) 331116</p>
-            <p class="contact">Website: <a href="http://www.del.ac.id">www.del.ac.id</a>, Email: lppm@del.ac.id</p>
-        </div>
+                <td class="col-text">
+                    <div class="title">INSTITUT TEKNOLOGI DEL</div>
+                    <div class="address">Jl. Sisingamangaraja, Kec. Laguboti, Kab. Toba Samosir – 22381</div>
+                    <div class="address">Sumatera Utara, Indonesia</div>
+                    <div class="contact">Telp: (0632) 331234, Fax: (632) 331116</div>
+                    <div class="contact">Website: <a href="http://www.del.ac.id">www.del.ac.id</a>, Email: lppm@del.ac.id</div>
+                </td>
+            </tr>
+        </table>
     </div>
 
-    <!-- Ceklis Lampiran -->
     <div class="checklist-title">Ceklis Lampiran</div>
 
     <table class="checklist-table">
