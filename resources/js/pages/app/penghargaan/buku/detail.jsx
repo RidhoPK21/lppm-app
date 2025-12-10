@@ -23,6 +23,7 @@ import {
     Download,
 } from "lucide-react";
 import { route } from "ziggy-js";
+import Swal from "sweetalert2"; // <--- Tambahkan ini
 
 export default function DetailBukuPage({ book }) {
     const breadcrumbs = [
@@ -65,8 +66,8 @@ export default function DetailBukuPage({ book }) {
     } else {
         const s = book.status.toLowerCase();
         if (s.includes("menunggu") || s.includes("submitted"))
-            statusVariant =
-                "warning"; // Menganggap 'warning' sudah didefinisikan dalam Badge
+            statusVariant = "warning";
+        // Menganggap 'warning' sudah didefinisikan dalam Badge
         else if (s.includes("disetujui") || s.includes("approved"))
             statusVariant = "default";
         else if (s.includes("ditolak") || s.includes("rejected"))
@@ -75,16 +76,32 @@ export default function DetailBukuPage({ book }) {
             statusVariant = "success";
     }
 
-    // --- HANDLER KIRIM ---
+    // --- HANDLER KIRIM DENGAN SWEETALERT2 ---
     const handleSubmit = () => {
-        if (
-            confirm(
-                "Apakah Anda yakin data sudah benar? Pengajuan akan dikirim ke LPPM."
-            )
-        ) {
-            router.post(route("app.penghargaan.buku.submit", { id: book.id }));
-        }
+        Swal.fire({
+            title: "Konfirmasi Pengajuan",
+            text: "Apakah Anda yakin data sudah benar? Pengajuan akan dikirim ke LPPM untuk proses verifikasi.",
+            icon: "warning", // Ubah ke 'info', 'question', atau ikon lain jika perlu
+            showCancelButton: true,
+            confirmButtonColor: "#3b82f6", // Warna Biru (Primary)
+            cancelButtonColor: "#6b7280", // Warna Abu-abu (Secondary/Muted)
+            confirmButtonText: "Ya, Kirim Pengajuan!",
+            cancelButtonText: "Batal",
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Lakukan pengiriman data jika pengguna mengkonfirmasi
+                router.post(
+                    route("app.penghargaan.buku.submit", { id: book.id })
+                );
+
+                // Opsi: Tampilkan SweetAlert "Loading/Mengirim" sebelum post jika diperlukan,
+                // dan setelah response dari Inersia baru tampilkan Success/Error.
+                // Karena InertiaJS/Laravel, biasanya notifikasi success akan di-handle
+                // melalui Flash Message setelah redirect/refresh.
+            }
+        });
     };
+    // ----------------------------------------
 
     const handleReviewFile = () => {
         window.open(
@@ -398,7 +415,7 @@ export default function DetailBukuPage({ book }) {
                                 {/* TOMBOL 4: KIRIM PENGAJUAN */}
                                 {isDraft && isDocumentsComplete && (
                                     <Button
-                                        onClick={handleSubmit}
+                                        onClick={handleSubmit} // Menggunakan SweetAlert
                                         // UBAH: hardcoded green -> variant="default" (Primary)
                                         variant="default"
                                         className="w-full shadow-md"

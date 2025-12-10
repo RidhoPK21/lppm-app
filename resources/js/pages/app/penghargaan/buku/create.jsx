@@ -155,7 +155,7 @@ export default function CreateBukuPage() {
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="Ilmu Komputer">
-                                            Ilmu Komputer
+                                            Informatika
                                         </SelectItem>
                                         <SelectItem value="Sistem Informasi">
                                             Sistem Informasi
@@ -169,8 +169,20 @@ export default function CreateBukuPage() {
                                         <SelectItem value="Manajemen Rekayasa">
                                             Manajemen Rekayasa
                                         </SelectItem>
-                                        <SelectItem value="Lainnya">
-                                            Lainnya
+                                        <SelectItem value="Teknik Metalurgi">
+                                            Teknik Metalurgi
+                                        </SelectItem>
+                                        <SelectItem value="Teknologi Komputer">
+                                            Teknologi Komputer
+                                        </SelectItem>
+                                        <SelectItem value="Teknologi Informasi">
+                                            Teknologi Informasi
+                                        </SelectItem>
+                                        <SelectItem value="Teknologi Rekayasa Perangkat Lunak">
+                                            Teknologi Rekayasa Perangkat Lunak
+                                        </SelectItem>
+                                        <SelectItem value="Bioteknologi">
+                                            Bioteknologi
                                         </SelectItem>
                                     </SelectContent>
                                 </Select>
