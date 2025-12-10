@@ -2,12 +2,19 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUuids; // 1. Import trait HasUuids
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class RegisSemi extends Model
 {
-    use HasFactory;
+    use HasFactory, HasUuids; // 2. Gunakan trait HasUuids
+
+    // 3. Matikan auto-increment
+    public $incrementing = false;
+
+    // 4. Set tipe key menjadi string
+    protected $keyType = 'string';
 
     // Gunakan tabel yang sudah ada: book_reviewers
     protected $table = 'book_reviewers';
@@ -15,8 +22,8 @@ class RegisSemi extends Model
     protected $fillable = [
         'book_submission_id',
         'user_id',
-        'review_note',
-        'review_date',
+        'review_note', // Pastikan nama kolom ini sesuai dengan database (mungkin 'note'?)
+        'review_date', // Pastikan nama kolom ini sesuai dengan database (mungkin 'reviewed_at'?)
         'status',
         // Tambahkan field untuk invited_at jika diperlukan
     ];

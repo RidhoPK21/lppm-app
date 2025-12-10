@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
@@ -13,45 +14,37 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // 1. Ambil ID User Utama dari .env
-        // Jika di .env kosong, pakai default '12e0...' (Punya Anda)
+     
+        
+        // Membersihkan tabel users terakhir
+        
+        
+        // --- LOGIKA PENYEMAAN OTENTIKASI HANYA BERDASARKAN ID UTAMA ---
+        
+        // 1. Ambil ID User Utama dari .env (ID Anda)
         $mainUserId = env('DEV_DEFAULT_USER_ID', '12e091b8-f227-4a58-8061-dc4a100c60f1');
 
-        // 2. Buat User Utama (Dosen yang Login)
-        User::create([
-            'id' => $mainUserId,
-            'name' => 'Abdullah Ubaid',
-            'email' => 'dosen@del.ac.id',
-            'password' => Hash::make('password'),
-        ]);
+        // 2. Buat User Utama (HANYA jika belum ada)
+        // Kita tidak mengisi nama/email DUMMY di sini. 
+        // Nama asli akan diisi saat Provisioning JIT (Anda login).
+        User::firstOrCreate(
+            ['id' => $mainUserId], // Kriteria Pencarian
+            [ // Data minimal yang akan diisi jika tidak ditemukan
+                'name' => 'Placeholder User', // Nama sementara yang akan ditimpa SSO
+                'email' => 'placeholder@example.com',
+                'password' => Hash::make('password'),
+            ]
+        );
 
-        // 3. Dosen Dummy 1 (Budi)
-        User::create([
-            'id' => '22e091b8-f227-4a58-8061-dc4a100c60f2',
-            'name' => 'Dr. Budi Santoso',
-            'email' => 'budi@del.ac.id',
-            'password' => Hash::make('password'),
-        ]);
+        // --- HAPUS SEMUA PEMBUATAN USER DUMMY (Budi, Siti, Rahmat) ---
+        // Anda tidak perlu lagi User::create untuk ID 22e..., 33e..., 44e...
 
-        // 4. Dosen Dummy 2 (Siti)
-        User::create([
-            'id' => '33e091b8-f227-4a58-8061-dc4a100c60f3',
-            'name' => 'Siti Aminah, M.T.',
-            'email' => 'siti@del.ac.id',
-            'password' => Hash::make('password'),
-        ]);
+        // 3. SEEDING HAK AKSES (Penting!)
+        // Lanjutkan dengan seeding Hak Akses (yang seharusnya diurus oleh scripts/seed.ts)
+        // Jika Anda memanggil scripts/seed.ts dari sini:
+        // $this->call(HakAksesSeeder::class); 
 
-        // 4. Dosen Dummy 3
-        User::create([
-            'id' => '44e091b8-f227-4a58-8061-dc4a100c60f4',
-            'name' => 'Prof. Rahmat Hidayat',
-            'email' => 'rahmat@del.ac.id',
-            'password' => Hash::make('password'),
-        ]);
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        // Karena Anda memiliki Hak Akses di Sequelize, Anda harus memastikan 
+        // skrip Sequelize Anda berjalan secara terpisah untuk mengisi m_hak_akses.
     }
 }
