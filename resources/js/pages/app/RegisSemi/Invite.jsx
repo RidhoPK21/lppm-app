@@ -139,7 +139,6 @@ export default function Invite({ book, availableReviewers = [], flash }) {
             setProcessingId(null);
         }
     };
-    // Menghapus handleInvite dan handleInviteAlternative karena handleInviteFinal sudah mencakup logika terbaik
 
     // Hitung statistik berdasarkan localReviewers
     const stats = {
@@ -173,7 +172,7 @@ export default function Invite({ book, availableReviewers = [], flash }) {
                         <p className="text-sm text-muted-foreground">
                             Cari dosen yang kompeten untuk menilai buku:{" "}
                             <span className="font-medium text-foreground">
-                                "{book.title}"
+                                &quot;{book.title}&quot;
                             </span>
                         </p>
                     </div>
@@ -360,7 +359,7 @@ export default function Invite({ book, availableReviewers = [], flash }) {
                                             <Search className="h-12 w-12 mx-auto text-muted-foreground" />
                                             <p>
                                                 Tidak ditemukan dosen dengan
-                                                pencarian "{search}".
+                                                pencarian &quot;{search}&quot;.
                                             </p>
                                             <Button
                                                 variant="outline"
@@ -378,8 +377,8 @@ export default function Invite({ book, availableReviewers = [], flash }) {
                                                 Dosen.
                                             </p>
                                             <p className="text-sm">
-                                                Coba matikan filter "Hanya
-                                                Dosen".
+                                                Coba matikan filter &quot;Hanya
+                                                Dosen&quot;.
                                             </p>
                                             <Button
                                                 variant="outline"
@@ -433,14 +432,16 @@ export default function Invite({ book, availableReviewers = [], flash }) {
                                     {/* UBAH: text-blue-500 -> text-primary */}
                                     <Filter className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
                                     <span>
-                                        Filter <strong>"Hanya Dosen"</strong>{" "}
+                                        Filter{" "}
+                                        <strong>&quot;Hanya Dosen&quot;</strong>{" "}
                                         aktif - hanya menampilkan user dengan
                                         akses Dosen.
                                     </span>
                                 </p>
                                 <p>
-                                    • User mungkin memiliki akses lain, tetapi
-                                    yang relevan untuk review buku adalah akses{" "}
+                                    • User mungkin memiliki akses lain (Admin,
+                                    Staff, dll), tetapi yang relevan untuk
+                                    review buku adalah akses{" "}
                                     <strong>Dosen</strong>.
                                 </p>
                                 <p>

@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import { route } from "ziggy-js";
 
-export default function DetailBukuPage({ book, user }) {
+export default function DetailBukuPage({ book }) {
     const breadcrumbs = [
         { title: "Penghargaan", url: "#" },
         { title: "Buku", url: route("app.penghargaan.buku.index") },

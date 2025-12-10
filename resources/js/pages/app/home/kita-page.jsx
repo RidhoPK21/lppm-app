@@ -393,7 +393,7 @@ export default function KitaPage({ submissions = [] }) {
             },
             {
                 preserveState: false, // ✅ Force reload halaman
-                onSuccess: (page) => {
+                onSuccess: () => {
                     // Tampilkan notifikasi sukses
                     triggerSuccessNotification();
 

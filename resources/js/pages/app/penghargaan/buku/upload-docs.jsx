@@ -1,6 +1,6 @@
 import React from "react";
 import AppLayout from "@/layouts/app-layout";
-import { Head, useForm, Link, router } from "@inertiajs/react";
+import { Head, useForm, Link } from "@inertiajs/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,7 +13,7 @@ import {
     CardFooter,
 } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Info, ArrowRight, FileText, AlertCircle } from "lucide-react";
+import { Info, FileText, AlertCircle } from "lucide-react";
 import { route } from "ziggy-js";
 
 export default function UploadDocsPage({ bookId, bookTitle }) {
@@ -70,7 +70,8 @@ export default function UploadDocsPage({ bookId, bookTitle }) {
                     <AlertTitle>Langkah Terakhir!</AlertTitle>
                     <AlertDescription>
                         Anda sedang melengkapi dokumen untuk buku: <br />
-                        <strong>"{bookTitle}"</strong>. <br />
+                        {/* PERBAIKAN: Mengganti " dengan &quot; */}
+                        <strong>&quot;{bookTitle}&quot;</strong>. <br />
                         Silakan lampirkan link Google Drive untuk setiap dokumen
                         persyaratan di bawah ini. <br />
                     </AlertDescription>
