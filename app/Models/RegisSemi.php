@@ -9,12 +9,40 @@ class RegisSemi extends Model
 {
     use HasFactory;
 
+    // Gunakan tabel yang sudah ada: book_reviewers
+    protected $table = 'book_reviewers';
+
     protected $fillable = [
-        'nama_seminar',
-        'penyelenggara',
-        'tanggal_seminar',
-        'lokasi',
+        'book_submission_id',
+        'user_id',
+        'review_note',
+        'review_date',
+        'status',
+        // Tambahkan field untuk invited_at jika diperlukan
     ];
 
-    protected $table = 'regis_semis';
+    protected $casts = [
+        'review_date' => 'datetime',
+        'invited_at' => 'datetime',
+        'responded_at' => 'datetime',
+    ];
+
+    /**
+     * Set default values
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($model) {
+            // Jika status tidak diisi, set default
+            if (!$model->status) {
+                $model->status = 'PENDING';
+            }
+            // Set invited_at jika membuat undangan baru
+            if (!$model->invited_at && $model->status === 'PENDING') {
+                $model->invited_at = now();
+            }
+        });
+    }
 }

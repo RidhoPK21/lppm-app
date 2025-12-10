@@ -6,13 +6,13 @@ use App\Helper\ToolsHelper;
 use App\Http\Api\UserApi;
 use App\Http\Controllers\App\Todo\TodoController;
 use App\Models\TodoModel;
+use Closure;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Mockery;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
-use Closure;
-use Mockery;
 
 class TodoControllerTest extends TestCase
 {
@@ -38,8 +38,8 @@ class TodoControllerTest extends TestCase
             });
 
         // Buat mock dengan alias
-        $this->todoModelMock = Mockery::mock('alias:' . TodoModel::class);
-        $this->userApiMock = Mockery::mock('alias:' . UserApi::class);
+        $this->todoModelMock = Mockery::mock('alias:'.TodoModel::class);
+        $this->userApiMock = Mockery::mock('alias:'.UserApi::class);
     }
 
     protected function tearDown(): void

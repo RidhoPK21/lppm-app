@@ -1,3 +1,4 @@
+// File: resources/js/Pages/app/notifikasi/page.jsx
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,11 +14,13 @@ import { Head, router } from "@inertiajs/react";
 import { Bell } from "lucide-react";
 import { useState } from "react";
 import PropTypes from 'prop-types';
+import ReviewNotificationCard from './ReviewNotificationCard';
 
-export default function NotificationPage({ notifications, filters }) {
+export default function NotificationPage({ notifications, filters, booksForReview = {} }) {
     const [searchValue, setSearchValue] = useState(filters.search || '');
     const [filterValue, setFilterValue] = useState(filters.filter || 'semua');
     const [sortValue, setSortValue] = useState(filters.sort || 'terbaru');
+    const [selectedReviewNotif, setSelectedReviewNotif] = useState(null);
 
     const handleSearch = () => {
         router.get('/notifikasi', {
@@ -55,10 +58,20 @@ export default function NotificationPage({ notifications, filters }) {
     };
 
     const handleNotificationClick = (notification) => {
-        if (!notification.is_read) {
-            router.post(`/notifikasi/${notification.id}/read`, {}, {
-                preserveScroll: true
-            });
+        // Check if this is a reviewer invitation notification
+        const isReviewInvite = notification.reference_key?.startsWith('REVIEWER_INVITE_');
+        const bookDetail = booksForReview[notification.id];
+
+        if (isReviewInvite && bookDetail) {
+            // Open modal for review notification
+            setSelectedReviewNotif(notification);
+        } else {
+            // Mark as read for regular notifications
+            if (!notification.is_read) {
+                router.post(`/notifikasi/${notification.id}/read`, {}, {
+                    preserveScroll: true
+                });
+            }
         }
     };
 
@@ -137,43 +150,59 @@ export default function NotificationPage({ notifications, filters }) {
                 </div>
 
                 <div className="flex flex-col gap-3 w-full">
-                    {notifications.map((item) => (
-                        <Card
-                            key={item.id}
-                            className={`w-full p-4 flex flex-row items-center justify-between gap-4 hover:bg-accent/5 transition-colors cursor-pointer ${
-                                !item.is_read
-                                    ? "bg-muted/30 border-l-4 border-l-primary"
-                                    : ""
-                            }`}
-                            onClick={() => handleNotificationClick(item)}
-                        >
-                            <div className="flex items-center gap-4 min-w-0 flex-1 text-left">
-                                <div className="shrink-0">
-                                    <div className="h-10 w-10 rounded-full bg-black flex items-center justify-center text-white dark:bg-white dark:text-black">
-                                        <Bell className="h-5 w-5" />
+                    {notifications.map((item) => {
+                        const isReviewInvite = item.reference_key?.startsWith('REVIEWER_INVITE_');
+                        
+                        return (
+                            <Card
+                                key={item.id}
+                                className={`w-full p-4 flex flex-row items-center justify-between gap-4 hover:bg-accent/5 transition-colors cursor-pointer ${
+                                    !item.is_read
+                                        ? "bg-muted/30 border-l-4 border-l-primary"
+                                        : ""
+                                } ${
+                                    isReviewInvite
+                                        ? "border-2 border-black dark:border-white"
+                                        : "border border-gray-200 dark:border-gray-700"
+                                }`}
+                                onClick={() => handleNotificationClick(item)}
+                            >
+                                <div className="flex items-center gap-4 min-w-0 flex-1 text-left">
+                                    <div className="shrink-0">
+                                        <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
+                                            isReviewInvite
+                                                ? "bg-black dark:bg-white"
+                                                : "bg-black dark:bg-white"
+                                        }`}>
+                                            <Bell className={`h-5 w-5 ${
+                                                isReviewInvite
+                                                    ? "text-white dark:text-black"
+                                                    : "text-white dark:text-black"
+                                            }`} />
+                                        </div>
+                                    </div>
+
+                                    <div className="flex flex-col min-w-0">
+                                        <h3 className="font-semibold text-base truncate">
+                                            {item.title}
+                                        </h3>
+                                        <p className="text-sm text-muted-foreground truncate">
+                                            {item.message}
+                                        </p>
                                     </div>
                                 </div>
 
-                                <div className="flex flex-col min-w-0">
-                                    <h3 className="font-semibold text-base truncate">
-                                        {item.title}
-                                    </h3>
-                                    <p className="text-sm text-muted-foreground truncate">
-                                        {item.message}
+                                <div className="text-right shrink-0">
+                                    <p className={`text-xs font-medium ${getTypeColor(item.type)}`}>
+                                        {item.type}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                        {formatDate(item.created_at)}
                                     </p>
                                 </div>
-                            </div>
-
-                            <div className="text-right shrink-0">
-                                <p className={`text-xs font-medium ${getTypeColor(item.type)}`}>
-                                    {item.type}
-                                </p>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                    {formatDate(item.created_at)}
-                                </p>
-                            </div>
-                        </Card>
-                    ))}
+                            </Card>
+                        );
+                    })}
 
                     {notifications.length === 0 && (
                         <div className="text-center py-10 text-muted-foreground bg-muted/10 rounded-lg border border-dashed w-full">
@@ -182,6 +211,15 @@ export default function NotificationPage({ notifications, filters }) {
                     )}
                 </div>
             </div>
+
+            {/* Review Modal */}
+            {selectedReviewNotif && booksForReview[selectedReviewNotif.id] && (
+                <ReviewNotificationCard
+                    notification={selectedReviewNotif}
+                    bookDetails={booksForReview[selectedReviewNotif.id]}
+                    onClose={() => setSelectedReviewNotif(null)}
+                />
+            )}
         </AppLayout>
     );
 }
@@ -195,14 +233,16 @@ NotificationPage.propTypes = {
             message: PropTypes.string.isRequired,
             type: PropTypes.oneOf(['Info', 'Sukses', 'Peringatan', 'Error', 'System']).isRequired,
             is_read: PropTypes.bool.isRequired,
-            created_at: PropTypes.string.isRequired
+            created_at: PropTypes.string.isRequired,
+            reference_key: PropTypes.string
         })
     ).isRequired,
     filters: PropTypes.shape({
         search: PropTypes.string,
         filter: PropTypes.string,
         sort: PropTypes.string
-    })
+    }),
+    booksForReview: PropTypes.object
 };
 
 NotificationPage.defaultProps = {
@@ -210,5 +250,6 @@ NotificationPage.defaultProps = {
         search: '',
         filter: 'semua',
         sort: 'terbaru'
-    }
+    },
+    booksForReview: {}
 };

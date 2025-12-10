@@ -10,9 +10,8 @@ import AppLayout from "@/layouts/app-layout";
 import * as Icon from "@tabler/icons-react";
 import { ChevronDown, X, CheckCircle, ChevronLeft, ChevronRight } from "lucide-react"; 
 import * as React from "react";
-// import { router } from "@inertiajs/react"; // Di-comment karena tidak digunakan di kode yang relevan
+import { router } from "@inertiajs/react"; // ✅ PENTING: Tambahkan ini untuk submit data
 
-// Asumsi Anda memiliki atau dapat menggunakan Calendar icon dari @tabler/icons-react
 const IconCalendar = Icon.IconCalendar;
 
 // --- Fungsi utilitas Tanggal ---
@@ -21,7 +20,6 @@ const getDaysInMonth = (year, month) => {
 };
 
 const getFirstDayOfMonth = (year, month) => {
-    // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
     return new Date(year, month, 1).getDay();
 };
 
@@ -29,7 +27,6 @@ const months = [
     "Januari", "Februari", "Maret", "April", "Mei", "Juni",
     "Juli", "Agustus", "September", "Oktober", "November", "Desember"
 ];
-// --- Akhir Fungsi utilitas Tanggal ---
 
 // Komponen Notifikasi Sukses Sederhana
 const SuccessNotification = ({ show, message, onClose }) => {
@@ -56,7 +53,6 @@ const SuccessNotification = ({ show, message, onClose }) => {
 
 // Komponen Kalender Minimalis yang Lengkap (Dinamis)
 const MinimalistCalendar = ({ onSelectDate, initialDate }) => {
-    // State untuk bulan dan tahun yang sedang dilihat
     const [currentDate, setCurrentDate] = React.useState(initialDate || new Date());
     const currentMonthIndex = currentDate.getMonth();
     const currentYear = currentDate.getFullYear();
@@ -66,16 +62,14 @@ const MinimalistCalendar = ({ onSelectDate, initialDate }) => {
     const daysInMonth = getDaysInMonth(currentYear, currentMonthIndex);
     const firstDay = getFirstDayOfMonth(currentYear, currentMonthIndex);
 
-    // Membuat array tanggal dalam bulan
     const calendarDays = [];
     for (let i = 0; i < firstDay; i++) {
-        calendarDays.push(null); // Placeholder untuk hari sebelum tanggal 1
+        calendarDays.push(null);
     }
     for (let i = 1; i <= daysInMonth; i++) {
         calendarDays.push(i);
     }
 
-    // Fungsi untuk navigasi bulan
     const handlePrevMonth = () => {
         setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
     };
@@ -91,12 +85,15 @@ const MinimalistCalendar = ({ onSelectDate, initialDate }) => {
         }
     };
     
-    // Anggap tanggal 15 adalah tanggal yang dipilih sebelumnya (untuk styling)
-    const simulatedSelectedDay = 15;
+    const today = new Date();
+    const isToday = (day) => {
+        return day === today.getDate() && 
+               currentMonthIndex === today.getMonth() && 
+               currentYear === today.getFullYear();
+    };
 
     return (
         <div className="bg-white p-4 rounded-lg shadow-2xl border border-gray-100 w-full">
-            {/* Header Bulan dan Tahun */}
             <div className="flex justify-between items-center mb-4">
                 <button 
                     onClick={handlePrevMonth}
@@ -117,21 +114,19 @@ const MinimalistCalendar = ({ onSelectDate, initialDate }) => {
                 </button>
             </div>
 
-            {/* Nama Hari */}
             <div className="grid grid-cols-7 text-xs font-semibold text-gray-600 mb-2">
                 {daysOfWeek.map(day => (
                     <div key={day} className="text-center">{day}</div>
                 ))}
             </div>
 
-            {/* Tanggal */}
             <div className="grid grid-cols-7 gap-1">
                 {calendarDays.map((date, index) => (
                     <div 
                         key={index} 
                         className={`text-center text-sm p-1.5 rounded-full cursor-pointer transition 
                             ${date === null ? 'invisible' : ''}
-                            ${date === simulatedSelectedDay && currentMonthIndex === new Date().getMonth() && currentYear === new Date().getFullYear() 
+                            ${isToday(date) 
                                 ? 'bg-black text-white font-bold' 
                                 : date !== null ? 'hover:bg-gray-200' : ''}
                         `}
@@ -145,39 +140,37 @@ const MinimalistCalendar = ({ onSelectDate, initialDate }) => {
     );
 };
 
-
 // Komponen Modal Tanggal Pencairan yang Diperbarui
 const DatePickerModal = ({ show, onClose, onConfirm, bukuId }) => {
     const [selectedDate, setSelectedDate] = React.useState('');
+    const [selectedDateRaw, setSelectedDateRaw] = React.useState(''); // ✅ Simpan format YYYY-MM-DD
     const [showCalendar, setShowCalendar] = React.useState(false);
 
     if (!show) return null;
 
-    // FUNGSI UNTUK MENGUBAH TANGGAL
+    // ✅ FUNGSI UNTUK MENGUBAH TANGGAL
     const handleDateSelect = (dateString) => {
-        // Menggunakan fungsi bawaan Date untuk memformat
+        // Simpan format asli untuk dikirim ke backend
+        setSelectedDateRaw(dateString);
+        
+        // Format untuk tampilan: DD/MM/YYYY
         const dateObj = new Date(dateString);
-        // Format: DD/MM/YYYY
         const formattedDate = `${dateObj.getDate().toString().padStart(2, '0')}/${(dateObj.getMonth() + 1).toString().padStart(2, '0')}/${dateObj.getFullYear()}`;
         
         setSelectedDate(formattedDate);
-        setShowCalendar(false); // Sembunyikan kalender setelah tanggal dipilih
+        setShowCalendar(false);
     };
 
     return (
-        // LATAR BELAKANG yang diperbaiki: Menggunakan bg-gray-900/40 untuk latar belakang semi-transparan 
-        // sehingga halaman di belakangnya tetap terlihat namun diblur.
         <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/40 backdrop-blur-sm"
             onClick={onClose}
         >
-            {/* Modal Content */}
             <div
                 className="bg-white rounded-lg shadow-xl w-full max-w-sm mx-4"
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="p-6">
-                    {/* Header Modal */}
                     <div className="flex justify-between items-center mb-6">
                         <h2 className="text-xl font-semibold text-gray-900">
                             Tentukan Tanggal Pencairan Penghargaan
@@ -187,7 +180,6 @@ const DatePickerModal = ({ show, onClose, onConfirm, bukuId }) => {
                         </button>
                     </div>
 
-                    {/* Date Picker Input SIMULASI */}
                     <div className="mb-8 relative">
                         <div
                             className="flex items-center border border-gray-300 rounded-md p-2 w-full cursor-pointer bg-white"
@@ -199,7 +191,6 @@ const DatePickerModal = ({ show, onClose, onConfirm, bukuId }) => {
                             </span>
                         </div>
                         
-                        {/* KALENDER LENGKAP MUNCUL */}
                         {showCalendar && (
                             <div className="absolute top-full left-0 mt-2 z-50 w-full">
                                 <MinimalistCalendar onSelectDate={handleDateSelect} />
@@ -207,7 +198,6 @@ const DatePickerModal = ({ show, onClose, onConfirm, bukuId }) => {
                         )}
                     </div>
 
-                    {/* Footer / Buttons */}
                     <div className="flex justify-end space-x-3">
                         <Button
                             variant="outline"
@@ -218,10 +208,11 @@ const DatePickerModal = ({ show, onClose, onConfirm, bukuId }) => {
                         </Button>
                         <Button
                             onClick={() => {
-                                onConfirm(bukuId);
+                                // ✅ Kirim tanggal dalam format YYYY-MM-DD
+                                onConfirm(bukuId, selectedDateRaw);
                             }}
                             className="bg-black hover:bg-gray-800 text-white"
-                            disabled={!selectedDate} // Nonaktifkan jika tanggal belum dipilih
+                            disabled={!selectedDate}
                         >
                             Kirim
                         </Button>
@@ -232,7 +223,7 @@ const DatePickerModal = ({ show, onClose, onConfirm, bukuId }) => {
     );
 };
 
-// Komponen BukuItem tetap sama
+// Komponen BukuItem
 const BukuItem = ({ id, judul, penulis, status, tanggal, onClick }) => (
     <div
         className="bg-white rounded-lg shadow-md mb-2 cursor-pointer hover:shadow-lg transition-shadow"
@@ -271,7 +262,7 @@ const BukuItem = ({ id, judul, penulis, status, tanggal, onClick }) => (
     </div>
 );
 
-// Komponen SelectDropdown tetap sama
+// Komponen SelectDropdown
 const SelectDropdown = ({ label, options, className = "", onChange }) => (
     <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -320,22 +311,37 @@ export default function KitaPage({ submissions = [] }) {
         setShowSuccess(true);
     };
     
-    const handleConfirm = (id) => {
-        // 1. Tutup modal
-        closeModal();
-        
-        // 2. Tampilkan notifikasi "Berhasil dikirim"
-        triggerSuccessNotification();
-
-        // Logika pengiriman data ke backend dilakukan di sini
-        // Misalnya: 
-        // router.post('/api/pencairan', { buku_id: id, tanggal: selectedDate });
-    };
+    // ✅ FUNGSI UNTUK SUBMIT DATA KE BACKEND
+   // ✅ FUNGSI UNTUK SUBMIT DATA KE BACKEND
+const handleConfirm = (id, tanggalPencairan) => {
+    // Tutup modal
+    closeModal();
+    
+    // Kirim data ke backend menggunakan Inertia router
+    router.post('/hrd/pencairan', {
+        book_id: id,
+        payment_date: tanggalPencairan
+    }, {
+        preserveState: false, // ✅ Force reload halaman
+        onSuccess: (page) => {
+            // Tampilkan notifikasi sukses
+            triggerSuccessNotification();
+            
+            // ✅ Reload halaman setelah 2 detik
+            setTimeout(() => {
+                router.reload({ only: ['submissions'] });
+            }, 2000);
+        },
+        onError: (errors) => {
+            console.error('Error submitting payment:', errors);
+            alert('Gagal mengirim data pencairan. Silakan coba lagi.');
+        }
+    });
+};
 
     const handleBukuClick = (id) => {
         openModal(id);
     };
-    // =======================================
 
     // Filter dan format data untuk ditampilkan
     const formattedSubmissions = submissions
@@ -351,8 +357,6 @@ export default function KitaPage({ submissions = [] }) {
         <AppLayout>
             <Card className="h-full border-none shadow-none">
                 <CardHeader className="p-0 space-y-4">
-                    
-
                     <div className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2 items-center px-4">
                         <div className="flex-1 flex border border-gray-300 rounded-md overflow-hidden h-10 w-full">
                             <input
@@ -415,7 +419,6 @@ export default function KitaPage({ submissions = [] }) {
                 </CardContent>
             </Card>
 
-            {/* Komponen Modal */}
             <DatePickerModal
                 show={showModal}
                 onClose={closeModal}
@@ -423,7 +426,6 @@ export default function KitaPage({ submissions = [] }) {
                 bukuId={selectedBukuId}
             />
 
-            {/* Komponen Notifikasi Sukses */}
             <SuccessNotification 
                 show={showSuccess}
                 message="Berhasil dikirim"

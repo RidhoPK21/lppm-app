@@ -19,7 +19,7 @@ class DatabaseSeeder extends Seeder
 
         // 2. Buat User Utama (Dosen yang Login)
         User::create([
-            'id' => $mainUserId, 
+            'id' => $mainUserId,
             'name' => 'Abdullah Ubaid',
             'email' => 'dosen@del.ac.id',
             'password' => Hash::make('password'),

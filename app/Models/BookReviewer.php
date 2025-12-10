@@ -2,19 +2,29 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class BookReviewer extends Model
 {
-    // Sesuaikan nama tabel jika berbeda
-    protected $table = 'book_reviewers'; 
+    use HasFactory;
+
+    protected $table = 'book_reviewers';
 
     protected $fillable = [
         'book_submission_id',
-        'user_id', // ID Dosen Reviewer
+        'user_id',
         'note',
-        'status', // e.g., PENDING, APPROVED, REJECTED
+        'status',
+        'reviewed_at',
+        'invited_by',
+        'invited_at',
+    ];
+
+    protected $casts = [
+        'reviewed_at' => 'datetime',
+        'invited_at' => 'datetime',
     ];
 
     public function book(): BelongsTo
@@ -24,6 +34,26 @@ class BookReviewer extends Model
 
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id', 'id');
+    }
+
+    public function inviter(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'invited_by');
+    }
+
+    public function scopePending($query)
+    {
+        return $query->where('status', 'PENDING');
+    }
+
+    public function scopeAccepted($query)
+    {
+        return $query->where('status', 'ACCEPTED');
+    }
+
+    public function scopeRejected($query)
+    {
+        return $query->where('status', 'REJECTED');
     }
 }

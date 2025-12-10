@@ -402,7 +402,7 @@
                         // Menggunakan variabel yang sama (file hanya dibaca sekali jika di-cache, tapi di blade PHP ini dieksekusi lagi)
                         if (file_exists($imagePath)) {
                             $imageData = base64_encode(file_get_contents($imagePath));
-                            $src = 'data:image/png;base64,' . $imageData;
+                            $src = 'data:img/png;base64,' . $imageData;
                             echo '<img src="' . $src . '" alt="Logo IT Del" style="width: 80px; height: auto;">';
                         }
                     ?>

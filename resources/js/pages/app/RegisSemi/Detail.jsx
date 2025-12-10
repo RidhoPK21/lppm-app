@@ -31,6 +31,7 @@ import {
     Loader2,
     FileType,
     AlertCircle,
+    MessageSquare,
 } from "lucide-react";
 
 // Helper Component untuk Form Read-Only
@@ -335,13 +336,14 @@ export default function DetailRegisSemi({ book }) {
                     >
                         <Users className="mr-2 h-5 w-5" /> Minta Penilaian
                     </Button>
-                    <Button
-                        variant="outline"
-                        onClick={() => handleAction("result")}
-                        className="h-12 border-gray-400"
-                    >
-                        <ClipboardList className="mr-2 h-5 w-5" /> Lihat Hasil
-                    </Button>
+                   <Button
+    onClick={() => router.visit(route('regis-semi.review-results', book.id))}
+    variant="outline"
+    className="border-2 border-black hover:bg-black hover:text-white"
+>
+    <MessageSquare className="h-4 w-4 mr-2" />
+    Lihat Hasil 
+</Button>
                 </div>
             </div>
 
