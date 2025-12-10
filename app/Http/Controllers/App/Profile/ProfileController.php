@@ -3,10 +3,9 @@
 namespace App\Http\Controllers\App\Profile;
 
 use App\Http\Controllers\Controller;
+use App\Models\Profile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Http;
-use App\Models\Profile;
 use Illuminate\Support\Facades\Log;
 
 class ProfileController extends Controller
@@ -25,21 +24,21 @@ class ProfileController extends Controller
             ['user_id' => $userId],
             [
                 // Gunakan name dari Auth user saat pertama kali dibuat
-                'name' => $user->name ?? 'Nama Tidak Ditemukan', 
+                'name' => $user->name ?? 'Nama Tidak Ditemukan',
             ]
         );
 
         // Merge data untuk frontend
         $merged = [
             // Data dari Auth User (Sumber utama, tidak bisa diedit)
-            'name' => $user->name ?? $profile->name ?? 'User Default', 
+            'name' => $user->name ?? $profile->name ?? 'User Default',
             'email' => $user->email ?? 'email@kosong.com',
             'photo' => $user->photo ?? '/images/default-avatar.png',
-            
-            // Data yang bisa diedit (dari DB Profile). 
+
+            // Data yang bisa diedit (dari DB Profile).
             // Menggunakan nama field yang sama dengan di database (snake_case)
-            // Namun, untuk kompatibilitas dengan frontend yang sudah ada, 
-            // kita akan menggunakan nama aslinya (NIDN, ProgramStudi, dll.) 
+            // Namun, untuk kompatibilitas dengan frontend yang sudah ada,
+            // kita akan menggunakan nama aslinya (NIDN, ProgramStudi, dll.)
             // yang diambil dari atribut Eloquent yang sesuai (nidn, prodi, dll.).
             // Eloquent secara otomatis akan mapping ke atribut yang benar.
             // **PENTING: Di sini kita menggunakan nama atribut Eloquent (yang sudah diperbaiki ke snake_case)**
@@ -52,31 +51,31 @@ class ProfileController extends Controller
         Log::info('Profile Data Merged:', $merged);
 
         return inertia('Profile/Index', [
-            'user' => $merged
+            'user' => $merged,
         ]);
     }
 
     /**
      * Update data profil user (hanya field editable)
      */
-   public function update(Request $request)
+    public function update(Request $request)
     {
         $user = Auth::user();
 
         $validated = $request->validate([
             'NIDN' => 'nullable|string|max:255',
-            'Prodi' => 'nullable|string|max:255', 
+            'Prodi' => 'nullable|string|max:255',
             'SintaID' => 'nullable|string|max:255',
             'ScopusID' => 'nullable|string|max:255',
         ]);
 
         $profile = Profile::firstOrNew(['user_id' => $user->id]);
-        
-        $profile->nidn = $validated['NIDN'] ?? null;         
-        $profile->prodi = $validated['Prodi'] ?? null;       
-        $profile->sinta_id = $validated['SintaID'] ?? null;  
+
+        $profile->nidn = $validated['NIDN'] ?? null;
+        $profile->prodi = $validated['Prodi'] ?? null;
+        $profile->sinta_id = $validated['SintaID'] ?? null;
         $profile->scopus_id = $validated['ScopusID'] ?? null;
-        
+
         $profile->save();
 
         // 🚨 PERBAIKAN UTAMA: Ganti response()->json dengan redirect() atau Inertia::location()

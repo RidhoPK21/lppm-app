@@ -104,6 +104,7 @@ class AuthController extends Controller
         if (! $resLoginInfo || $resLoginInfo->status != 'success') {
             ToolsHelper::setAuthToken('');
             Auth::logout();
+
             return redirect()->route('auth.logout');
         }
 
@@ -181,19 +182,17 @@ class AuthController extends Controller
     }
 
     // ================= Helper: Login Laravel =================
-   private function loginLaravelUser($apiUser)
-{
-    $user = User::updateOrCreate(
-        ['email' => $apiUser->email],  // cek berdasarkan email
-        [
-            'id' => $apiUser->id,       // update id jika ada perubahan
-            'name' => $apiUser->name,
-            'password' => bcrypt('dummy-password'), // tidak dipakai tapi wajib ada
-        ]
-    );
+    private function loginLaravelUser($apiUser)
+    {
+        $user = User::updateOrCreate(
+            ['email' => $apiUser->email],  // cek berdasarkan email
+            [
+                'id' => $apiUser->id,       // update id jika ada perubahan
+                'name' => $apiUser->name,
+                'password' => bcrypt('dummy-password'), // tidak dipakai tapi wajib ada
+            ]
+        );
 
-    Auth::login($user);
-}
-
-
+        Auth::login($user);
+    }
 }

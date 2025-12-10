@@ -26,20 +26,18 @@ class TodoController extends Controller
 
         return Inertia::render('app/todo/todo-page', [
             // LAZY: hanya dipanggil jika dibutuhkan di sisi front-end
-            'todoList' => fn() =>
-                TodoModel::query()
-                    ->where('user_id', $auth->id)
-                    ->when($search, function ($query) use ($search) {
-                        $lower = strtolower($search);
+            'todoList' => fn () => TodoModel::query()
+                ->where('user_id', $auth->id)
+                ->when($search, function ($query) use ($search) {
+                    $lower = strtolower($search);
 
-                        $query->where(fn($q) =>
-                            $q
-                                ->whereRaw('LOWER(title) LIKE ?', ["%{$lower}%"])
-                                ->orWhereRaw('LOWER(description) LIKE ?', ["%{$lower}%"])
-                        );
-                    })
-                    ->orderByDesc('created_at')   // Diperbaiki
-                    ->paginate($perPage),
+                    $query->where(fn ($q) => $q
+                        ->whereRaw('LOWER(title) LIKE ?', ["%{$lower}%"])
+                        ->orWhereRaw('LOWER(description) LIKE ?', ["%{$lower}%"])
+                    );
+                })
+                ->orderByDesc('created_at')   // Diperbaiki
+                ->paginate($perPage),
 
             // ALWAYS: selalu dikirim
             'pageName' => Inertia::always('Todo List'),
@@ -56,7 +54,7 @@ class TodoController extends Controller
     {
         $auth = $request->attributes->get('auth');
         $isEditor = $this->checkIsEditor($auth);
-        if (!$isEditor) {
+        if (! $isEditor) {
             return back()->with('error', 'Anda tidak memiliki izin untuk mengolah todo.');
         }
 
@@ -71,7 +69,7 @@ class TodoController extends Controller
                 ->where('user_id', $auth->id)
                 ->first();
 
-            if (!$todo) {
+            if (! $todo) {
                 return back()->with('error', 'Todo tidak ditemukan.');
             }
 
@@ -100,7 +98,7 @@ class TodoController extends Controller
         $auth = $request->attributes->get('auth');
         $isEditor = $this->checkIsEditor($auth);
 
-        if (!$isEditor) {
+        if (! $isEditor) {
             return back()->with('error', 'Anda tidak memiliki izin untuk mengolah todo.');
         }
 

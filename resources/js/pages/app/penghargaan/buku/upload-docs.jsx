@@ -13,7 +13,7 @@ import {
     CardFooter,
 } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Info, ArrowRight, FileText } from "lucide-react";
+import { Info, ArrowRight, FileText, AlertCircle } from "lucide-react";
 import { route } from "ziggy-js";
 
 export default function UploadDocsPage({ bookId, bookTitle }) {
@@ -45,7 +45,9 @@ export default function UploadDocsPage({ bookId, bookTitle }) {
     }
 
     // Cek apakah semua link sudah diisi
-    const allLinksValid = data.links.every(link => link && link.trim() !== "");
+    const allLinksValid = data.links.every(
+        (link) => link && link.trim() !== ""
+    );
 
     function handleSubmit(e) {
         e.preventDefault();
@@ -53,7 +55,7 @@ export default function UploadDocsPage({ bookId, bookTitle }) {
             onSuccess: () => {
                 // Setelah berhasil simpan, redirect ke detail page
                 // PDF sudah otomatis di-generate di backend
-            }
+            },
         });
     }
 
@@ -62,7 +64,8 @@ export default function UploadDocsPage({ bookId, bookTitle }) {
             <Head title="Unggah Dokumen Pendukung" />
 
             <div className="max-w-2xl mx-auto w-full space-y-6">
-                <Alert className="bg-blue-50 border-blue-200 text-blue-800">
+                {/* INFO ALERT: Menggunakan warna tema Primary/Info */}
+                <Alert className="bg-primary/10 text-primary border-primary/20">
                     <Info className="h-4 w-4" />
                     <AlertTitle>Langkah Terakhir!</AlertTitle>
                     <AlertDescription>
@@ -70,7 +73,6 @@ export default function UploadDocsPage({ bookId, bookTitle }) {
                         <strong>"{bookTitle}"</strong>. <br />
                         Silakan lampirkan link Google Drive untuk setiap dokumen
                         persyaratan di bawah ini. <br />
-                       
                     </AlertDescription>
                 </Alert>
 
@@ -93,7 +95,9 @@ export default function UploadDocsPage({ bookId, bookTitle }) {
                                         className="text-base font-medium"
                                     >
                                         {documentLabels[index]}{" "}
-                                        <span className="text-red-500">*</span>
+                                        <span className="text-destructive">
+                                            *
+                                        </span>
                                     </Label>
                                     <Input
                                         id={`link_${index}`}
@@ -108,17 +112,19 @@ export default function UploadDocsPage({ bookId, bookTitle }) {
                                     />
                                     {/* Menampilkan error spesifik per baris */}
                                     {errors[`links.${index}`] && (
-                                        <p className="text-sm text-red-500">
+                                        <p className="text-sm text-destructive">
                                             {errors[`links.${index}`]}
                                         </p>
                                     )}
                                 </div>
                             ))}
 
+                            {/* PERBAIKAN: Menggunakan div untuk global errors.links */}
                             {errors.links && (
-                                <p className="text-sm text-red-500 font-medium mt-2 bg-red-50 p-2 rounded">
-                                    ⚠️ {errors.links}
-                                </p>
+                                <div className="p-3 bg-destructive/10 text-destructive border border-destructive/20 rounded-md text-sm font-medium">
+                                    <AlertCircle className="h-4 w-4 inline mr-2 shrink-0" />
+                                    {errors.links}
+                                </div>
                             )}
                         </CardContent>
                         <CardFooter className="flex justify-end bg-muted/10 py-4 gap-2">
@@ -131,17 +137,14 @@ export default function UploadDocsPage({ bookId, bookTitle }) {
                             <Button
                                 type="submit"
                                 disabled={processing || !allLinksValid}
-                                className="bg-black text-white hover:bg-gray-800"
+                                variant="default"
                             >
                                 {processing ? (
-                                    <>
-                                       
-                                        Menyimpan & Generate PDF...
-                                    </>
+                                    <>Menyimpan & Generate PDF...</>
                                 ) : (
                                     <>
                                         <FileText className="mr-2 h-4 w-4" />
-                                        Simpan 
+                                        Simpan
                                     </>
                                 )}
                             </Button>
@@ -150,9 +153,10 @@ export default function UploadDocsPage({ bookId, bookTitle }) {
                 </Card>
 
                 {!allLinksValid && (
-                    <Alert className="bg-yellow-50 border-yellow-200">
+                    <Alert className="bg-amber-50 text-amber-800 border-amber-200">
+                        <AlertCircle className="h-4 w-4 shrink-0" />
                         <AlertDescription>
-                            ⚠️ Harap isi semua 5 link dokumen untuk melanjutkan.
+                            Harap isi semua 5 link dokumen untuk melanjutkan.
                         </AlertDescription>
                     </Alert>
                 )}

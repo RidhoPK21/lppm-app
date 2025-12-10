@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
 class SubmissionLog extends Model
 {
@@ -15,6 +15,6 @@ class SubmissionLog extends Model
         'book_submission_id',
         'user_id',
         'action',
-        'note'
+        'note',
     ];
 }

@@ -1,18 +1,16 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Auth\AuthController;
-use App\Http\Controllers\App\Home\HomeController;
+use App\Http\Controllers\Api\DosenController;
 use App\Http\Controllers\App\HakAkses\HakAksesController;
-use App\Http\Controllers\App\Todo\TodoController;
-use App\Http\Controllers\App\RegisSemi\RegisSemiController;
+use App\Http\Controllers\App\Home\HomeController;
+use App\Http\Controllers\App\HRD\HRDController;
+use App\Http\Controllers\App\Notifikasi\NotificationController;
 use App\Http\Controllers\App\Penghargaan\PenghargaanBukuController;
 use App\Http\Controllers\App\Profile\ProfileController;
-use App\Http\Controllers\App\Notifikasi\NotificationController;
-use App\Http\Controllers\App\HRD\HRDController;
-use App\Http\Controllers\Api\DosenController;
-
-use Inertia\Inertia;
+use App\Http\Controllers\App\RegisSemi\RegisSemiController;
+use App\Http\Controllers\App\Todo\TodoController;
+use App\Http\Controllers\Auth\AuthController;
+use Illuminate\Support\Facades\Route;
 
 Route::middleware(['throttle:req-limit', 'handle.inertia'])->group(function () {
 
@@ -54,7 +52,7 @@ Route::middleware(['throttle:req-limit', 'handle.inertia'])->group(function () {
         });
 
         Route::get('/hrd/home', [RegisSemiController::class, 'indexHRD'])->name('hrd.home');
-        
+
         // ------------------- HAK AKSES -------------------
         Route::prefix('hak-akses')->group(function () {
             Route::get('/', [HakAksesController::class, 'index'])->name('hak-akses');
@@ -75,7 +73,7 @@ Route::middleware(['throttle:req-limit', 'handle.inertia'])->group(function () {
             // Halaman utama
             Route::get('/', [RegisSemiController::class, 'index'])->name('index');
             Route::get('/buku-masuk', [RegisSemiController::class, 'indexBukuMasuk'])->name('indexx');
-            
+
             Route::post('/change', [RegisSemiController::class, 'postChange'])->name('change');
             Route::post('/delete', [RegisSemiController::class, 'postDelete'])->name('delete');
             Route::post('/delete-selected', [RegisSemiController::class, 'postDeleteSelected'])->name('delete-selected');
@@ -118,8 +116,12 @@ Route::middleware(['throttle:req-limit', 'handle.inertia'])->group(function () {
             Route::get('/buku/{id}/download-pdf', [PenghargaanBukuController::class, 'downloadPdf'])
                 ->name('app.penghargaan.buku.download-pdf');
 
-            Route::get('/dosen', function () { return 'Penghargaan Dosen UI (Dummy)'; })->name('penghargaan.dosen');
-            Route::get('/penelitian', function () { return 'Penghargaan Penelitian UI (Dummy)'; })->name('penghargaan.penelitian');
+            Route::get('/dosen', function () {
+                return 'Penghargaan Dosen UI (Dummy)';
+            })->name('penghargaan.dosen');
+            Route::get('/penelitian', function () {
+                return 'Penghargaan Penelitian UI (Dummy)';
+            })->name('penghargaan.penelitian');
         });
 
         // ------------------- HRD -------------------
@@ -130,7 +132,9 @@ Route::middleware(['throttle:req-limit', 'handle.inertia'])->group(function () {
 
         // ------------------- PENGHARGAAN MAHASISWA -------------------
         Route::prefix('penghargaan')->middleware('role:Mahasiswa')->group(function () {
-            Route::get('/mahasiswa', function () { return 'Penghargaan Mahasiswa UI (Dummy)'; })->name('penghargaan.mahasiswa');
+            Route::get('/mahasiswa', function () {
+                return 'Penghargaan Mahasiswa UI (Dummy)';
+            })->name('penghargaan.mahasiswa');
         });
 
         // ------------------- NOTIFIKASI -------------------
@@ -152,6 +156,6 @@ Route::middleware(['throttle:req-limit', 'handle.inertia'])->group(function () {
             ->name('book-submissions.preview-pdf');
         Route::get('/book-submissions/{id}/download-pdf', [RegisSemiController::class, 'downloadPdf'])
             ->name('book-submissions.download-pdf');
-        
+
     });
 });

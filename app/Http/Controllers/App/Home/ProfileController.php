@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\App\Profile;
 
 use App\Http\Controllers\Controller;
+use App\Models\Profile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Models\Profile;
 use Illuminate\Support\Facades\Log;
 
 class ProfileController extends Controller
@@ -32,7 +32,7 @@ class ProfileController extends Controller
             'name' => $user->name ?? $profile->name ?? 'User Default',
             'email' => $user->email ?? 'email@kosong.com',
             'photo' => $user->photo ?? '/images/default-avatar.png',
-            
+
             // Data yang bisa diedit dari DB (menggunakan nama field snake_case)
             'NIDN' => $profile->nidn ?? '',
             'ProgramStudi' => $profile->prodi ?? '',
@@ -43,7 +43,7 @@ class ProfileController extends Controller
         Log::info('Profile Data Merged:', $merged);
 
         return inertia('Profile/Index', [
-            'user' => $merged
+            'user' => $merged,
         ]);
     }
 
@@ -68,19 +68,19 @@ class ProfileController extends Controller
 
         // Ambil atau buat profile
         $profile = Profile::firstOrNew(['user_id' => $user->id]);
-        
+
         // Update semua field yang tervalidasi
         $profile->name = $validated['name'] ?? $profile->name;
         $profile->nidn = $validated['NIDN'] ?? null;
         $profile->prodi = $validated['Prodi'] ?? null;
         $profile->sinta_id = $validated['SintaID'] ?? null;
         $profile->scopus_id = $validated['ScopusID'] ?? null;
-        
+
         $saved = $profile->save();
 
         Log::info('Profile Save Result:', [
             'success' => $saved,
-            'profile_data' => $profile->toArray()
+            'profile_data' => $profile->toArray(),
         ]);
 
         if ($saved) {

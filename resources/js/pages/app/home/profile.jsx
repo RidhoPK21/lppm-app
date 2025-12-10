@@ -1,16 +1,18 @@
 import AppLayout from "@/layouts/app-layout";
+import { Button } from "@/components/ui/button";
+import { Head } from "@inertiajs/react";
 
 // Komponen helper untuk baris data
 const DataRow = ({ label, value, editable = false }) => (
-    <div className="flex justify-between items-center py-4 px-4 border-b border-gray-200">
-        <div className="text-gray-600 font-medium">{label}</div>
+    <div className="flex justify-between items-center py-4 px-4 border-b border-border">
+        <div className="text-muted-foreground font-medium">{label}</div>
         <div className="flex items-center space-x-2">
-            <span className="text-gray-800">{value || '...'}</span> 
+            <span className="text-foreground">{value || "..."}</span>
             {editable && (
                 // Ikon Pensil SVG inline
                 <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    className="h-4 w-4 text-gray-400 cursor-pointer hover:text-gray-600"
+                    className="h-4 w-4 text-muted-foreground cursor-pointer hover:text-foreground"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -28,35 +30,22 @@ const DataRow = ({ label, value, editable = false }) => (
 );
 
 export default function Profile({ user, error }) {
-    const userData = user || {}; 
+    const userData = user || {};
 
-    const { 
-        name, 
-        email, 
-        NIDN,
-        ProgramStudi,
-        SintaID,
-        ScopusID,
-        photo
-    } = userData;
+    const { name, email, NIDN, ProgramStudi, SintaID, ScopusID, photo } =
+        userData;
 
     return (
         <AppLayout>
-            {/* PERUBAHAN UTAMA:
-               Menghapus 'max-w-3xl' dari div utama dan menggantinya dengan 'max-w-screen-xl mx-auto' 
-               atau 'max-w-full' untuk lebar yang jauh lebih besar. 
-               Saya akan menggunakan 'max-w-full' agar hanya dibatasi oleh AppLayout dan padding.
-            */}
-            <div className="p-6"> 
-                {/* Kontainer baru untuk memastikan konten tetap memiliki batas maksimal yang besar, 
-                   misalnya 6xl atau 7xl, atau bahkan 8xl. Saya pilih max-w-7xl untuk sangat lebar. */}
-                <div className="max-w-7xl mx-auto"> 
+            <Head title="Profil Pengguna" />
 
+            <div className="p-6">
+                <div className="max-w-7xl mx-auto">
                     {/* Judul Halaman: Pengaturan Akun */}
-                    <h1 className="text-lg font-medium text-gray-800 flex items-center mb-8">
+                    <h1 className="text-lg font-medium text-foreground flex items-center mb-8">
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
-                            className="h-5 w-5 mr-2 text-gray-500"
+                            className="h-5 w-5 mr-2 text-muted-foreground"
                             fill="none"
                             viewBox="0 0 24 24"
                             stroke="currentColor"
@@ -77,25 +66,27 @@ export default function Profile({ user, error }) {
                     </h1>
 
                     {error && (
-                        <div className="bg-red-100 text-red-700 p-3 rounded-md mb-4">
+                        <div className="bg-destructive/10 text-destructive border border-destructive/20 p-3 rounded-md mb-4">
                             {error}
                         </div>
                     )}
 
                     {/* Bagian Foto Profil */}
                     <div className="flex flex-col items-center mb-10">
-                        <p className="text-sm text-gray-500 mb-4">Add profile picture</p>
+                        <p className="text-sm text-muted-foreground mb-4">
+                            Add profile picture
+                        </p>
                         <div className="relative group">
                             <img
-                                src={photo || "/images/default-profile.png"} 
+                                src={photo || "/images/default-profile.png"}
                                 alt="Foto Profil"
-                                className="w-24 h-24 rounded-full object-cover border-2 border-gray-300 shadow"
+                                className="w-24 h-24 rounded-full object-cover border-2 border-input shadow"
                             />
                             {/* Ikon Pensil di atas foto profil */}
-                            <div className="absolute top-0 right-0 p-1 bg-white rounded-full border border-gray-300 cursor-pointer shadow-md">
+                            <div className="absolute top-0 right-0 p-1 bg-background rounded-full border border-input cursor-pointer shadow-md">
                                 <svg
                                     xmlns="http://www.w3.org/2000/svg"
-                                    className="h-4 w-4 text-gray-500"
+                                    className="h-4 w-4 text-muted-foreground"
                                     fill="none"
                                     viewBox="0 0 24 24"
                                     stroke="currentColor"
@@ -109,27 +100,40 @@ export default function Profile({ user, error }) {
                                 </svg>
                             </div>
                         </div>
-                        <p className="text-sm text-gray-500 mt-2">Edit user profile</p>
+                        <p className="text-sm text-muted-foreground mt-2">
+                            Edit user profile
+                        </p>
                     </div>
 
                     {/* Bagian Data Pengguna */}
-                    <div className="border border-gray-200 rounded-lg bg-white shadow-sm divide-y divide-gray-200">
+                    <div className="border border-border rounded-lg bg-card shadow-sm divide-y divide-border">
                         <DataRow label="Nama" value={name} />
-                        <DataRow label="Akun Email" value={email} /> 
-                        <DataRow label="NIDN" value={NIDN} /> 
+                        <DataRow label="Akun Email" value={email} />
+                        <DataRow label="NIDN" value={NIDN} />
                         <DataRow label="Program Studi" value={ProgramStudi} />
-                        <DataRow label="Sinta ID" value={SintaID} editable={true} />
-                        <DataRow label="Scopus ID" value={ScopusID} editable={true} />
+                        <DataRow
+                            label="Sinta ID"
+                            value={SintaID}
+                            editable={true}
+                        />
+                        <DataRow
+                            label="Scopus ID"
+                            value={ScopusID}
+                            editable={true}
+                        />
                     </div>
 
                     {/* Tombol Aksi */}
                     <div className="flex justify-between items-center mt-8">
-                        <button className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition duration-150">
+                        <Button variant="outline" className="h-10 px-6">
                             Kembali
-                        </button>
-                        <button className="px-6 py-2 bg-black text-white rounded-lg font-medium hover:bg-gray-800 transition duration-150 shadow-md">
+                        </Button>
+                        <Button
+                            variant="default"
+                            className="h-10 px-6 font-medium shadow-md"
+                        >
                             Simpan Perubahan
-                        </button>
+                        </Button>
                     </div>
                 </div>
             </div>
