@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Head, usePage } from "@inertiajs/react";
+import { Head } from "@inertiajs/react";
 import AppLayout from "@/layouts/app-layout";
 import {
     Card,

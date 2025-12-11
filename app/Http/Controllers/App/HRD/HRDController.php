@@ -31,6 +31,7 @@ class HRDController extends Controller
                     'book_submissions.status',
                     'users.name as nama_dosen'
                 )
+                // Pastikan tipe data kolom user_id di kedua tabel cocok (sama-sama UUID atau Integer)
                 ->join('users', 'book_submissions.user_id', '=', 'users.id')
                 ->where('book_submissions.status', 'APPROVED_CHIEF') // ✅ Hanya APPROVED_CHIEF
                 ->orderBy('book_submissions.created_at', 'desc')
@@ -53,9 +54,9 @@ class HRDController extends Controller
             ]);
 
             // Sesuaikan string ini dengan lokasi file React Anda: 'app/home/kita-page.jsx'
-return Inertia::render('app/home/kita-page', [
-    'submissions' => $formattedBooks
-]);
+            return Inertia::render('app/home/kita-page', [
+                'submissions' => $formattedBooks,
+            ]);
 
         } catch (\Exception $e) {
             Log::error('Error loading HRD page', [
@@ -64,9 +65,9 @@ return Inertia::render('app/home/kita-page', [
             ]);
 
             // Sesuaikan string ini dengan lokasi file React Anda: 'app/home/kita-page.jsx'
-return Inertia::render('app/home/kita-page', [
-    'submissions' => $formattedBooks
-]);
+            return Inertia::render('app/home/kita-page', [
+                'submissions' => [], // Return array kosong jika error
+            ]);
         }
     }
 
@@ -75,8 +76,10 @@ return Inertia::render('app/home/kita-page', [
      */
     public function storePencairan(Request $request)
     {
+        // PERUBAHAN KECIL: Menghapus rule 'integer' pada book_id agar support UUID.
+        // Jika ID masih integer, ini tetap aman.
         $validated = $request->validate([
-            'book_id' => 'required|integer|exists:book_submissions,id',
+            'book_id' => 'required|exists:book_submissions,id',
             'payment_date' => 'required|date',
         ]);
 
@@ -120,6 +123,7 @@ return Inertia::render('app/home/kita-page', [
             ]);
 
             // Catat log aktivitas
+            // Auth::id() aman digunakan meskipun UUID (return string)
             SubmissionLog::create([
                 'book_submission_id' => $bookId,
                 'user_id' => Auth::id(),

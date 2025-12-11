@@ -26,7 +26,6 @@ import {
     CheckCircle,
     XCircle,
     Users,
-    ClipboardList,
     ExternalLink,
     Loader2,
     FileType,

@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory; // <--- Import
 use Illuminate\Database\Eloquent\Model;
 
 class RegisSemi extends Model
 {
-    use HasFactory;
+    use HasFactory, HasUuids;
 
     // Gunakan tabel yang sudah ada: book_reviewers
     protected $table = 'book_reviewers';
@@ -18,7 +19,6 @@ class RegisSemi extends Model
         'review_note',
         'review_date',
         'status',
-        // Tambahkan field untuk invited_at jika diperlukan
     ];
 
     protected $casts = [

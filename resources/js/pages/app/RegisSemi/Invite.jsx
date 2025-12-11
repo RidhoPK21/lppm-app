@@ -36,7 +36,6 @@ const Badge = ({ children, variant = "default", className = "" }) => {
         destructive:
             "bg-destructive/10 text-destructive border border-destructive/20",
         outline: "border border-input text-foreground",
-        // Menghapus blue, yellow, red, green hardcoded
     };
 
     // Peta lama ke varian baru
@@ -44,7 +43,7 @@ const Badge = ({ children, variant = "default", className = "" }) => {
     if (variant === "green" || variant === "blue") {
         variantKey = "success";
     } else if (variant === "red" || variant === "yellow") {
-        variantKey = "destructive"; // Atau buat 'warning' jika dibutuhkan
+        variantKey = "destructive";
     }
 
     const variantStyle = variants[variantKey] || variants.default;
@@ -139,7 +138,6 @@ export default function Invite({ book, availableReviewers = [], flash }) {
             setProcessingId(null);
         }
     };
-    // Menghapus handleInvite dan handleInviteAlternative karena handleInviteFinal sudah mencakup logika terbaik
 
     // Hitung statistik berdasarkan localReviewers
     const stats = {
@@ -173,7 +171,8 @@ export default function Invite({ book, availableReviewers = [], flash }) {
                         <p className="text-sm text-muted-foreground">
                             Cari dosen yang kompeten untuk menilai buku:{" "}
                             <span className="font-medium text-foreground">
-                                "{book.title}"
+                                {/* PERBAIKAN 1: &quot; pengganti " */}
+                                &quot;{book.title}&quot;
                             </span>
                         </p>
                     </div>
@@ -193,12 +192,10 @@ export default function Invite({ book, availableReviewers = [], flash }) {
                                 />
                             </div>
                             <Button
-                                // UBAH: Gunakan variant default (primary)
                                 variant={
                                     filterDosenOnly ? "default" : "outline"
                                 }
                                 size="sm"
-                                // UBAH: Hapus hardcoded green class
                                 className="h-12 whitespace-nowrap"
                                 onClick={() =>
                                     setFilterDosenOnly(!filterDosenOnly)
@@ -222,7 +219,6 @@ export default function Invite({ book, availableReviewers = [], flash }) {
                                 filteredReviewers.map((reviewer) => (
                                     <Card
                                         key={reviewer.user_id}
-                                        // UBAH: border-l-green-500 -> border-l-primary, bg-green-50/30 -> bg-primary/10
                                         className={`hover:border-primary/50 transition-colors ${
                                             reviewer.has_dosen_akses
                                                 ? "border-l-4 border-l-primary bg-primary/10"
@@ -233,12 +229,10 @@ export default function Invite({ book, availableReviewers = [], flash }) {
                                             <div className="flex items-start gap-4">
                                                 <Avatar className="h-10 w-10">
                                                     <AvatarImage
-                                                        // UBAH: background=4ade80 -> gunakan warna primary (atau biarkan default)
                                                         src={`https://ui-avatars.com/api/?name=${encodeURIComponent(
                                                             reviewer.name
                                                         )}&background=10b981&color=ffffff`}
                                                     />
-                                                    {/* UBAH: bg-green-100 text-green-800 -> bg-primary/10 text-primary */}
                                                     <AvatarFallback className="bg-primary/10 text-primary">
                                                         {reviewer.name.charAt(
                                                             0
@@ -251,7 +245,6 @@ export default function Invite({ book, availableReviewers = [], flash }) {
                                                         <h4 className="font-semibold text-sm md:text-base">
                                                             {reviewer.name}
                                                             {reviewer.has_dosen_akses && (
-                                                                // UBAH: text-green-500 -> text-primary
                                                                 <BadgeCheck className="inline ml-2 h-4 w-4 text-primary" />
                                                             )}
                                                         </h4>
@@ -274,10 +267,8 @@ export default function Invite({ book, availableReviewers = [], flash }) {
                                                         </p>
                                                     </div>
 
-                                                    {/* Hanya tampilkan badge Dosen saja */}
                                                     {reviewer.has_dosen_akses && (
                                                         <div className="flex flex-wrap gap-1 mt-2">
-                                                            {/* MENGGUNAKAN BADGE THEME-AWARE */}
                                                             <Badge
                                                                 variant="success"
                                                                 className="text-xs"
@@ -310,7 +301,6 @@ export default function Invite({ book, availableReviewers = [], flash }) {
                                                     <Button
                                                         variant="secondary"
                                                         disabled
-                                                        // UBAH: Hapus hardcoded green, gunakan secondary/outline dan text-primary
                                                         className="gap-2 text-primary border border-primary/20 bg-primary/10 hover:bg-primary/10"
                                                     >
                                                         <CheckCircle2 className="h-4 w-4" />
@@ -328,7 +318,6 @@ export default function Invite({ book, availableReviewers = [], flash }) {
                                                             processingId ===
                                                             reviewer.user_id
                                                         }
-                                                        // UBAH: Hapus hardcoded green, gunakan variant default
                                                         variant={
                                                             reviewer.has_dosen_akses
                                                                 ? "default"
@@ -360,7 +349,8 @@ export default function Invite({ book, availableReviewers = [], flash }) {
                                             <Search className="h-12 w-12 mx-auto text-muted-foreground" />
                                             <p>
                                                 Tidak ditemukan dosen dengan
-                                                pencarian "{search}".
+                                                {/* PERBAIKAN 2: &quot; pengganti " */}
+                                                pencarian &quot;{search}&quot;.
                                             </p>
                                             <Button
                                                 variant="outline"
@@ -378,8 +368,9 @@ export default function Invite({ book, availableReviewers = [], flash }) {
                                                 Dosen.
                                             </p>
                                             <p className="text-sm">
-                                                Coba matikan filter "Hanya
-                                                Dosen".
+                                                {/* PERBAIKAN 3: &quot; pengganti " */}
+                                                Coba matikan filter &quot;Hanya
+                                                Dosen&quot;.
                                             </p>
                                             <Button
                                                 variant="outline"
@@ -420,7 +411,6 @@ export default function Invite({ book, availableReviewers = [], flash }) {
                             </CardHeader>
                             <CardContent className="text-sm space-y-3 text-muted-foreground">
                                 <p className="flex items-start gap-2">
-                                    {/* UBAH: text-green-500 -> text-primary */}
                                     <BadgeCheck className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
                                     <span>
                                         <strong>
@@ -430,10 +420,13 @@ export default function Invite({ book, availableReviewers = [], flash }) {
                                     </span>
                                 </p>
                                 <p className="flex items-start gap-2">
-                                    {/* UBAH: text-blue-500 -> text-primary */}
                                     <Filter className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
                                     <span>
-                                        Filter <strong>"Hanya Dosen"</strong>{" "}
+                                        {/* PERBAIKAN 4: &quot; pengganti " */}
+                                        Filter{" "}
+                                        <strong>
+                                            &quot;Hanya Dosen&quot;
+                                        </strong>{" "}
                                         aktif - hanya menampilkan user dengan
                                         akses Dosen.
                                     </span>
@@ -450,15 +443,9 @@ export default function Invite({ book, availableReviewers = [], flash }) {
                             </CardContent>
                         </Card>
 
-                        <Card
-                            // UBAH: border-green-200 -> border-primary/20, bg-green-50/30 -> bg-primary/10
-                            className="border-primary/20 bg-primary/10"
-                        >
+                        <Card className="border-primary/20 bg-primary/10">
                             <CardHeader>
-                                <CardTitle
-                                    // UBAH: text-green-800 -> text-primary
-                                    className="text-base flex items-center gap-2 text-primary"
-                                >
+                                <CardTitle className="text-base flex items-center gap-2 text-primary">
                                     <BadgeCheck className="h-5 w-5" />
                                     Statistik Dosen
                                 </CardTitle>
@@ -466,20 +453,17 @@ export default function Invite({ book, availableReviewers = [], flash }) {
                             <CardContent className="space-y-3">
                                 <div className="flex justify-between items-center">
                                     <span className="text-sm">Total Dosen</span>
-                                    {/* UBAH: text-green-700 -> text-primary */}
                                     <span className="font-semibold text-primary">
                                         {stats.totalReviewers}
                                     </span>
                                 </div>
                                 <div className="flex justify-between items-center">
                                     <div className="flex items-center gap-2">
-                                        {/* UBAH: text-green-500 -> text-primary */}
                                         <BadgeCheck className="h-3 w-3 text-primary" />
                                         <span className="text-sm">
                                             Dengan Akses Dosen
                                         </span>
                                     </div>
-                                    {/* UBAH: text-green-600 -> text-primary */}
                                     <span className="font-semibold text-primary">
                                         {stats.withDosenAkses}
                                     </span>
@@ -492,18 +476,15 @@ export default function Invite({ book, availableReviewers = [], flash }) {
                                 </div>
                                 <div className="flex justify-between items-center">
                                     <span className="text-sm">Terundang</span>
-                                    {/* UBAH: text-blue-600 -> text-primary */}
                                     <span className="font-semibold text-primary">
                                         {stats.invited}
                                     </span>
                                 </div>
-                                {/* UBAH: border-green-200 -> border-primary/20 */}
                                 <div className="pt-2 border-t border-primary/20">
                                     <div className="flex justify-between items-center">
                                         <span className="text-sm">
                                             Mode Tampilan
                                         </span>
-                                        {/* MENGGUNAKAN BADGE THEME-AWARE */}
                                         <Badge
                                             variant={
                                                 filterDosenOnly

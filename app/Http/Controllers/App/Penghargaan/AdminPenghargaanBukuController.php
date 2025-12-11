@@ -15,43 +15,49 @@ class AdminPenghargaanBukuController extends Controller
     {
         $search = $request->input('search');
 
-        // HAPUS with(['user']) - hanya pakai authors saja
-        $query = BookSubmission::with(['authors'])
+        // PERUBAHAN 1: Tambahkan 'user' lagi agar kita bisa ambil Nama Dosen
+        $query = BookSubmission::with(['authors', 'user'])
             ->where('status', '!=', 'DRAFT');
 
+        // PERUBAHAN 2: Logic Search disesuaikan
         if ($search) {
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
-                    ->orWhere('user_id', 'like', "%{$search}%");
+                  // Search berdasarkan Nama User (lebih berguna daripada search UUID)
+                    ->orWhereHas('user', function ($userQuery) use ($search) {
+                        $userQuery->where('name', 'like', "%{$search}%");
+                    });
             });
         }
 
-        // Ambil user_id yang memiliki akses Dosen (termasuk yang punya akses lain)
+        // Ambil user_id yang memiliki akses Dosen
+        // Pastikan HakAksesModel mengembalikan array string UUID
         $dosenUserIds = HakAksesModel::getUserIdsWithDosenAkses();
 
-        // Debug info
         Log::info('Admin Penghargaan Buku - Dosen Filter', [
             'total_dosen_ids' => count($dosenUserIds),
-            'sample_ids' => array_slice($dosenUserIds, 0, 5),
         ]);
 
         if (! empty($dosenUserIds)) {
             $query->whereIn('user_id', $dosenUserIds);
         } else {
-            $query->where('user_id', null);
+            // Jika tidak ada dosen ditemukan, jangan tampilkan apa-apa (atau sesuai kebijakan)
+            $query->whereNull('user_id');
         }
 
         $submissions = $query->orderBy('updated_at', 'desc')->get();
 
         $mappedSubmissions = $submissions->map(function ($book) {
+            // Logic Penulis
             $firstAuthor = $book->authors->where('role', 'FIRST_AUTHOR')->first();
             $authorName = $firstAuthor ? $firstAuthor->name : ($book->authors->first()->name ?? '-');
             $countOthers = $book->authors->count() - 1;
+
             if ($countOthers > 0) {
                 $authorName .= " + {$countOthers} lainnya";
             }
 
-            // Ambil akses user untuk informasi tambahan
+            // Ambil akses user
             $userAkses = HakAksesModel::getAksesByUserId($book->user_id);
             $hasDosenAkses = in_array('Dosen', $userAkses);
 
@@ -59,15 +65,19 @@ class AdminPenghargaanBukuController extends Controller
                 'id' => $book->id,
                 'judul' => $book->title,
                 'user_id' => $book->user_id,
-                'nama_dosen' => 'Dosen ('.substr($book->user_id, 0, 8).')',
+
+                // PERUBAHAN 3: Tampilkan Nama Asli User, bukan potongan UUID
+                // Jika user terhapus/null, fallback ke potongan ID
+                'nama_dosen' => $book->user ? $book->user->name : 'User Unknown ('.substr($book->user_id, 0, 8).')',
+
                 'penulis_display' => $authorName,
                 'isbn' => $book->isbn,
                 'tanggal_pengajuan' => $book->updated_at->format('d M Y'),
                 'status' => $book->status,
                 'status_label' => $this->formatStatusLabel($book->status),
                 'status_color' => $this->getStatusColor($book->status),
-                'user_akses' => $userAkses, // Informasi tambahan
-                'has_dosen_akses' => $hasDosenAkses, // Flag
+                'user_akses' => $userAkses,
+                'has_dosen_akses' => $hasDosenAkses,
             ];
         });
 
@@ -78,7 +88,7 @@ class AdminPenghargaanBukuController extends Controller
             'stats' => [
                 'total_submissions' => $mappedSubmissions->count(),
                 'with_dosen_akses' => $mappedSubmissions->where('has_dosen_akses', true)->count(),
-                'unique_dosen' => count(array_unique($mappedSubmissions->pluck('user_id')->toArray())),
+                'unique_dosen' => $mappedSubmissions->pluck('user_id')->unique()->count(),
             ],
         ]);
     }

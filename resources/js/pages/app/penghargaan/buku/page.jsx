@@ -5,7 +5,7 @@ import { Head, Link, usePage, router } from "@inertiajs/react";
 import { Button } from "@/components/ui/button";
 import { Plus, Search, ChevronDown } from "lucide-react";
 // Import Input dipertahankan, tetapi menggunakan elemen <input> di toolbar search
-import { Input } from "@/components/ui/input";
+//import { Input } from "@/components/ui/input";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -19,15 +19,7 @@ import * as Icon from "@tabler/icons-react";
 // ==========================================
 // FUNGSI UTILITY STATUS COLOR (TIDAK BERUBAH)
 // ==========================================
-const getStatusColorClass = (status) => {
-    if (!status) return "text-muted-foreground";
-    const s = status.toLowerCase();
-    if (s.includes("disetujui") || s.includes("selesai")) return "text-primary";
-    if (s.includes("ditolak")) return "text-destructive";
-    if (s.includes("draft") || s.includes("menunggu"))
-        return "text-muted-foreground";
-    return "text-muted-foreground";
-};
+
 
 // ==========================================
 // KOMPONEN BUKU ITEM MINI (TIDAK BERUBAH)
