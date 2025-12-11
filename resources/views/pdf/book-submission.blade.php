@@ -33,20 +33,11 @@
         }
 
         .col-logo {
-    /* 1. Tetapkan lebar kolom yang cukup agar teks tidak bergeser */
-    width: 100px; 
-    
-    /* 2. Gunakan vertical-align middle agar sejajar vertikal */
-    vertical-align: middle;
-    
-    /* 3. KUNCI UTAMA: Rata KANAN. 
-       Ini akan memaksa gambar logo menempel ke sisi kanan kolom (mendekati teks) 
-       tanpa menggeser posisi kolom teks itu sendiri. */
-    text-align: right;
-    
-    /* 4. Atur jarak (gap) antara logo dan teks di sini */
-    padding-right: 10px; 
-}
+            width: 100px; 
+            vertical-align: middle;
+            text-align: right;
+            padding-right: 10px; 
+        }
 
         .col-text {
             vertical-align: middle;
@@ -226,6 +217,14 @@
             font-size: 9pt;
             width: 180px;
         }
+        
+        /* FOOTER Tambahan */
+        .final-system-note {
+            text-align: center;
+            font-size: 9pt;
+            color: #666;
+            margin-top: 30px; 
+        }
     </style>
 </head>
 <body>
@@ -238,9 +237,9 @@
                         if (file_exists($imagePath)) {
                             $imageData = base64_encode(file_get_contents($imagePath));
                             $src = 'data:image/png;base64,' . $imageData;
-                            // Width diatur agar pas di kolom
-// Cari baris ini di bagian bawah:
-                            echo '<img src="' . $src . '" alt="Logo IT Del" style="width: 100px; height: auto; margin-right: -60px;">';                        } else {
+                            
+                            echo '<img src="' . $src . '" alt="Logo IT Del" style="width: 100px; height: auto; margin-right: -60px;">';
+                        } else {
                             echo '<div style="color:red; font-size:8pt; border:1px solid red;">Logo Not Found</div>';
                         }
                     ?>
@@ -327,7 +326,7 @@
     </div>
 
     <div class="content-section">
-        <p>Dengan ini memohon mendapatkan penghargaan <span style="margin-left: 10px;">+</span> dengan rincian sebagai berikut.</p>
+        <p>Dengan ini memohon mendapatkan penghargaan buku dengan rincian sebagai berikut.</p>
         
         <table class="data-table">
             <tr>
@@ -385,11 +384,16 @@
 
     <div class="signature-section">
         <div class="signature-text">Hormat Saya,</div>
-        <div class="signed-indicator">
-            <em>Signed</em>
+        
+        <div style="text-align: left; margin-top: 50px;"> 
+            <span style="font-size: 10pt; color: #000; font-style: italic; border-bottom: 1px solid #000;">
+                Signed
+            </span>
         </div>
-        <div class="signature-line"></div>
-        <div class="signature-name">({{ $user->name ?? '...................................................' }})</div>
+        
+        <div class="signature-name" style="margin-top: 3px;">
+            ({{ $user->name ?? '...................................................' }})
+        </div>
     </div>
 
     <div class="page-break"></div>
@@ -399,11 +403,14 @@
             <tr>
                 <td class="col-logo">
                     <?php
-                        // Menggunakan variabel yang sama (file hanya dibaca sekali jika di-cache, tapi di blade PHP ini dieksekusi lagi)
+                        $imagePath = public_path('img/Logodel.png');
                         if (file_exists($imagePath)) {
                             $imageData = base64_encode(file_get_contents($imagePath));
-                            $src = 'data:img/png;base64,' . $imageData;
-                            echo '<img src="' . $src . '" alt="Logo IT Del" style="width: 80px; height: auto;">';
+                            $src = 'data:image/png;base64,' . $imageData;
+                            
+                            echo '<img src="' . $src . '" alt="Logo IT Del" style="width: 100px; height: auto; margin-right: -60px;">';
+                        } else {
+                            echo '<div style="color:red; font-size:8pt; border:1px solid red;">Logo Not Found</div>';
                         }
                     ?>
                 </td>
@@ -439,5 +446,9 @@
             @endforeach
         </tbody>
     </table>
-</body>
+    
+    <div class="final-system-note">
+        Form ini tidak perlu tanda tangan karena dibuat oleh sistem
+    </div>
+    </body>
 </html>

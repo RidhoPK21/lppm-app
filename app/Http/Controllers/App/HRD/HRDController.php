@@ -2,15 +2,15 @@
 
 namespace App\Http\Controllers\App\HRD;
 
-use App\Http\Controllers\Controller;
 use App\Http\Controllers\App\Notifikasi\NotificationController;
+use App\Http\Controllers\Controller;
 use App\Models\BookSubmission;
 use App\Models\SubmissionLog;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Carbon\Carbon;
 use Inertia\Inertia;
 
 class HRDController extends Controller
@@ -49,22 +49,24 @@ class HRDController extends Controller
 
             Log::info('[HRD Index] Books loaded', [
                 'count' => $formattedBooks->count(),
-                'books' => $formattedBooks->toArray()
+                'books' => $formattedBooks->toArray(),
             ]);
 
-            return Inertia::render('app/hrd/kita/page', [
-                'submissions' => $formattedBooks
-            ]);
+            // Sesuaikan string ini dengan lokasi file React Anda: 'app/home/kita-page.jsx'
+return Inertia::render('app/home/kita-page', [
+    'submissions' => $formattedBooks
+]);
 
         } catch (\Exception $e) {
             Log::error('Error loading HRD page', [
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
-            
-            return Inertia::render('app/hrd/kita/page', [
-                'submissions' => []
-            ]);
+
+            // Sesuaikan string ini dengan lokasi file React Anda: 'app/home/kita-page.jsx'
+return Inertia::render('app/home/kita-page', [
+    'submissions' => $formattedBooks
+]);
         }
     }
 
@@ -75,7 +77,7 @@ class HRDController extends Controller
     {
         $validated = $request->validate([
             'book_id' => 'required|integer|exists:book_submissions,id',
-            'payment_date' => 'required|date'
+            'payment_date' => 'required|date',
         ]);
 
         DB::beginTransaction();
@@ -92,8 +94,9 @@ class HRDController extends Controller
                 DB::rollback();
                 Log::warning('[HRD Payment] Invalid status', [
                     'book_id' => $bookId,
-                    'current_status' => $book->status
+                    'current_status' => $book->status,
                 ]);
+
                 return back()->with('error', 'Buku tidak dalam status yang valid untuk pencairan.');
             }
 
@@ -101,19 +104,19 @@ class HRDController extends Controller
                 'book_id' => $bookId,
                 'book_title' => $book->title,
                 'payment_date' => $paymentDate,
-                'submitter_user_id' => $book->user_id
+                'submitter_user_id' => $book->user_id,
             ]);
 
             // ✅ Update status menjadi PAID dan simpan tanggal pencairan
             $book->update([
                 'status' => 'PAID',
                 'payment_date' => $paymentDate,
-                'updated_at' => Carbon::now()
+                'updated_at' => Carbon::now(),
             ]);
 
             Log::info('[HRD Payment] Book status updated to PAID', [
                 'book_id' => $bookId,
-                'payment_date' => $paymentDate
+                'payment_date' => $paymentDate,
             ]);
 
             // Catat log aktivitas
@@ -121,7 +124,7 @@ class HRDController extends Controller
                 'book_submission_id' => $bookId,
                 'user_id' => Auth::id(),
                 'action' => 'PAYMENT_DISBURSED',
-                'note' => "Dana penghargaan dicairkan oleh HRD pada tanggal {$paymentDate}"
+                'note' => "Dana penghargaan dicairkan oleh HRD pada tanggal {$paymentDate}",
             ]);
 
             // 🔥 KIRIM NOTIFIKASI KE DOSEN PENGAJU
@@ -136,7 +139,7 @@ class HRDController extends Controller
             Log::info('[HRD Payment] Payment disbursement successful', [
                 'book_id' => $bookId,
                 'status' => 'PAID',
-                'notification_sent_to' => $book->user_id
+                'notification_sent_to' => $book->user_id,
             ]);
 
             // ✅ Redirect dengan reload halaman
@@ -145,14 +148,14 @@ class HRDController extends Controller
 
         } catch (\Exception $e) {
             DB::rollback();
-            
+
             Log::error('[HRD Payment] Error processing payment disbursement', [
                 'book_id' => $validated['book_id'] ?? null,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
 
-            return back()->with('error', 'Gagal memproses pencairan: ' . $e->getMessage());
+            return back()->with('error', 'Gagal memproses pencairan: '.$e->getMessage());
         }
     }
 }

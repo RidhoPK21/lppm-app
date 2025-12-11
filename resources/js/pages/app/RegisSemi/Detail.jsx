@@ -57,17 +57,17 @@ export default function DetailRegisSemi({ book }) {
     // --- STATE UNTUK POPUP ---
     const [isApproveOpen, setIsApproveOpen] = useState(false);
     const [isRejectOpen, setIsRejectOpen] = useState(false);
-    
+
     const [amount, setAmount] = useState("");
     const [rejectNote, setRejectNote] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Safety check data
     if (!book) return <div>Loading data...</div>;
-    
+
     // Handle drive_links
     const links = Array.isArray(book.drive_link) ? book.drive_link : [];
-    
+
     // Tautan pertama (dianggap sebagai tautan folder utama)
     const documentLink = links.length > 0 ? links[0] : null;
 
@@ -197,12 +197,12 @@ export default function DetailRegisSemi({ book }) {
                                 <StackedFormField label="File PDF Buku">
                                     <div className="space-y-2">
                                         <div className="flex items-center gap-2">
-                                            <FileType className="h-5 w-5 text-green-600" />
+                                            {/* UBAH: text-green-600 -> text-primary */}
+                                            <FileType className="h-5 w-5 text-primary" />
                                             <span className="text-sm font-medium text-gray-700">
                                                 PDF Surat Permohonan Tersedia
                                             </span>
                                         </div>
-                                       
                                     </div>
                                 </StackedFormField>
                             </div>
@@ -216,21 +216,28 @@ export default function DetailRegisSemi({ book }) {
                             {links.length > 0 ? (
                                 <div className="space-y-3">
                                     {links.map((link, idx) => {
-                                        const isPdf = link && (
-                                            link.toLowerCase().includes('.pdf') ||
-                                            link.includes('drive.google.com/file')
-                                        );
-                                        
+                                        const isPdf =
+                                            link &&
+                                            (link
+                                                .toLowerCase()
+                                                .includes(".pdf") ||
+                                                link.includes(
+                                                    "drive.google.com/file"
+                                                ));
+
                                         return (
                                             <StackedFormField
                                                 key={idx}
-                                                label={`Dokumen ${idx + 1}${isPdf ? ' (PDF)' : ''}`}
+                                                label={`Dokumen ${idx + 1}${
+                                                    isPdf ? " (PDF)" : ""
+                                                }`}
                                             >
                                                 <div className="flex gap-2">
                                                     <Input
                                                         value={link}
                                                         readOnly
-                                                        className={`bg-gray-50 ${isPdf ? 'text-purple-600' : 'text-blue-600'}`}
+                                                        // UBAH: Hapus hardcoded text color
+                                                        className="bg-gray-50 text-primary"
                                                     />
                                                     <a
                                                         href={link}
@@ -240,7 +247,11 @@ export default function DetailRegisSemi({ book }) {
                                                         <Button
                                                             variant="outline"
                                                             size="icon"
-                                                            title={isPdf ? "Buka PDF" : "Buka Link"}
+                                                            title={
+                                                                isPdf
+                                                                    ? "Buka PDF"
+                                                                    : "Buka Link"
+                                                            }
                                                         >
                                                             {isPdf ? (
                                                                 <FileType className="h-4 w-4" />
@@ -268,10 +279,10 @@ export default function DetailRegisSemi({ book }) {
 
                 {/* --- TOMBOL UTAMA --- */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    {/* 1. Buka Dokumen */}
+                    {/* 1. Buka Dokumen (SECONDARY - theme aware) */}
                     <Button
                         variant="secondary"
-                        className="h-12 border border-gray-200"
+                        className="h-12 border border-input"
                         onClick={() => handleAction("open-document")}
                         disabled={!documentLink}
                     >
@@ -279,12 +290,18 @@ export default function DetailRegisSemi({ book }) {
                         Dokumen
                     </Button>
 
-                    {/* 2. PDF Download (jika ada) */}
+                    {/* 2. PDF Download (UBAH: Gunakan warna primary untuk outline) */}
                     {hasPdfFile ? (
                         <Button
                             variant="outline"
-                            className="h-12 border-blue-600 text-blue-600 hover:bg-blue-50"
-                            onClick={() => window.open(route("regis-semi.download-pdf", book.id), "_blank")}
+                            // UBAH: Gunakan kelas theme-aware (border-primary, text-primary)
+                            className="h-12 border-primary text-primary hover:bg-primary/5"
+                            onClick={() =>
+                                window.open(
+                                    route("regis-semi.download-pdf", book.id),
+                                    "_blank"
+                                )
+                            }
                         >
                             <FileType className="mr-2 h-5 w-5" />
                             Download PDF
@@ -300,10 +317,12 @@ export default function DetailRegisSemi({ book }) {
                         </Button>
                     )}
 
-                    {/* 3. SETUJUI */}
+                    {/* 3. SETUJUI (UBAH: Gunakan variant default/primary) */}
                     <Button
                         onClick={() => setIsApproveOpen(true)}
-                        className="bg-green-600 hover:bg-green-700 h-12 text-white"
+                        // UBAH: Hapus hardcoded green, gunakan variant default
+                        variant="default"
+                        className="h-12"
                         disabled={
                             book.status === "APPROVED_CHIEF" ||
                             book.status === "REJECTED" ||
@@ -313,10 +332,12 @@ export default function DetailRegisSemi({ book }) {
                         <CheckCircle className="mr-2 h-5 w-5" /> Setujui
                     </Button>
 
-                    {/* 4. TOLAK */}
+                    {/* 4. TOLAK (UBAH: Gunakan variant destructive) */}
                     <Button
                         onClick={() => setIsRejectOpen(true)}
-                        className="bg-red-600 hover:bg-red-700 h-12 text-white"
+                        // UBAH: Gunakan variant destructive
+                        variant="destructive"
+                        className="h-12"
                         disabled={
                             book.status === "APPROVED_CHIEF" ||
                             book.status === "REJECTED" ||
@@ -331,19 +352,24 @@ export default function DetailRegisSemi({ book }) {
                     <Button
                         variant="outline"
                         onClick={() => handleAction("invite")}
-                        className="h-12 border-gray-400"
+                        className="h-12 border-input" // UBAH: Gunakan border-input/outline default
                         disabled={book.status === "REJECTED"}
                     >
                         <Users className="mr-2 h-5 w-5" /> Minta Penilaian
                     </Button>
-                   <Button
-    onClick={() => router.visit(route('regis-semi.review-results', book.id))}
-    variant="outline"
-    className="border-2 border-black hover:bg-black hover:text-white"
->
-    <MessageSquare className="h-4 w-4 mr-2" />
-    Lihat Hasil 
-</Button>
+                    <Button
+                        onClick={() =>
+                            router.visit(
+                                route("regis-semi.review-results", book.id)
+                            )
+                        }
+                        variant="outline"
+                        // UBAH: Hapus hardcoded black, gunakan outline default
+                        className="h-12"
+                    >
+                        <MessageSquare className="h-4 w-4 mr-2" />
+                        Lihat Hasil
+                    </Button>
                 </div>
             </div>
 
@@ -351,7 +377,8 @@ export default function DetailRegisSemi({ book }) {
             <Dialog open={isApproveOpen} onOpenChange={setIsApproveOpen}>
                 <DialogContent className="sm:max-w-[425px]">
                     <DialogHeader>
-                        <DialogTitle className="text-green-700">
+                        {/* UBAH: text-green-700 -> text-primary */}
+                        <DialogTitle className="text-primary">
                             Setujui Pengajuan
                         </DialogTitle>
                         <DialogDescription>
@@ -389,7 +416,8 @@ export default function DetailRegisSemi({ book }) {
                             </Button>
                             <Button
                                 type="submit"
-                                className="bg-green-600 hover:bg-green-700"
+                                // UBAH: Hapus hardcoded green, gunakan variant default
+                                variant="default"
                                 disabled={isSubmitting || !amount}
                             >
                                 {isSubmitting ? (
@@ -410,7 +438,8 @@ export default function DetailRegisSemi({ book }) {
             <Dialog open={isRejectOpen} onOpenChange={setIsRejectOpen}>
                 <DialogContent className="sm:max-w-[500px]">
                     <DialogHeader>
-                        <DialogTitle className="text-red-600">
+                        {/* UBAH: text-red-600 -> text-destructive */}
+                        <DialogTitle className="text-destructive">
                             Tolak Pengajuan
                         </DialogTitle>
                         <DialogDescription>

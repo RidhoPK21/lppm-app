@@ -57,7 +57,7 @@ export default function DetailBukuPage({ book, user }) {
     if (isDraft) {
         if (isDocumentsComplete) {
             displayStatus = "Draft (Siap Kirim)";
-            statusVariant = "success";
+            statusVariant = "success"; // Menganggap 'success' sudah didefinisikan dalam Badge
         } else {
             displayStatus = "Draft (Belum Lengkap)";
             statusVariant = "secondary";
@@ -65,7 +65,8 @@ export default function DetailBukuPage({ book, user }) {
     } else {
         const s = book.status.toLowerCase();
         if (s.includes("menunggu") || s.includes("submitted"))
-            statusVariant = "warning";
+            statusVariant =
+                "warning"; // Menganggap 'warning' sudah didefinisikan dalam Badge
         else if (s.includes("disetujui") || s.includes("approved"))
             statusVariant = "default";
         else if (s.includes("ditolak") || s.includes("rejected"))
@@ -86,11 +87,16 @@ export default function DetailBukuPage({ book, user }) {
     };
 
     const handleReviewFile = () => {
-        window.open(route("app.penghargaan.buku.preview-pdf", { id: book.id }), "_blank");
+        window.open(
+            route("app.penghargaan.buku.preview-pdf", { id: book.id }),
+            "_blank"
+        );
     };
 
     const handleDownloadPdf = () => {
-        window.location.href = route("app.penghargaan.buku.download-pdf", { id: book.id });
+        window.location.href = route("app.penghargaan.buku.download-pdf", {
+            id: book.id,
+        });
     };
 
     const getLinkUrl = (link) => {
@@ -137,7 +143,7 @@ export default function DetailBukuPage({ book, user }) {
                         {displayStatus}
                     </Badge>
                 </div>
-                
+
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Kolom Kiri: Informasi Utama */}
                     <div className="lg:col-span-2 space-y-6">
@@ -230,19 +236,23 @@ export default function DetailBukuPage({ book, user }) {
                                         {links.map((link, idx) => {
                                             const url = getLinkUrl(link);
                                             const name = getLinkName(link, idx);
-                                            
+
                                             return (
                                                 <div
                                                     key={idx}
                                                     className="flex items-center p-3 rounded-md border hover:bg-muted transition-colors group"
                                                 >
-                                                    <File className="h-5 w-5 text-blue-500 mr-3" />
+                                                    {/* UBAH: text-blue-500 -> text-primary */}
+                                                    <File className="h-5 w-5 text-primary mr-3" />
                                                     <div className="flex-1 truncate">
-                                                        <p className="text-sm font-medium text-blue-600">
+                                                        {/* UBAH: text-blue-600 -> text-primary */}
+                                                        <p className="text-sm font-medium text-primary">
                                                             {name}
                                                             {!url && (
-                                                                <span className="text-red-500 ml-2 text-xs">
-                                                                    (Belum Diunggah)
+                                                                // UBAH: text-red-500 -> text-destructive
+                                                                <span className="text-destructive ml-2 text-xs">
+                                                                    (Belum
+                                                                    Diunggah)
                                                                 </span>
                                                             )}
                                                         </p>
@@ -257,7 +267,8 @@ export default function DetailBukuPage({ book, user }) {
                                                                 <ExternalLink className="h-3 w-3" />
                                                             </a>
                                                         ) : (
-                                                            <p className="text-xs text-red-400 italic">
+                                                            // UBAH: text-red-400 -> text-destructive
+                                                            <p className="text-xs text-destructive italic">
                                                                 Wajib diisi
                                                             </p>
                                                         )}
@@ -287,7 +298,8 @@ export default function DetailBukuPage({ book, user }) {
                                 <div className="space-y-6">
                                     <div className="flex gap-3">
                                         <div className="mt-0.5">
-                                            <CheckCircle className="h-5 w-5 text-green-500" />
+                                            {/* UBAH: text-green-500 -> text-primary */}
+                                            <CheckCircle className="h-5 w-5 text-primary" />
                                         </div>
                                         <div>
                                             <p className="font-medium text-sm">
@@ -310,12 +322,13 @@ export default function DetailBukuPage({ book, user }) {
                                                 <AlertCircle
                                                     className={`h-5 w-5 ${
                                                         isDocumentsComplete
-                                                            ? "text-green-500"
-                                                            : "text-yellow-500"
+                                                            ? "text-primary" // UBAH: text-green-500 -> text-primary
+                                                            : "text-amber-500" // UBAH: text-yellow-500 -> text-amber-500 (standard warning shade)
                                                     }`}
                                                 />
                                             ) : (
-                                                <Clock className="h-5 w-5 text-yellow-500" />
+                                                // UBAH: text-yellow-500 -> text-amber-500
+                                                <Clock className="h-5 w-5 text-amber-500" />
                                             )}
                                         </div>
                                         <div>
@@ -340,7 +353,8 @@ export default function DetailBukuPage({ book, user }) {
                                     <Button
                                         onClick={handleReviewFile}
                                         variant="outline"
-                                        className="w-full border-purple-600 text-purple-600 hover:bg-purple-50"
+                                        // UBAH: hardcoded purple -> border-primary text-primary hover:bg-primary/5
+                                        className="w-full border-primary text-primary hover:bg-primary/5"
                                     >
                                         <FileText className="mr-2 h-4 w-4" />
                                         Review File PDF
@@ -352,7 +366,8 @@ export default function DetailBukuPage({ book, user }) {
                                     <Button
                                         onClick={handleDownloadPdf}
                                         variant="outline"
-                                        className="w-full border-blue-600 text-blue-600 hover:bg-blue-50"
+                                        // UBAH: hardcoded blue -> border-primary text-primary hover:bg-primary/5
+                                        className="w-full border-primary text-primary hover:bg-primary/5"
                                     >
                                         <Download className="mr-2 h-4 w-4" />
                                         Download Surat Permohonan
@@ -368,9 +383,14 @@ export default function DetailBukuPage({ book, user }) {
                                         )}
                                         className="w-full"
                                     >
-                                        <Button variant="outline" className="w-full">
+                                        <Button
+                                            variant="outline"
+                                            className="w-full"
+                                        >
                                             <FileText className="mr-2 h-4 w-4" />
-                                            {isDocumentsComplete ? "Edit Dokumen" : "Lengkapi Dokumen"}
+                                            {isDocumentsComplete
+                                                ? "Edit Dokumen"
+                                                : "Lengkapi Dokumen"}
                                         </Button>
                                     </Link>
                                 )}
@@ -379,7 +399,9 @@ export default function DetailBukuPage({ book, user }) {
                                 {isDraft && isDocumentsComplete && (
                                     <Button
                                         onClick={handleSubmit}
-                                        className="w-full bg-green-600 hover:bg-green-700 text-white shadow-md"
+                                        // UBAH: hardcoded green -> variant="default" (Primary)
+                                        variant="default"
+                                        className="w-full shadow-md"
                                     >
                                         <Send className="mr-2 h-4 w-4" />
                                         Kirim Pengajuan ke LPPM
@@ -388,7 +410,8 @@ export default function DetailBukuPage({ book, user }) {
 
                                 {/* INFO: Jika Sudah Dikirim */}
                                 {!isDraft && (
-                                    <div className="w-full p-3 bg-blue-50 text-blue-800 text-center rounded-md text-sm font-medium border border-blue-200">
+                                    // UBAH: hardcoded blue -> bg-primary/10 text-primary border-primary/20
+                                    <div className="w-full p-3 bg-primary/10 text-primary text-center rounded-md text-sm font-medium border border-primary/20">
                                         <CheckCircle className="inline-block w-4 h-4 mr-2 mb-0.5" />
                                         Pengajuan berhasil dikirim ke LPPM.
                                     </div>

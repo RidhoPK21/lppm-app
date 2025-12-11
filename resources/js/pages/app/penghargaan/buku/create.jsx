@@ -55,9 +55,10 @@ export default function CreateBukuPage() {
                 <div className="flex items-center">
                     <Link href={route("app.penghargaan.buku.index")}>
                         <Button
+                            // UBAH: Menghapus hardcoded color class, biarkan variant secondary
                             variant="secondary"
                             size="sm"
-                            className="gap-2 bg-black text-white hover:bg-black/80 dark:bg-white dark:text-black font-semibold"
+                            className="gap-2 font-semibold"
                         >
                             <ArrowLeft className="h-4 w-4" /> Kembali
                         </Button>
@@ -68,7 +69,7 @@ export default function CreateBukuPage() {
                 {errors.error && (
                     <Alert
                         variant="destructive"
-                        className="bg-red-50 border-red-200 text-red-800"
+                        // UBAH: Hapus hardcoded red class, biarkan variant="destructive" yang mengaturnya
                     >
                         <AlertCircle className="h-4 w-4" />
                         <AlertTitle>Gagal Menyimpan!</AlertTitle>
@@ -93,7 +94,8 @@ export default function CreateBukuPage() {
                             <div className="space-y-2">
                                 <Label htmlFor="judul">
                                     Judul Buku{" "}
-                                    <span className="text-red-500">*</span>
+                                    <span className="text-destructive">*</span>{" "}
+                                    {/* UBAH: text-red-500 -> text-destructive */}
                                 </Label>
                                 <Input
                                     id="judul"
@@ -104,7 +106,9 @@ export default function CreateBukuPage() {
                                     }
                                 />
                                 {errors.judul && (
-                                    <p className="text-sm text-red-500">
+                                    <p className="text-sm text-destructive">
+                                        {" "}
+                                        {/* UBAH: text-red-500 -> text-destructive */}
                                         {errors.judul}
                                     </p>
                                 )}
@@ -114,7 +118,8 @@ export default function CreateBukuPage() {
                             <div className="space-y-2">
                                 <Label htmlFor="penulis">
                                     Penulis (Tim){" "}
-                                    <span className="text-red-500">*</span>
+                                    <span className="text-destructive">*</span>{" "}
+                                    {/* UBAH: text-red-500 -> text-destructive */}
                                 </Label>
                                 <Input
                                     id="penulis"
@@ -128,7 +133,9 @@ export default function CreateBukuPage() {
                                     Pisahkan nama penulis dengan koma.
                                 </p>
                                 {errors.penulis && (
-                                    <p className="text-sm text-red-500">
+                                    <p className="text-sm text-destructive">
+                                        {" "}
+                                        {/* UBAH: text-red-500 -> text-destructive */}
                                         {errors.penulis}
                                     </p>
                                 )}
@@ -168,7 +175,9 @@ export default function CreateBukuPage() {
                                     </SelectContent>
                                 </Select>
                                 {errors.bidang_keilmuan && (
-                                    <p className="text-sm text-red-500">
+                                    <p className="text-sm text-destructive">
+                                        {" "}
+                                        {/* UBAH: text-red-500 -> text-destructive */}
                                         {errors.bidang_keilmuan}
                                     </p>
                                 )}
@@ -187,7 +196,9 @@ export default function CreateBukuPage() {
                                         }
                                     />
                                     {errors.penerbit && (
-                                        <p className="text-sm text-red-500">
+                                        <p className="text-sm text-destructive">
+                                            {" "}
+                                            {/* UBAH: text-red-500 -> text-destructive */}
                                             {errors.penerbit}
                                         </p>
                                     )}
@@ -197,7 +208,10 @@ export default function CreateBukuPage() {
                                 <div className="space-y-2">
                                     <Label>
                                         Tingkat Penerbit{" "}
-                                        <span className="text-red-500">*</span>
+                                        <span className="text-destructive">
+                                            *
+                                        </span>{" "}
+                                        {/* UBAH: text-red-500 -> text-destructive */}
                                     </Label>
                                     <Select
                                         value={data.level_penerbit}
@@ -221,7 +235,9 @@ export default function CreateBukuPage() {
                                         </SelectContent>
                                     </Select>
                                     {errors.level_penerbit && (
-                                        <p className="text-sm text-red-500">
+                                        <p className="text-sm text-destructive">
+                                            {" "}
+                                            {/* UBAH: text-red-500 -> text-destructive */}
                                             {errors.level_penerbit}
                                         </p>
                                     )}
@@ -242,7 +258,9 @@ export default function CreateBukuPage() {
                                         }
                                     />
                                     {errors.tahun && (
-                                        <p className="text-sm text-red-500">
+                                        <p className="text-sm text-destructive">
+                                            {" "}
+                                            {/* UBAH: text-red-500 -> text-destructive */}
                                             {errors.tahun}
                                         </p>
                                     )}
@@ -252,7 +270,10 @@ export default function CreateBukuPage() {
                                 <div className="space-y-2">
                                     <Label htmlFor="isbn">
                                         ISBN{" "}
-                                        <span className="text-red-500">*</span>
+                                        <span className="text-destructive">
+                                            *
+                                        </span>{" "}
+                                        {/* UBAH: text-red-500 -> text-destructive */}
                                     </Label>
                                     <Input
                                         id="isbn"
@@ -263,7 +284,9 @@ export default function CreateBukuPage() {
                                         }
                                     />
                                     {errors.isbn && (
-                                        <p className="text-sm text-red-500">
+                                        <p className="text-sm text-destructive">
+                                            {" "}
+                                            {/* UBAH: text-red-500 -> text-destructive */}
                                             {errors.isbn}
                                         </p>
                                     )}
@@ -299,7 +322,9 @@ export default function CreateBukuPage() {
                                         </SelectContent>
                                     </Select>
                                     {errors.kategori && (
-                                        <p className="text-sm text-red-500">
+                                        <p className="text-sm text-destructive">
+                                            {" "}
+                                            {/* UBAH: text-red-500 -> text-destructive */}
                                             {errors.kategori}
                                         </p>
                                     )}
@@ -323,7 +348,9 @@ export default function CreateBukuPage() {
                                         }
                                     />
                                     {errors.jumlah_halaman && (
-                                        <p className="text-sm text-red-500">
+                                        <p className="text-sm text-destructive">
+                                            {" "}
+                                            {/* UBAH: text-red-500 -> text-destructive */}
                                             {errors.jumlah_halaman}
                                         </p>
                                     )}
@@ -342,7 +369,9 @@ export default function CreateBukuPage() {
                             <Button
                                 type="submit"
                                 disabled={processing}
-                                className="w-full md:w-auto bg-black text-white hover:bg-gray-800"
+                                // UBAH: hardcoded black/white -> variant="default" (Primary color)
+                                variant="default"
+                                className="w-full md:w-auto"
                             >
                                 {processing ? (
                                     "Menyimpan..."

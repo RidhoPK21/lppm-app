@@ -1,23 +1,22 @@
 <?php
 
 namespace App\Http\Controllers\App\RegisSemi;
-use Illuminate\Support\Facades\Log;
-use App\Http\Controllers\Controller;
-use App\Http\Controllers\App\Notifikasi\NotificationController;
-use Carbon\Carbon;
-use App\Models\BookSubmission;
-use App\Models\SubmissionLog;
 
+use App\Http\Controllers\App\Notifikasi\NotificationController;
+use App\Http\Controllers\Controller;
+use App\Models\BookReviewer;
+use App\Models\BookSubmission;
+use App\Models\HakAksesModel;
+use App\Models\SubmissionLog;
+use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Inertia\Inertia;
-use App\Models\User;
-use App\Models\BookReviewer; 
-use App\Models\HakAksesModel;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-
+use Inertia\Inertia;
 
 class RegisSemiController extends Controller
 {
@@ -45,143 +44,143 @@ class RegisSemiController extends Controller
         ]);
     }
 
-   public function storeInvite(Request $request, $bookId)
-{
-    $validated = $request->validate([
-        'user_id' => 'required|uuid',
-    ]);
-
-    try {
-        $book = BookSubmission::findOrFail($bookId);
-        
-        Log::info('[Store Invite] Starting invite process', [
-            'book_id' => $bookId,
-            'book_title' => $book->title,
-            'reviewer_id' => $validated['user_id'],
-            'invited_by' => Auth::id(),
+    public function storeInvite(Request $request, $bookId)
+    {
+        $validated = $request->validate([
+            'user_id' => 'required|uuid',
         ]);
-        
-        // Cek apakah sudah diundang
-        $alreadyInvited = BookReviewer::where('book_submission_id', $bookId)
-            ->where('user_id', $validated['user_id'])
-            ->exists();
-            
-        if ($alreadyInvited) {
-            Log::warning('Reviewer already invited', [
+
+        try {
+            $book = BookSubmission::findOrFail($bookId);
+
+            Log::info('[Store Invite] Starting invite process', [
                 'book_id' => $bookId,
-                'reviewer_id' => $validated['user_id']
+                'book_title' => $book->title,
+                'reviewer_id' => $validated['user_id'],
+                'invited_by' => Auth::id(),
             ]);
-            
+
+            // Cek apakah sudah diundang
+            $alreadyInvited = BookReviewer::where('book_submission_id', $bookId)
+                ->where('user_id', $validated['user_id'])
+                ->exists();
+
+            if ($alreadyInvited) {
+                Log::warning('Reviewer already invited', [
+                    'book_id' => $bookId,
+                    'reviewer_id' => $validated['user_id'],
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Reviewer sudah diundang sebelumnya',
+                ], 422);
+            }
+
+            // Simpan undangan ke database
+            $bookReviewer = BookReviewer::create([
+                'book_submission_id' => $bookId,
+                'user_id' => $validated['user_id'],
+                'status' => 'PENDING',
+                'note' => null,
+                'invited_by' => Auth::id(),
+                'invited_at' => now(),
+            ]);
+
+            Log::info('[Store Invite] BookReviewer record created', [
+                'book_reviewer_id' => $bookReviewer->id,
+                'book_id' => $bookId,
+                'reviewer_id' => $validated['user_id'],
+            ]);
+
+            // === PERBAIKAN: Pastikan user ada di tabel users ===
+            $reviewerUser = User::find($validated['user_id']);
+
+            if (! $reviewerUser) {
+                Log::warning('[Store Invite] Reviewer user not found in users table, creating...', [
+                    'user_id' => $validated['user_id'],
+                ]);
+
+                // Cari info user dari m_hak_akses
+                $hakAkses = DB::table('m_hak_akses')
+                    ->where('user_id', $validated['user_id'])
+                    ->first();
+
+                $userName = $hakAkses ? 'Reviewer' : 'Reviewer '.substr($validated['user_id'], 0, 8);
+                $userEmail = $validated['user_id'].'@reviewer.local';
+
+                // Buat user baru
+                $reviewerUser = User::create([
+                    'id' => $validated['user_id'],
+                    'name' => $userName,
+                    'email' => $userEmail,
+                    'password' => bcrypt(Str::random(16)),
+                ]);
+
+                Log::info('[Store Invite] Created reviewer user', [
+                    'user_id' => $reviewerUser->id,
+                    'name' => $reviewerUser->name,
+                ]);
+            }
+
+            // === KIRIM NOTIFIKASI ===
+            Log::info('[Store Invite] Calling notification function', [
+                'book_id' => $bookId,
+                'book_title' => $book->title,
+                'reviewer_id' => $validated['user_id'],
+            ]);
+
+            $notificationSent = NotificationController::sendReviewerInvitationNotification(
+                $bookId,
+                $book->title,
+                $validated['user_id'] // Kirim langsung Laravel user_id
+            );
+
+            Log::info('[Store Invite] Notification result', [
+                'sent' => $notificationSent,
+                'book_id' => $bookId,
+                'reviewer_id' => $validated['user_id'],
+            ]);
+
+            // Verifikasi notifikasi dibuat
+            $notificationCheck = DB::table('notifications')
+                ->where('reference_key', 'REVIEWER_INVITE_'.$bookId.'_'.$validated['user_id'])
+                ->first();
+
+            Log::info('[Store Invite] Notification verification', [
+                'reference_key' => 'REVIEWER_INVITE_'.$bookId.'_'.$validated['user_id'],
+                'notification_found' => $notificationCheck ? 'YES' : 'NO',
+                'notification_id' => $notificationCheck->id ?? null,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Undangan berhasil dikirim',
+                'debug' => [
+                    'book_reviewer_id' => $bookReviewer->id,
+                    'notification_created' => $notificationCheck ? true : false,
+                    'notification_id' => $notificationCheck->id ?? null,
+                ],
+            ], 200);
+
+        } catch (\Exception $e) {
+            Log::error('[Store Invite] Error: '.$e->getMessage(), [
+                'book_id' => $bookId,
+                'reviewer_id' => $validated['user_id'] ?? null,
+                'trace' => $e->getTraceAsString(),
+            ]);
+
             return response()->json([
                 'success' => false,
-                'message' => 'Reviewer sudah diundang sebelumnya'
-            ], 422);
+                'message' => 'Gagal mengundang reviewer: '.$e->getMessage(),
+            ], 500);
         }
-
-        // Simpan undangan ke database
-        $bookReviewer = BookReviewer::create([
-            'book_submission_id' => $bookId,
-            'user_id' => $validated['user_id'],
-            'status' => 'PENDING',
-            'note' => null,
-            'invited_by' => Auth::id(),
-            'invited_at' => now(),
-        ]);
-        
-        Log::info('[Store Invite] BookReviewer record created', [
-            'book_reviewer_id' => $bookReviewer->id,
-            'book_id' => $bookId,
-            'reviewer_id' => $validated['user_id'],
-        ]);
-        
-        // === PERBAIKAN: Pastikan user ada di tabel users ===
-        $reviewerUser = User::find($validated['user_id']);
-        
-        if (!$reviewerUser) {
-            Log::warning('[Store Invite] Reviewer user not found in users table, creating...', [
-                'user_id' => $validated['user_id']
-            ]);
-            
-            // Cari info user dari m_hak_akses
-            $hakAkses = DB::table('m_hak_akses')
-                ->where('user_id', $validated['user_id'])
-                ->first();
-            
-            $userName = $hakAkses ? 'Reviewer' : 'Reviewer ' . substr($validated['user_id'], 0, 8);
-            $userEmail = $validated['user_id'] . '@reviewer.local';
-            
-            // Buat user baru
-            $reviewerUser = User::create([
-                'id' => $validated['user_id'],
-                'name' => $userName,
-                'email' => $userEmail,
-                'password' => bcrypt(Str::random(16)),
-            ]);
-            
-            Log::info('[Store Invite] Created reviewer user', [
-                'user_id' => $reviewerUser->id,
-                'name' => $reviewerUser->name
-            ]);
-        }
-        
-        // === KIRIM NOTIFIKASI ===
-        Log::info('[Store Invite] Calling notification function', [
-            'book_id' => $bookId,
-            'book_title' => $book->title,
-            'reviewer_id' => $validated['user_id']
-        ]);
-        
-        $notificationSent = NotificationController::sendReviewerInvitationNotification(
-            $bookId,
-            $book->title,
-            $validated['user_id'] // Kirim langsung Laravel user_id
-        );
-        
-        Log::info('[Store Invite] Notification result', [
-            'sent' => $notificationSent,
-            'book_id' => $bookId,
-            'reviewer_id' => $validated['user_id']
-        ]);
-        
-        // Verifikasi notifikasi dibuat
-        $notificationCheck = DB::table('notifications')
-            ->where('reference_key', 'REVIEWER_INVITE_' . $bookId . '_' . $validated['user_id'])
-            ->first();
-            
-        Log::info('[Store Invite] Notification verification', [
-            'reference_key' => 'REVIEWER_INVITE_' . $bookId . '_' . $validated['user_id'],
-            'notification_found' => $notificationCheck ? 'YES' : 'NO',
-            'notification_id' => $notificationCheck->id ?? null
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Undangan berhasil dikirim',
-            'debug' => [
-                'book_reviewer_id' => $bookReviewer->id,
-                'notification_created' => $notificationCheck ? true : false,
-                'notification_id' => $notificationCheck->id ?? null
-            ]
-        ], 200);
-
-    } catch (\Exception $e) {
-        Log::error('[Store Invite] Error: ' . $e->getMessage(), [
-            'book_id' => $bookId,
-            'reviewer_id' => $validated['user_id'] ?? null,
-            'trace' => $e->getTraceAsString()
-        ]);
-        
-        return response()->json([
-            'success' => false,
-            'message' => 'Gagal mengundang reviewer: ' . $e->getMessage()
-        ], 500);
     }
-}
 
     public function indexHRD()
     {
         Log::info('HRD Page accessed - Checking for APPROVED_CHIEF books');
-        
+
         $submissions = BookSubmission::with('user')
             ->where('status', 'APPROVED_CHIEF')
             ->orderBy('created_at', 'desc')
@@ -191,9 +190,9 @@ class RegisSemiController extends Controller
                     'id' => $item->id,
                     'title' => $item->title,
                     'status' => $item->status,
-                    'amount' => $item->approved_amount
+                    'amount' => $item->approved_amount,
                 ]);
-                
+
                 return [
                     'id' => $item->id,
                     'judul' => $item->title,
@@ -202,15 +201,15 @@ class RegisSemiController extends Controller
                     'status' => $item->status,
                     'status_label' => $this->formatStatusLabel($item->status),
                     'approved_amount' => $item->approved_amount,
-                    'amount_formatted' => $item->approved_amount 
-                        ? 'Rp ' . number_format($item->approved_amount, 0, ',', '.')
+                    'amount_formatted' => $item->approved_amount
+                        ? 'Rp '.number_format($item->approved_amount, 0, ',', '.')
                         : null,
                 ];
             });
 
         Log::info('HRD Submissions Result', [
             'count' => $submissions->count(),
-            'status' => 'APPROVED_CHIEF'
+            'status' => 'APPROVED_CHIEF',
         ]);
 
         return Inertia::render('app/home/kita-page', [
@@ -219,8 +218,8 @@ class RegisSemiController extends Controller
                 'total_records' => $submissions->count(),
                 'status_filter' => 'APPROVED_CHIEF',
                 'message' => 'HRD page loaded successfully',
-                'timestamp' => now()->toDateTimeString()
-            ]
+                'timestamp' => now()->toDateTimeString(),
+            ],
         ]);
     }
 
@@ -269,163 +268,161 @@ class RegisSemiController extends Controller
                 'isbn' => $book->isbn,
                 'publisher' => $book->publisher,
                 'drive_link' => json_decode($book->drive_link),
-                'pdf_path' => $book->pdf_path, 
+                'pdf_path' => $book->pdf_path,
                 'status_label' => $book->status,
                 'dosen' => $book->user->name ?? 'Dosen Tidak Ditemukan',
-            ]
+            ],
         ]);
     }
 
     public function previewPdf($id)
     {
         $book = BookSubmission::findOrFail($id);
-        
+
         Log::info('Preview PDF', [
             'book_id' => $book->id,
             'pdf_path' => $book->pdf_path,
-            'storage_path' => $book->pdf_path ? 'public/' . $book->pdf_path : null
+            'storage_path' => $book->pdf_path ? 'public/'.$book->pdf_path : null,
         ]);
-        
+
         if (filter_var($book->pdf_path, FILTER_VALIDATE_URL)) {
             return redirect()->away($book->pdf_path);
         }
-        
-        if (!$book->pdf_path) {
+
+        if (! $book->pdf_path) {
             abort(404, 'File PDF tidak ditemukan di database.');
         }
-        
+
         $storagePath = $book->pdf_path;
-        
-        if (!Storage::exists($storagePath) && Storage::exists('public/' . $storagePath)) {
-            $storagePath = 'public/' . $storagePath;
+
+        if (! Storage::exists($storagePath) && Storage::exists('public/'.$storagePath)) {
+            $storagePath = 'public/'.$storagePath;
         }
-        
-        if (!Storage::exists($storagePath)) {
+
+        if (! Storage::exists($storagePath)) {
             $possiblePaths = [
                 $book->pdf_path,
-                'public/' . $book->pdf_path,
+                'public/'.$book->pdf_path,
                 str_replace('pdfs/', 'public/pdfs/', $book->pdf_path),
-                'pdfs/book-submissions/' . basename($book->pdf_path),
-                'public/pdfs/book-submissions/' . basename($book->pdf_path)
+                'pdfs/book-submissions/'.basename($book->pdf_path),
+                'public/pdfs/book-submissions/'.basename($book->pdf_path),
             ];
-            
+
             foreach ($possiblePaths as $path) {
                 if (Storage::exists($path)) {
                     $storagePath = $path;
                     break;
                 }
             }
-            
-            if (!Storage::exists($storagePath)) {
+
+            if (! Storage::exists($storagePath)) {
                 Log::error('PDF not found in any location', [
                     'book_id' => $book->id,
                     'pdf_path' => $book->pdf_path,
-                    'tried_paths' => $possiblePaths
+                    'tried_paths' => $possiblePaths,
                 ]);
                 abort(404, 'File PDF tidak ditemukan di storage.');
             }
         }
-        
-        $fullPath = storage_path('app/' . $storagePath);
-        
-        if (!file_exists($fullPath)) {
+
+        $fullPath = storage_path('app/'.$storagePath);
+
+        if (! file_exists($fullPath)) {
             abort(404, 'File tidak ditemukan di server.');
         }
-        
+
         return response()->file($fullPath, [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'inline; filename="' . basename($fullPath) . '"'
+            'Content-Disposition' => 'inline; filename="'.basename($fullPath).'"',
         ]);
     }
 
     public function downloadPdf($id)
     {
         $book = BookSubmission::findOrFail($id);
-        
-        if (!$book->pdf_path) {
+
+        if (! $book->pdf_path) {
             abort(404, 'File PDF tidak ditemukan.');
         }
-        
+
         if (filter_var($book->pdf_path, FILTER_VALIDATE_URL)) {
             return redirect()->away($book->pdf_path);
         }
-        
-        $storagePath = 'public/' . $book->pdf_path;
-        
-        if (!Storage::exists($storagePath)) {
+
+        $storagePath = 'public/'.$book->pdf_path;
+
+        if (! Storage::exists($storagePath)) {
             abort(404, 'File tidak ditemukan di server.');
         }
-        
-        return Storage::download($storagePath, 'buku_' . $book->id . '_' . Str::slug($book->title) . '.pdf');
+
+        return Storage::download($storagePath, 'buku_'.$book->id.'_'.Str::slug($book->title).'.pdf');
     }
 
     // Tambahkan method ini ke RegisSemiController.php
 
-/**
- * Tampilkan hasil review dari semua reviewer untuk buku tertentu
- */
-public function showReviewResults($id)
-{
-    try {
-        $book = BookSubmission::with(['user'])->findOrFail($id);
-        
-        // Ambil semua review untuk buku ini
-        $reviews = DB::table('book_reviewers as br')
-            ->join('users as u', 'br.user_id', '=', 'u.id')
-            ->where('br.book_submission_id', $id)
-            ->where('br.status', 'ACCEPTED') // Hanya review yang sudah selesai
-            ->whereNotNull('br.note') // Hanya yang ada catatannya
-            ->select(
-                'br.id',
-                'br.note',
-                'br.reviewed_at',
-                'u.id as reviewer_id',
-                'u.name as reviewer_name',
-                'u.email as reviewer_email'
-            )
-            ->orderBy('br.reviewed_at', 'desc')
-            ->get();
+    /**
+     * Tampilkan hasil review dari semua reviewer untuk buku tertentu
+     */
+    public function showReviewResults($id)
+    {
+        try {
+            $book = BookSubmission::with(['user'])->findOrFail($id);
 
-        Log::info('[Review Results] Loaded reviews', [
-            'book_id' => $id,
-            'review_count' => $reviews->count(),
-            'book_title' => $book->title
-        ]);
+            // Ambil semua review untuk buku ini
+            $reviews = DB::table('book_reviewers as br')
+                ->join('users as u', 'br.user_id', '=', 'u.id')
+                ->where('br.book_submission_id', $id)
+                ->where('br.status', 'ACCEPTED') // Hanya review yang sudah selesai
+                ->whereNotNull('br.note') // Hanya yang ada catatannya
+                ->select(
+                    'br.id',
+                    'br.note',
+                    'br.reviewed_at',
+                    'u.id as reviewer_id',
+                    'u.name as reviewer_name',
+                    'u.email as reviewer_email'
+                )
+                ->orderBy('br.reviewed_at', 'desc')
+                ->get();
 
-        // Format data untuk frontend
-        $results = $reviews->map(function($review) {
-            return [
-                'id' => $review->id,
-                'reviewer_name' => $review->reviewer_name,
-                'reviewer_email' => $review->reviewer_email,
-                'comment' => $review->note,
-                'reviewed_at' => $review->reviewed_at,
-                'formatted_date' => Carbon::parse($review->reviewed_at)->format('d M Y, H:i')
-            ];
-        })->toArray();
+            Log::info('[Review Results] Loaded reviews', [
+                'book_id' => $id,
+                'review_count' => $reviews->count(),
+                'book_title' => $book->title,
+            ]);
 
-        return Inertia::render('App/RegisSemi/Result', [
-            'bukuId' => $book->id,
-            'bookTitle' => $book->title,
-            'bookIsbn' => $book->isbn,
-            'bookAuthor' => $book->user->name ?? 'Unknown',
-            'results' => $results,
-            'reviewCount' => count($results)
-        ]);
+            // Format data untuk frontend
+            $results = $reviews->map(function ($review) {
+                return [
+                    'id' => $review->id,
+                    'reviewer_name' => $review->reviewer_name,
+                    'reviewer_email' => $review->reviewer_email,
+                    'comment' => $review->note,
+                    'reviewed_at' => $review->reviewed_at,
+                    'formatted_date' => Carbon::parse($review->reviewed_at)->format('d M Y, H:i'),
+                ];
+            })->toArray();
 
-    } catch (\Exception $e) {
-        Log::error('[Review Results] Error loading reviews', [
-            'book_id' => $id,
-            'error' => $e->getMessage(),
-            'trace' => $e->getTraceAsString()
-        ]);
+            return Inertia::render('App/RegisSemi/Result', [
+                'bukuId' => $book->id,
+                'bookTitle' => $book->title,
+                'bookIsbn' => $book->isbn,
+                'bookAuthor' => $book->user->name ?? 'Unknown',
+                'results' => $results,
+                'reviewCount' => count($results),
+            ]);
 
-        return redirect()->route('regis-semi.index')
-            ->with('error', 'Gagal memuat hasil review');
+        } catch (\Exception $e) {
+            Log::error('[Review Results] Error loading reviews', [
+                'book_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return redirect()->route('regis-semi.index')
+                ->with('error', 'Gagal memuat hasil review');
+        }
     }
-}
-
-
 
     public function showStaff($id)
     {
@@ -449,32 +446,37 @@ public function showReviewResults($id)
                 'pdf_path' => $book->pdf_path,
                 'status_label' => $book->status,
                 'dosen' => $book->user->name ?? 'Dosen Tidak Ditemukan',
-            ]
+            ],
         ]);
     }
-public function invite($id)
+
+    public function invite($id)
     {
         $book = BookSubmission::findOrFail($id);
-        
+
         // Gunakan method baru yang sudah memperbaiki join dengan tabel users
         $availableReviewers = HakAksesModel::getAvailableReviewersForBook($id);
-        
+
         Log::info('Available Reviewers with User Info', [
             'book_id' => $id,
             'total_reviewers' => count($availableReviewers),
             'reviewers_sample' => array_slice($availableReviewers, 0, 3),
-            'with_dosen_count' => count(array_filter($availableReviewers, fn($r) => $r['has_dosen_akses']))
+            'with_dosen_count' => count(array_filter($availableReviewers, fn ($r) => $r['has_dosen_akses'])),
         ]);
-        
+
         // Urutkan: yang punya akses Dosen duluan
-        usort($availableReviewers, function($a, $b) {
-            if ($a['has_dosen_akses'] && !$b['has_dosen_akses']) return -1;
-            if (!$a['has_dosen_akses'] && $b['has_dosen_akses']) return 1;
-            
+        usort($availableReviewers, function ($a, $b) {
+            if ($a['has_dosen_akses'] && ! $b['has_dosen_akses']) {
+                return -1;
+            }
+            if (! $a['has_dosen_akses'] && $b['has_dosen_akses']) {
+                return 1;
+            }
+
             // Jika sama, urutkan berdasarkan nama
             return strcmp($a['name'], $b['name']);
         });
-        
+
         return Inertia::render('App/RegisSemi/Invite', [
             'book' => [
                 'id' => $book->id,
@@ -485,9 +487,9 @@ public function invite($id)
             'availableReviewers' => $availableReviewers,
             'stats' => [
                 'total_reviewers' => count($availableReviewers),
-                'with_dosen_akses' => count(array_filter($availableReviewers, fn($r) => $r['has_dosen_akses'])),
-                'invited_count' => count(array_filter($availableReviewers, fn($r) => $r['is_invited'])),
-            ]
+                'with_dosen_akses' => count(array_filter($availableReviewers, fn ($r) => $r['has_dosen_akses'])),
+                'invited_count' => count(array_filter($availableReviewers, fn ($r) => $r['is_invited'])),
+            ],
         ]);
     }
 
@@ -518,7 +520,7 @@ public function invite($id)
                 'book_submission_id' => $book->id,
                 'user_id' => $userId,
                 'action' => 'APPROVE',
-                'note' => 'Pengajuan disetujui oleh Ketua LPPM. Menunggu pencairan HRD.'
+                'note' => 'Pengajuan disetujui oleh Ketua LPPM. Menunggu pencairan HRD.',
             ]);
 
             NotificationController::sendBookPaymentNotification(
@@ -532,7 +534,7 @@ public function invite($id)
             'book_id' => $book->id,
             'title' => $book->title,
             'amount' => $book->approved_amount,
-            'status' => $book->status
+            'status' => $book->status,
         ]);
 
         return redirect()->route('regis-semi.index')
@@ -557,7 +559,7 @@ public function invite($id)
                 'book_submission_id' => $book->id,
                 'user_id' => Auth::id() ?? $book->user_id,
                 'action' => 'REJECT',
-                'note' => $request->note
+                'note' => $request->note,
             ]);
         });
 
@@ -596,7 +598,7 @@ public function invite($id)
 
         return inertia('App/RegisSemi/Indexx', [
             'submissions' => $submissions,
-            'pageName' => 'Penghargaan Buku Masuk'
+            'pageName' => 'Penghargaan Buku Masuk',
         ]);
     }
 
@@ -631,7 +633,7 @@ public function invite($id)
 
         return Inertia::render('App/RegisSemi/Result', [
             'submissions' => $submissions,
-            'pageName' => 'Hasil Pengajuan Buku'
+            'pageName' => 'Hasil Pengajuan Buku',
         ]);
     }
 }

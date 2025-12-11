@@ -17,14 +17,6 @@ class DatabaseSeeder extends Seeder
         $mainUserId = env('DEV_DEFAULT_USER_ID', '12e091b8-f227-4a58-8061-dc4a100c60f1');
 
         // Buat User Utama (Admin)
-        User::firstOrCreate(
-            ['id' => $mainUserId],
-            [
-                'name' => 'Super Admin',
-                'email' => 'admin@del.ac.id', // Email placeholder
-                'password' => Hash::make('password'),
-            ]
-        );
 
         // 2. Definisi User Dosen (Harus sama ID-nya dengan yang ada di seed.ts)
         $dosenUsers = [

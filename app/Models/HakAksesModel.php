@@ -3,15 +3,17 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class HakAksesModel extends Model
 {
     protected $table = 'm_hak_akses';
 
     protected $primaryKey = 'id';
+
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [
@@ -28,7 +30,7 @@ class HakAksesModel extends Model
         parent::boot();
 
         static::creating(function ($model) {
-            if (!$model->id) {
+            if (! $model->id) {
                 $model->id = (string) Str::uuid();
             }
         });
@@ -42,9 +44,9 @@ class HakAksesModel extends Model
     {
         return DB::table('m_hak_akses as ha')
             ->join('users as u', 'u.id', '=', 'ha.user_id')
-            ->where(function($query) {
+            ->where(function ($query) {
                 $query->where('ha.akses', 'like', '%Dosen%')
-                      ->orWhere('ha.akses', 'Dosen');
+                    ->orWhere('ha.akses', 'Dosen');
             })
             ->select(
                 'u.id as user_id',
@@ -70,18 +72,18 @@ class HakAksesModel extends Model
     {
         // Ambil semua user dengan akses Dosen
         $dosenUsers = self::getDosenUsersWithCompleteInfo();
-        
+
         // Ambil user yang sudah diundang
         $invitedUserIds = \App\Models\BookReviewer::where('book_submission_id', $bookId)
             ->pluck('user_id')
             ->toArray();
-        
+
         // Proses data
         $availableReviewers = [];
         foreach ($dosenUsers as $user) {
             // Parse akses menjadi array
             $aksesList = array_map('trim', explode(',', $user->akses));
-            
+
             $availableReviewers[] = [
                 'id' => $user->user_id,
                 'user_id' => $user->user_id,
@@ -90,16 +92,17 @@ class HakAksesModel extends Model
                 'akses_list' => $aksesList,
                 'has_dosen_akses' => in_array('Dosen', $aksesList) || str_contains($user->akses, 'Dosen'),
                 'is_invited' => in_array($user->user_id, $invitedUserIds),
-                'raw_akses' => $user->akses
+                'raw_akses' => $user->akses,
             ];
         }
-        
+
         return $availableReviewers;
     }
 
     /**
      * Mendapatkan semua user_id dengan akses tertentu
-     * @param string|array $akses Bisa string atau array akses
+     *
+     * @param  string|array  $akses  Bisa string atau array akses
      */
     public static function getUserIdsByAkses($akses)
     {
@@ -108,7 +111,7 @@ class HakAksesModel extends Model
                 ->pluck('user_id')
                 ->toArray();
         }
-        
+
         return self::where('akses', $akses)
             ->pluck('user_id')
             ->toArray();
@@ -119,10 +122,10 @@ class HakAksesModel extends Model
      */
     public static function getUserIdsWithDosenAkses()
     {
-        return self::where(function($query) {
-                $query->where('akses', 'like', '%Dosen%')
-                      ->orWhere('akses', 'Dosen');
-            })
+        return self::where(function ($query) {
+            $query->where('akses', 'like', '%Dosen%')
+                ->orWhere('akses', 'Dosen');
+        })
             ->distinct()
             ->pluck('user_id')
             ->toArray();
@@ -134,10 +137,10 @@ class HakAksesModel extends Model
     public static function getUsersWithDosenAkses()
     {
         // Ambil user_id yang memiliki akses Dosen
-        $dosenUserIds = self::where(function($query) {
-                $query->where('akses', 'like', '%Dosen%')
-                      ->orWhere('akses', 'Dosen');
-            })
+        $dosenUserIds = self::where(function ($query) {
+            $query->where('akses', 'like', '%Dosen%')
+                ->orWhere('akses', 'Dosen');
+        })
             ->distinct()
             ->pluck('user_id')
             ->toArray();
@@ -158,10 +161,10 @@ class HakAksesModel extends Model
     public static function getDosenUsersWithDetails()
     {
         // Ambil semua user_id dengan akses Dosen
-        $dosenUserIds = self::where(function($query) {
-                $query->where('akses', 'like', '%Dosen%')
-                      ->orWhere('akses', 'Dosen');
-            })
+        $dosenUserIds = self::where(function ($query) {
+            $query->where('akses', 'like', '%Dosen%')
+                ->orWhere('akses', 'Dosen');
+        })
             ->distinct()
             ->pluck('user_id')
             ->toArray();
@@ -189,19 +192,19 @@ class HakAksesModel extends Model
     {
         if (is_array($akses)) {
             return self::where('user_id', $userId)
-                ->where(function($query) use ($akses) {
+                ->where(function ($query) use ($akses) {
                     foreach ($akses as $ak) {
                         $query->orWhere('akses', $ak)
-                              ->orWhere('akses', 'like', "%{$ak}%");
+                            ->orWhere('akses', 'like', "%{$ak}%");
                     }
                 })
                 ->exists();
         }
-        
+
         return self::where('user_id', $userId)
-            ->where(function($query) use ($akses) {
+            ->where(function ($query) use ($akses) {
                 $query->where('akses', $akses)
-                      ->orWhere('akses', 'like', "%{$akses}%");
+                    ->orWhere('akses', 'like', "%{$akses}%");
             })
             ->exists();
     }
@@ -214,7 +217,7 @@ class HakAksesModel extends Model
         $aksesData = self::where('user_id', $userId)
             ->pluck('akses')
             ->toArray();
-        
+
         // Jika ada string gabungan seperti "Admin,Dosen", split menjadi array
         $allAkses = [];
         foreach ($aksesData as $akses) {
@@ -226,7 +229,7 @@ class HakAksesModel extends Model
                 $allAkses[] = $akses;
             }
         }
-        
+
         // Hapus duplikat dan kembalikan
         return array_unique($allAkses);
     }
@@ -237,9 +240,9 @@ class HakAksesModel extends Model
     public static function userHasDosenAkses($userId)
     {
         return self::where('user_id', $userId)
-            ->where(function($query) {
+            ->where(function ($query) {
                 $query->where('akses', 'Dosen')
-                      ->orWhere('akses', 'like', '%Dosen%');
+                    ->orWhere('akses', 'like', '%Dosen%');
             })
             ->exists();
     }

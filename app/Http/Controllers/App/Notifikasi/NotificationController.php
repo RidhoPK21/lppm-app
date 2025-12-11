@@ -14,7 +14,7 @@ class NotificationController extends Controller
     /**
      * Tampilkan halaman notifikasi dan buat notifikasi yang diperlukan.
      */
-  public function index(Request $request)
+    public function index(Request $request)
     {
         $authUser = $request->attributes->get('auth');
         
@@ -92,8 +92,33 @@ class NotificationController extends Controller
         // ------------------------------------
         
         // Query notifications dari database menggunakan Laravel user_id
+        // ✅ PERBAIKAN: Tambahkan filtering berdasarkan ROLE
         $query = DB::table('notifications')
-            ->where('user_id', $laravelUser->id);
+            ->where('user_id', $laravelUser->id)
+            ->where(function($q) use ($isLPPM, $isDosen, $isHRD) {
+                // Selalu tampilkan notifikasi sistem/umum (Welcome, dll)
+                $q->whereNull('reference_key')
+                  ->orWhere('type', 'System');
+
+                // Jika Role Dosen Aktif: Tampilkan notifikasi reject, uang cair, dan undangan review
+                if ($isDosen) {
+                    $q->orWhere('reference_key', 'like', 'REJECT_%')           
+                      ->orWhere('reference_key', 'like', 'PAYMENT_SUCCESS_%')  
+                      ->orWhere('reference_key', 'like', 'REVIEWER_INVITE_%'); 
+                }
+
+                // Jika Role LPPM Aktif: Tampilkan notifikasi pengajuan baru, revisi, dan hasil review
+                if ($isLPPM) {
+                    $q->orWhere('reference_key', 'like', 'SUBMISSION_%')       
+                      ->orWhere('reference_key', 'like', 'REVISION_%')         
+                      ->orWhere('reference_key', 'like', 'REVIEW_COMPLETE_%'); 
+                }
+
+                // Jika Role HRD Aktif: Tampilkan notifikasi pembayaran
+                if ($isHRD) {
+                    $q->orWhere('reference_key', 'like', 'PAYMENT_CHIEF_%');   
+                }
+            });
 
         // Apply search
         if (!empty($filters['search'])) {
@@ -191,7 +216,8 @@ class NotificationController extends Controller
         ]);
     }
     
-     private static function resolveLaravelUserIdWithMultipleSources($apiUserId)
+    // ... Sisa method (resolveLaravelUserIdWithMultipleSources, createIdMapping, dll) biarkan tetap sama ...
+    private static function resolveLaravelUserIdWithMultipleSources($apiUserId)
     {
         Log::info('[Resolve User ID] Starting for API user ID', ['api_user_id' => $apiUserId]);
         

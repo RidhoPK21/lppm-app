@@ -45,21 +45,32 @@ export const columns = [
         header: "Status",
         cell: ({ row }) => {
             const status = row.getValue("status");
-            let color = "bg-gray-500";
+            let variant = "outline"; // Default: neutral/outline
 
-            if (status === "disetujui")
-                color = "bg-green-500 hover:bg-green-600";
-            if (status === "diajukan")
-                color = "bg-yellow-500 hover:bg-yellow-600";
-            if (status === "ditolak") color = "bg-red-500 hover:bg-red-600";
+            // MENGUBAH HARDCODED COLORS KE VARIAN TEMA SHADCN
+            if (status === "disetujui") {
+                // Menggunakan 'default' untuk merepresentasikan status sukses/disetujui (primary color)
+                variant = "default";
+            } else if (status === "diajukan") {
+                // Menggunakan 'secondary' untuk merepresentasikan status pending/submitted
+                variant = "secondary";
+            } else if (status === "ditolak") {
+                // Menggunakan 'destructive' untuk status penolakan
+                variant = "destructive";
+            }
 
-            return <Badge className={`${color} capitalize`}>{status}</Badge>;
+            // Menghapus hardcoded class 'color' dan menggantinya dengan 'variant'
+            return (
+                <Badge variant={variant} className="capitalize">
+                    {status}
+                </Badge>
+            );
         },
     },
     {
         id: "actions",
         header: "Aksi",
-        // FIX: Menghapus parameter { row } yang tidak terpakai untuk menghindari error ESLint
+        // FIX: Menghapus parameter { row } yang tidak terpakai
         cell: () => {
             return (
                 <DropdownMenu>
@@ -77,7 +88,8 @@ export const columns = [
                         <DropdownMenuItem>
                             <Edit className="mr-2 h-4 w-4" /> Edit
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="text-red-600 focus:text-red-600">
+                        {/* UBAH: text-red-600 -> text-destructive (theme-aware) */}
+                        <DropdownMenuItem className="text-destructive focus:text-destructive">
                             <Trash className="mr-2 h-4 w-4" /> Hapus
                         </DropdownMenuItem>
                     </DropdownMenuContent>

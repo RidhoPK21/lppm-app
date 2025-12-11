@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\HakAksesModel;
-use Illuminate\Http\Request;
 
 class DosenController extends Controller
 {
@@ -23,25 +22,25 @@ class DosenController extends Controller
                         'akses' => $item->akses,
                         'nama' => "Dosen ({$item->user_id})",
                         'email' => "{$item->user_id}@dosen.local",
-                        'initial' => "D",
-                        'is_invited' => false // default
+                        'initial' => 'D',
+                        'is_invited' => false, // default
                     ];
                 })
                 ->toArray();
-            
+
             return response()->json([
                 'success' => true,
                 'message' => 'Data dosen berhasil diambil',
                 'data' => $dosenData,
-                'count' => count($dosenData)
+                'count' => count($dosenData),
             ]);
-            
+
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal mengambil data dosen',
                 'data' => [],
-                'count' => 0
+                'count' => 0,
             ], 500);
         }
     }

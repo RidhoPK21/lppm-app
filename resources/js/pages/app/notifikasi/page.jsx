@@ -1,4 +1,5 @@
 // File: resources/js/Pages/app/notifikasi/page.jsx
+
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,53 +14,70 @@ import AppLayout from "@/layouts/app-layout";
 import { Head, router } from "@inertiajs/react";
 import { Bell } from "lucide-react";
 import { useState } from "react";
-import PropTypes from 'prop-types';
-import ReviewNotificationCard from './ReviewNotificationCard';
+import PropTypes from "prop-types";
+import ReviewNotificationCard from "./ReviewNotificationCard";
 
-export default function NotificationPage({ notifications, filters, booksForReview = {} }) {
-    const [searchValue, setSearchValue] = useState(filters.search || '');
-    const [filterValue, setFilterValue] = useState(filters.filter || 'semua');
-    const [sortValue, setSortValue] = useState(filters.sort || 'terbaru');
+export default function NotificationPage({
+    notifications,
+    filters,
+    booksForReview = {},
+}) {
+    const [searchValue, setSearchValue] = useState(filters.search || "");
+    const [filterValue, setFilterValue] = useState(filters.filter || "semua");
+    const [sortValue, setSortValue] = useState(filters.sort || "terbaru");
     const [selectedReviewNotif, setSelectedReviewNotif] = useState(null);
 
     const handleSearch = () => {
-        router.get('/notifikasi', {
-            search: searchValue,
-            filter: filterValue,
-            sort: sortValue
-        }, {
-            preserveState: true,
-            preserveScroll: true
-        });
+        router.get(
+            "/notifikasi",
+            {
+                search: searchValue,
+                filter: filterValue,
+                sort: sortValue,
+            },
+            {
+                preserveState: true,
+                preserveScroll: true,
+            }
+        );
     };
 
     const handleFilterChange = (value) => {
         setFilterValue(value);
-        router.get('/notifikasi', {
-            search: searchValue,
-            filter: value,
-            sort: sortValue
-        }, {
-            preserveState: true,
-            preserveScroll: true
-        });
+        router.get(
+            "/notifikasi",
+            {
+                search: searchValue,
+                filter: value,
+                sort: sortValue,
+            },
+            {
+                preserveState: true,
+                preserveScroll: true,
+            }
+        );
     };
 
     const handleSortChange = (value) => {
         setSortValue(value);
-        router.get('/notifikasi', {
-            search: searchValue,
-            filter: filterValue,
-            sort: value
-        }, {
-            preserveState: true,
-            preserveScroll: true
-        });
+        router.get(
+            "/notifikasi",
+            {
+                search: searchValue,
+                filter: filterValue,
+                sort: value,
+            },
+            {
+                preserveState: true,
+                preserveScroll: true,
+            }
+        );
     };
 
     const handleNotificationClick = (notification) => {
         // Check if this is a reviewer invitation notification
-        const isReviewInvite = notification.reference_key?.startsWith('REVIEWER_INVITE_');
+        const isReviewInvite =
+            notification.reference_key?.startsWith("REVIEWER_INVITE_");
         const bookDetail = booksForReview[notification.id];
 
         if (isReviewInvite && bookDetail) {
@@ -68,25 +86,30 @@ export default function NotificationPage({ notifications, filters, booksForRevie
         } else {
             // Mark as read for regular notifications
             if (!notification.is_read) {
-                router.post(`/notifikasi/${notification.id}/read`, {}, {
-                    preserveScroll: true
-                });
+                router.post(
+                    `/notifikasi/${notification.id}/read`,
+                    {},
+                    {
+                        preserveScroll: true,
+                    }
+                );
             }
         }
     };
 
+    // UBAH: Menggunakan kelas theme-aware atau warna Tailwind yang sudah ditentukan (amber untuk peringatan)
     const getTypeColor = (type) => {
-        if (type === "Info") return "text-blue-500";
-        if (type === "Sukses") return "text-green-500";
-        if (type === "Peringatan") return "text-yellow-500";
-        if (type === "Error") return "text-red-500";
-        return "text-gray-500";
+        if (type === "Info") return "text-blue-600"; // Menggunakan shade blue yang konsisten
+        if (type === "Sukses") return "text-primary";
+        if (type === "Peringatan") return "text-amber-600";
+        if (type === "Error") return "text-destructive";
+        return "text-muted-foreground";
     };
 
     const formatDate = (dateString) => {
         const date = new Date(dateString);
-        const day = String(date.getDate()).padStart(2, '0');
-        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, "0");
+        const month = String(date.getMonth() + 1).padStart(2, "0");
         const year = date.getFullYear();
         return `${day} / ${month} / ${year}`;
     };
@@ -101,7 +124,8 @@ export default function NotificationPage({ notifications, filters, booksForRevie
                         Notifikasi
                     </h1>
                     <p className="text-muted-foreground mt-1">
-                        Pantau semua aktivitas dan pemberitahuan terbaru Anda di sini.
+                        Pantau semua aktivitas dan pemberitahuan terbaru Anda di
+                        sini.
                     </p>
                 </div>
 
@@ -109,36 +133,51 @@ export default function NotificationPage({ notifications, filters, booksForRevie
                     <div className="flex-1 flex gap-2">
                         <Input
                             placeholder="Cari notifikasi..."
-                            className="bg-white dark:bg-sidebar"
+                            // UBAH: bg-white/dark:bg-sidebar -> bg-background
+                            className="bg-background"
                             value={searchValue}
                             onChange={(e) => setSearchValue(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                            onKeyDown={(e) =>
+                                e.key === "Enter" && handleSearch()
+                            }
                         />
                         <Button
                             variant="secondary"
-                            className="bg-gray-100 dark:bg-muted hover:bg-gray-200"
+                            // UBAH: bg-gray-100/dark:bg-muted -> biarkan variant secondary yang mengurus warna
                             onClick={handleSearch}
                         >
                             Cari
                         </Button>
                     </div>
                     <div className="flex gap-2">
-                        <Select value={filterValue} onValueChange={handleFilterChange}>
-                            <SelectTrigger className="w-[140px] bg-white dark:bg-sidebar">
+                        <Select
+                            value={filterValue}
+                            onValueChange={handleFilterChange}
+                        >
+                            {/* UBAH: bg-white/dark:bg-sidebar -> bg-background */}
+                            <SelectTrigger className="w-[140px] bg-background">
                                 <SelectValue placeholder="Filter" />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="semua">Semua</SelectItem>
-                                <SelectItem value="belum_dibaca">Belum Dibaca</SelectItem>
+                                <SelectItem value="belum_dibaca">
+                                    Belum Dibaca
+                                </SelectItem>
                                 <SelectItem value="Info">Info</SelectItem>
                                 <SelectItem value="Sukses">Sukses</SelectItem>
-                                <SelectItem value="Peringatan">Peringatan</SelectItem>
+                                <SelectItem value="Peringatan">
+                                    Peringatan
+                                </SelectItem>
                                 <SelectItem value="Error">Error</SelectItem>
                                 <SelectItem value="System">System</SelectItem>
                             </SelectContent>
                         </Select>
-                        <Select value={sortValue} onValueChange={handleSortChange}>
-                            <SelectTrigger className="w-[140px] bg-white dark:bg-sidebar">
+                        <Select
+                            value={sortValue}
+                            onValueChange={handleSortChange}
+                        >
+                            {/* UBAH: bg-white/dark:bg-sidebar -> bg-background */}
+                            <SelectTrigger className="w-[140px] bg-background">
                                 <SelectValue placeholder="Urutkan" />
                             </SelectTrigger>
                             <SelectContent>
@@ -151,8 +190,9 @@ export default function NotificationPage({ notifications, filters, booksForRevie
 
                 <div className="flex flex-col gap-3 w-full">
                     {notifications.map((item) => {
-                        const isReviewInvite = item.reference_key?.startsWith('REVIEWER_INVITE_');
-                        
+                        const isReviewInvite =
+                            item.reference_key?.startsWith("REVIEWER_INVITE_");
+
                         return (
                             <Card
                                 key={item.id}
@@ -162,23 +202,18 @@ export default function NotificationPage({ notifications, filters, booksForRevie
                                         : ""
                                 } ${
                                     isReviewInvite
-                                        ? "border-2 border-black dark:border-white"
-                                        : "border border-gray-200 dark:border-gray-700"
+                                        ? "border-2 border-primary/50" // UBAH: border-black/dark:border-white -> border-primary/50
+                                        : "border border-input" // UBAH: border-gray-200/dark:border-gray-700 -> border-input
                                 }`}
                                 onClick={() => handleNotificationClick(item)}
                             >
                                 <div className="flex items-center gap-4 min-w-0 flex-1 text-left">
                                     <div className="shrink-0">
-                                        <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
-                                            isReviewInvite
-                                                ? "bg-black dark:bg-white"
-                                                : "bg-black dark:bg-white"
-                                        }`}>
-                                            <Bell className={`h-5 w-5 ${
-                                                isReviewInvite
-                                                    ? "text-white dark:text-black"
-                                                    : "text-white dark:text-black"
-                                            }`} />
+                                        <div
+                                            className={`h-10 w-10 rounded-full flex items-center justify-center bg-primary`}
+                                        >
+                                            {/* UBAH: bg-black/dark:bg-white -> bg-primary, text-white/dark:text-black -> text-primary-foreground */}
+                                            <Bell className="h-5 w-5 text-primary-foreground" />
                                         </div>
                                     </div>
 
@@ -193,7 +228,11 @@ export default function NotificationPage({ notifications, filters, booksForRevie
                                 </div>
 
                                 <div className="text-right shrink-0">
-                                    <p className={`text-xs font-medium ${getTypeColor(item.type)}`}>
+                                    <p
+                                        className={`text-xs font-medium ${getTypeColor(
+                                            item.type
+                                        )}`}
+                                    >
                                         {item.type}
                                     </p>
                                     <p className="text-xs text-muted-foreground mt-1">
@@ -231,25 +270,31 @@ NotificationPage.propTypes = {
             user_id: PropTypes.string.isRequired,
             title: PropTypes.string.isRequired,
             message: PropTypes.string.isRequired,
-            type: PropTypes.oneOf(['Info', 'Sukses', 'Peringatan', 'Error', 'System']).isRequired,
+            type: PropTypes.oneOf([
+                "Info",
+                "Sukses",
+                "Peringatan",
+                "Error",
+                "System",
+            ]).isRequired,
             is_read: PropTypes.bool.isRequired,
             created_at: PropTypes.string.isRequired,
-            reference_key: PropTypes.string
+            reference_key: PropTypes.string,
         })
     ).isRequired,
     filters: PropTypes.shape({
         search: PropTypes.string,
         filter: PropTypes.string,
-        sort: PropTypes.string
+        sort: PropTypes.string,
     }),
-    booksForReview: PropTypes.object
+    booksForReview: PropTypes.object,
 };
 
 NotificationPage.defaultProps = {
     filters: {
-        search: '',
-        filter: 'semua',
-        sort: 'terbaru'
+        search: "",
+        filter: "semua",
+        sort: "terbaru",
     },
-    booksForReview: {}
+    booksForReview: {},
 };
