@@ -27,7 +27,8 @@ class PenghargaanBukuController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        $mappedBooks = $books->map(function ($book) {
+        // ✅ PERBAIKAN: Type Hint (BookSubmission $book)
+        $mappedBooks = $books->map(function (BookSubmission $book) {
             $authorNames = $book->authors->pluck('name')->join(', ');
 
             return [
@@ -374,7 +375,8 @@ class PenghargaanBukuController extends Controller
         return $pdf->stream('Surat_Permohonan_Penghargaan_Buku_'.$book->id.'.pdf');
     }
 
-    private function generateAndSavePdf($book)
+    // ✅ PERBAIKAN: Type Hint (BookSubmission $book)
+    private function generateAndSavePdf(BookSubmission $book)
     {
         try {
             $book->load('authors');

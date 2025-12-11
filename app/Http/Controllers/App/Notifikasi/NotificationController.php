@@ -3,12 +3,14 @@
 namespace App\Http\Controllers\App\Notifikasi;
 
 use App\Http\Controllers\Controller;
-use App\Models\Notification; // Pastikan Model ini sudah dibuat
+use App\Models\BookReviewer;
+use App\Models\BookSubmission;
+use App\Models\Notification;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log; // Penting untuk Generate UUID manual
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 
@@ -135,9 +137,10 @@ class NotificationController extends Controller
         }
 
         // Get notifications
-        $notifications = $query->get()->map(function ($notif) {
+        // ✅ PERBAIKAN: Type Hint (Notification $notif)
+        $notifications = $query->get()->map(function (Notification $notif) {
             return [
-                'id' => $notif->id, // ✅ PERBAIKAN: Hapus (int) casting agar UUID string aman
+                'id' => $notif->id, // Hapus (int) casting agar UUID aman
                 'user_id' => $notif->user_id,
                 'title' => $notif->title,
                 'message' => $notif->message,
@@ -170,7 +173,7 @@ class NotificationController extends Controller
 
                 if ($bookDetail) {
                     $booksForReview[$notif['id']] = [
-                        'id' => $bookDetail->id, // ✅ PERBAIKAN: Hapus (int) casting
+                        'id' => $bookDetail->id,
                         'title' => $bookDetail->title,
                         'isbn' => $bookDetail->isbn,
                         'publisher' => $bookDetail->publisher,
@@ -213,7 +216,6 @@ class NotificationController extends Controller
             ? 'Selamat datang di Website LPPM. Anda siap untuk mengajukan buku.'
             : 'Selamat datang, Silahkan Melengkapi Profilmu untuk pengalaman yang lebih baik.';
 
-        // ✅ PERBAIKAN: Gunakan Model::create agar UUID otomatis dibuat
         Notification::create([
             'user_id' => $laravelUserId,
             'title' => $title,
@@ -249,7 +251,6 @@ class NotificationController extends Controller
                     ->exists();
 
                 if (! $notifExists) {
-                    // ✅ PERBAIKAN: Gunakan Model::create
                     Notification::create([
                         'user_id' => $laravelUserId,
                         'title' => 'Pengajuan Buku Baru',
@@ -291,7 +292,6 @@ class NotificationController extends Controller
                     ->exists();
 
                 if (! $notifExists) {
-                    // ✅ PERBAIKAN: Gunakan Model::create
                     Notification::create([
                         'user_id' => $laravelUserId,
                         'title' => 'Revisi Pengajuan Buku',
@@ -352,7 +352,6 @@ class NotificationController extends Controller
                     ->exists();
 
                 if (! $notifExists) {
-                    // ✅ PERBAIKAN: Gunakan Model::create
                     Notification::create([
                         'user_id' => $laravelUserId,
                         'title' => $title,
@@ -392,7 +391,6 @@ class NotificationController extends Controller
                     ->exists();
 
                 if (! $notifExists) {
-                    // ✅ PERBAIKAN: Gunakan Model::create
                     Notification::create([
                         'user_id' => $laravelUserId,
                         'title' => 'Pembayaran Penghargaan Buku',
@@ -431,7 +429,6 @@ class NotificationController extends Controller
                     ->exists();
 
                 if (! $notifExists) {
-                    // ✅ PERBAIKAN: Gunakan Model::create
                     Notification::create([
                         'user_id' => $laravelUserId,
                         'title' => 'Dana Insentif Buku Telah Cair',
@@ -575,7 +572,6 @@ class NotificationController extends Controller
                 ->exists();
 
             if (! $notifExists) {
-                // ✅ PERBAIKAN: Gunakan Model::create
                 Notification::create([
                     'user_id' => $laravelUser->id,
                     'title' => $title,
@@ -604,7 +600,6 @@ class NotificationController extends Controller
             $message = "Tugas Baru: Anda diundang me-review buku '{$bookTitle}'.";
             $referenceKey = 'REVIEWER_INVITE_'.$bookId.'_'.$laravelUserId;
 
-            // ✅ PERBAIKAN: Gunakan updateOrCreate dari Model
             Notification::updateOrCreate(
                 ['user_id' => $laravelUserId, 'reference_key' => $referenceKey],
                 [
@@ -646,7 +641,7 @@ class NotificationController extends Controller
 
             DB::beginTransaction();
 
-            $bookReviewer = \App\Models\BookReviewer::where('book_submission_id', $bookId)
+            $bookReviewer = BookReviewer::where('book_submission_id', $bookId)
                 ->where('user_id', $laravelUser->id)
                 ->first();
 
@@ -665,7 +660,7 @@ class NotificationController extends Controller
             // Update notifikasi jadi terbaca
             Notification::where('id', $request->notification_id)->update(['is_read' => true]);
 
-            $book = \App\Models\BookSubmission::find($bookId);
+            $book = BookSubmission::find($bookId);
             if (! $book) {
                 DB::rollBack();
 
@@ -683,7 +678,6 @@ class NotificationController extends Controller
                     $existingNotif = Notification::where('reference_key', $referenceKey)->exists();
 
                     if (! $existingNotif) {
-                        // ✅ PERBAIKAN: Gunakan Model::create
                         Notification::create([
                             'user_id' => $inviter->id,
                             'title' => 'Review Buku Selesai',
@@ -724,7 +718,6 @@ class NotificationController extends Controller
                 ->exists();
 
             if (! $notifExists) {
-                // ✅ PERBAIKAN: Gunakan Model::create
                 Notification::create([
                     'user_id' => $laravelUser->id,
                     'title' => 'Dana Insentif Buku Telah Cair',

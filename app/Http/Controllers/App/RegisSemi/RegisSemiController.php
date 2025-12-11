@@ -28,7 +28,8 @@ class RegisSemiController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        $mappedData = $submissions->map(function ($item) {
+        // ✅ PERBAIKAN: Tambahkan type hint (BookSubmission $item)
+        $mappedData = $submissions->map(function (BookSubmission $item) {
             return [
                 'id' => $item->id,
                 'judul' => $item->title,
@@ -181,11 +182,12 @@ class RegisSemiController extends Controller
     {
         Log::info('HRD Page accessed - Checking for APPROVED_CHIEF books');
 
+        // ✅ PERBAIKAN: Type hint (BookSubmission $item)
         $submissions = BookSubmission::with('user')
             ->where('status', 'APPROVED_CHIEF')
             ->orderBy('created_at', 'desc')
             ->get()
-            ->map(function ($item) {
+            ->map(function (BookSubmission $item) {
                 Log::info('Found HRD Book', [
                     'id' => $item->id,
                     'title' => $item->title,
@@ -493,12 +495,12 @@ class RegisSemiController extends Controller
         ]);
     }
 
-    private function checkIfAlreadyInvited($userId, $bookId)
-    {
-        return BookReviewer::where('book_submission_id', $bookId)
-            ->where('user_id', $userId)
-            ->exists();
-    }
+    // private function checkIfAlreadyInvited($userId, $bookId)
+    // {
+    //     return BookReviewer::where('book_submission_id', $bookId)
+    //         ->where('user_id', $userId)
+    //         ->exists();
+    // }
 
     public function approve(Request $request, $id)
     {
@@ -586,7 +588,8 @@ class RegisSemiController extends Controller
         $submissions = BookSubmission::with('user')
             ->orderBy('created_at', 'desc')
             ->get()
-            ->map(function ($item) {
+            // ✅ PERBAIKAN: Type hint (BookSubmission $item)
+            ->map(function (BookSubmission $item) {
                 return [
                     'id' => $item->id,
                     'judul' => $item->title,
@@ -621,7 +624,8 @@ class RegisSemiController extends Controller
             ->where('status', 'PAID')
             ->orderBy('created_at', 'desc')
             ->get()
-            ->map(function ($item) {
+            // ✅ PERBAIKAN: Type hint (BookSubmission $item)
+            ->map(function (BookSubmission $item) {
                 return [
                     'id' => $item->id,
                     'judul' => $item->title,

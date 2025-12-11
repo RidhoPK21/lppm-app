@@ -7,6 +7,19 @@ use Illuminate\Database\Eloquent\Factories\HasFactory; // <--- Import
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property string $id
+ * @property string $book_submission_id
+ * @property string $user_id
+ * @property string|null $note
+ * @property string $status
+ * @property \Illuminate\Support\Carbon|null $reviewed_at
+ * @property string $invited_by
+ * @property \Illuminate\Support\Carbon $invited_at
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ */
+
 class BookReviewer extends Model
 {
     use HasFactory, HasUuids;
