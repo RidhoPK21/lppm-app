@@ -28,11 +28,14 @@ class RegisSemiController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        $mappedData = $submissions->map(function ($item) {
+        $mappedData = $submissions->map(function (BookSubmission $item) {
+            /** @var User|null $user */
+            $user = $item->user;
+
             return [
                 'id' => $item->id,
                 'judul' => $item->title,
-                'nama_dosen' => $item->user->name ?? 'Unknown User',
+                'nama_dosen' => $user ? $user->name : 'Unknown User',
                 'tanggal_pengajuan' => $item->created_at->format('d M Y'),
                 'status' => $item->status,
                 'status_label' => $this->formatStatusLabel($item->status),
@@ -185,7 +188,7 @@ class RegisSemiController extends Controller
             ->where('status', 'APPROVED_CHIEF')
             ->orderBy('created_at', 'desc')
             ->get()
-            ->map(function ($item) {
+            ->map(function (BookSubmission $item) {
                 Log::info('Found HRD Book', [
                     'id' => $item->id,
                     'title' => $item->title,
@@ -193,10 +196,13 @@ class RegisSemiController extends Controller
                     'amount' => $item->approved_amount,
                 ]);
 
+                /** @var User|null $user */
+                $user = $item->user;
+
                 return [
                     'id' => $item->id,
                     'judul' => $item->title,
-                    'nama_dosen' => $item->user->name ?? 'Unknown User',
+                    'nama_dosen' => $user ? $user->name : 'Unknown User',
                     'tanggal_pengajuan' => $item->created_at->format('d M Y'),
                     'status' => $item->status,
                     'status_label' => $this->formatStatusLabel($item->status),
@@ -493,12 +499,7 @@ class RegisSemiController extends Controller
         ]);
     }
 
-    private function checkIfAlreadyInvited($userId, $bookId)
-    {
-        return BookReviewer::where('book_submission_id', $bookId)
-            ->where('user_id', $userId)
-            ->exists();
-    }
+    // Method checkIfAlreadyInvited dihapus karena tidak digunakan (Unused method fix)
 
     public function approve(Request $request, $id)
     {
@@ -586,11 +587,14 @@ class RegisSemiController extends Controller
         $submissions = BookSubmission::with('user')
             ->orderBy('created_at', 'desc')
             ->get()
-            ->map(function ($item) {
+            ->map(function (BookSubmission $item) {
+                /** @var User|null $user */
+                $user = $item->user;
+
                 return [
                     'id' => $item->id,
                     'judul' => $item->title,
-                    'nama_dosen' => $item->user->name ?? '-',
+                    'nama_dosen' => $user ? $user->name : '-',
                     'status_label' => $this->formatStatus($item->status),
                     'tanggal_pengajuan' => $item->created_at->format('d M Y, H:i'),
                 ];
@@ -621,11 +625,14 @@ class RegisSemiController extends Controller
             ->where('status', 'PAID')
             ->orderBy('created_at', 'desc')
             ->get()
-            ->map(function ($item) {
+            ->map(function (BookSubmission $item) {
+                /** @var User|null $user */
+                $user = $item->user;
+
                 return [
                     'id' => $item->id,
                     'judul' => $item->title,
-                    'nama_dosen' => $item->user->name ?? '-',
+                    'nama_dosen' => $user ? $user->name : '-',
                     'status_label' => $this->formatStatus($item->status),
                     'tanggal_pengajuan' => $item->created_at->format('d M Y, H:i'),
                 ];

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\App\Penghargaan;
 use App\Http\Controllers\Controller;
 use App\Models\BookSubmission;
 use App\Models\HakAksesModel;
+use App\Models\User; // TAMBAHAN: Import Model User
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
@@ -47,7 +48,8 @@ class AdminPenghargaanBukuController extends Controller
 
         $submissions = $query->orderBy('updated_at', 'desc')->get();
 
-        $mappedSubmissions = $submissions->map(function ($book) {
+        // PERBAIKAN DI SINI: Tambahkan Type Hint (BookSubmission $book)
+        $mappedSubmissions = $submissions->map(function (BookSubmission $book) {
             // Logic Penulis
             $firstAuthor = $book->authors->where('role', 'FIRST_AUTHOR')->first();
             $authorName = $firstAuthor ? $firstAuthor->name : ($book->authors->first()->name ?? '-');
@@ -61,14 +63,17 @@ class AdminPenghargaanBukuController extends Controller
             $userAkses = HakAksesModel::getAksesByUserId($book->user_id);
             $hasDosenAkses = in_array('Dosen', $userAkses);
 
+            // TAMBAHAN: Definisi variabel eksplisit untuk PHPStan
+            /** @var User|null $user */
+            $user = $book->user;
+
             return [
                 'id' => $book->id,
                 'judul' => $book->title,
                 'user_id' => $book->user_id,
 
-                // PERUBAHAN 3: Tampilkan Nama Asli User, bukan potongan UUID
-                // Jika user terhapus/null, fallback ke potongan ID
-                'nama_dosen' => $book->user ? $book->user->name : 'User Unknown ('.substr($book->user_id, 0, 8).')',
+                // PERUBAHAN 3: Gunakan variabel $user lokal yang sudah didefinisikan
+                'nama_dosen' => $user ? $user->name : 'User Unknown ('.substr($book->user_id, 0, 8).')',
 
                 'penulis_display' => $authorName,
                 'isbn' => $book->isbn,

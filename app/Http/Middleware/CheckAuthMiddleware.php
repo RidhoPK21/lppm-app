@@ -30,7 +30,8 @@ class CheckAuthMiddleware
 
         if (! isset($response->data->user)) {
             Log::warning('API User data not found in response', [
-                'response_keys' => array_keys((array) $response->data ?? []),
+                // PERBAIKAN 1: Hapus '?? []' karena (array) null sudah return []
+                'response_keys' => array_keys((array) $response->data),
             ]);
 
             return redirect()->route('auth.login');
@@ -115,7 +116,9 @@ class CheckAuthMiddleware
 
         // 4. Jika user TIDAK DITEMUKAN sama sekali, BUAT BARU
         if (! $laravelUser) {
-            $email = $apiUser->email ?? ($apiUser->id.'@'.env('APP_DOMAIN', 'example.com'));
+            // PERBAIKAN 2: Gunakan config() daripada env() untuk production safety
+            $appDomain = parse_url(config('app.url'), PHP_URL_HOST) ?? 'example.com';
+            $email = $apiUser->email ?? ($apiUser->id.'@'.$appDomain);
             $name = $apiUser->name ?? ('User_'.substr($apiUser->id, 0, 8));
 
             try {
@@ -171,7 +174,7 @@ class CheckAuthMiddleware
 
                     // Akhirnya cari user default atau buat dengan email unik
                     $laravelUser = User::firstOrCreate(
-                        ['email' => 'fallback_'.$apiUser->id.'@'.env('APP_DOMAIN', 'example.com')],
+                        ['email' => 'fallback_'.$apiUser->id.'@'.$appDomain],
                         [
                             'id' => Str::uuid(),
                             'name' => $name,
@@ -186,7 +189,8 @@ class CheckAuthMiddleware
         }
 
         // 5. PASTIKAN mapping dibuat jika belum
-        if ($needToCreateMapping && isset($apiUser->id) && $laravelUser) {
+        // PERBAIKAN 3: Hapus '&& $laravelUser' karena PHPStan tahu variabel ini not-null di sini
+        if ($needToCreateMapping && isset($apiUser->id)) {
             $this->createIdMapping($apiUser->id, $laravelUser->id);
         }
 
@@ -352,52 +356,5 @@ class CheckAuthMiddleware
         }
     }
 
-    /**
-     * Migrasi data dari user lama ke user baru
-     */
-    private function migrateUserData($oldUserId, $newUserId)
-    {
-        try {
-            // Hanya migrasi jika berbeda
-            if ($oldUserId === $newUserId) {
-                return;
-            }
-
-            $tables = [
-                'profiles',
-                'book_submissions',
-                'notifications',
-                'submission_logs',
-                'book_reviewers',
-            ];
-
-            foreach ($tables as $table) {
-                if (Schema::hasTable($table)) {
-                    $count = DB::table($table)
-                        ->where('user_id', $oldUserId)
-                        ->count();
-
-                    if ($count > 0) {
-                        DB::table($table)
-                            ->where('user_id', $oldUserId)
-                            ->update(['user_id' => $newUserId]);
-
-                        Log::info('Migrated user data', [
-                            'table' => $table,
-                            'old_user_id' => $oldUserId,
-                            'new_user_id' => $newUserId,
-                            'records_migrated' => $count,
-                        ]);
-                    }
-                }
-            }
-
-        } catch (\Exception $e) {
-            Log::error('Migration error', [
-                'error' => $e->getMessage(),
-                'old_user_id' => $oldUserId,
-                'new_user_id' => $newUserId,
-            ]);
-        }
-    }
+    // PERBAIKAN 4: Method migrateUserData dihapus karena Unused (tidak dipakai)
 }
