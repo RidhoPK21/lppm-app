@@ -62,11 +62,11 @@ Route::middleware(['throttle:req-limit', 'handle.inertia'])->group(function () {
         });
 
         // ------------------- TODO -------------------
-        Route::prefix('todo')->group(function () {
-            Route::get('/', [TodoController::class, 'index'])->name('todo');
-            Route::post('/change', [TodoController::class, 'postChange'])->name('todo.change-post');
-            Route::post('/delete', [TodoController::class, 'postDelete'])->name('todo.delete-post');
-        });
+        // Route::prefix('todo')->group(function () {
+        //     Route::get('/', [TodoController::class, 'index'])->name('todo');
+        //     Route::post('/change', [TodoController::class, 'postChange'])->name('todo.change-post');
+        //     Route::post('/delete', [TodoController::class, 'postDelete'])->name('todo.delete-post');
+        // });
 
         // ------------------- REGIS SEMI (LPPM) -------------------
         Route::middleware('role:LppmKetua|Lppm Staff')->prefix('regis-semi')->name('regis-semi.')->group(function () {

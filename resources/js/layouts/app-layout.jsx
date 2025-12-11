@@ -61,7 +61,6 @@ export default function AppLayout({ children }) {
             title: "Main",
             items: [
                 { title: "Beranda", url: route("home"), icon: Icon.IconHome },
-                { title: "Todo", url: route("todo"), icon: Icon.IconChecklist },
             ]
         },
         {
@@ -95,7 +94,6 @@ export default function AppLayout({ children }) {
             title: "Main",
             items: [
                 { title: "Beranda", url: route("home"), icon: Icon.IconHome },
-                { title: "Todo", url: route("todo"), icon: Icon.IconChecklist },
             ]
         },
 
