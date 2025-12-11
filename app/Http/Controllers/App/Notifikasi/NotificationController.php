@@ -7,7 +7,6 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str; // <-- Wajib: Import Str untuk generate UUID
 use Inertia\Inertia;
 
 class NotificationController extends Controller
@@ -121,9 +120,8 @@ class NotificationController extends Controller
 
         // Get notifications dan convert to array
         $notifications = $query->get()->map(function ($notif) {
-            // Hapus cast (int) karena ID sekarang UUID (string)
             return [
-                'id' => $notif->id, // Biarkan sebagai string
+                'id' => (int) $notif->id,
                 'user_id' => $notif->user_id,
                 'title' => $notif->title,
                 'message' => $notif->message,
@@ -166,7 +164,7 @@ class NotificationController extends Controller
 
                 if ($bookDetail) {
                     $booksForReview[$notif['id']] = [
-                        'id' => $bookDetail->id, // Biarkan sebagai string UUID
+                        'id' => (int) $bookDetail->id,
                         'title' => $bookDetail->title,
                         'isbn' => $bookDetail->isbn,
                         'publisher' => $bookDetail->publisher,
@@ -328,14 +326,13 @@ class NotificationController extends Controller
                 'message' => $message,
             ]);
 
-            // === PERBAIKAN UUID: Tambahkan 'id' manual ===
+            // === PERBAIKAN: Hapus pengecekan exists, langsung insert atau update ===
             $inserted = DB::table('notifications')->updateOrInsert(
                 [
                     'user_id' => $laravelUserId,
                     'reference_key' => $referenceKey,
                 ],
                 [
-                    'id' => Str::uuid()->toString(), // <-- Wajib: Generate UUID manual
                     'title' => 'Undangan Review Buku',
                     'message' => $message,
                     'type' => 'Info',
@@ -466,7 +463,6 @@ class NotificationController extends Controller
 
         // Buat notifikasi baru
         DB::table('notifications')->insert([
-            'id' => Str::uuid()->toString(), // <-- Wajib: Generate UUID manual
             'user_id' => $laravelUserId,
             'title' => $title,
             'message' => $message,
@@ -517,7 +513,6 @@ class NotificationController extends Controller
                 }
 
                 DB::table('notifications')->insert([
-                    'id' => Str::uuid()->toString(), // <-- Wajib: Generate UUID manual
                     'user_id' => $laravelUserId,
                     'title' => 'Pengajuan Buku Baru',
                     'message' => $messageFormat,
@@ -574,7 +569,6 @@ class NotificationController extends Controller
                 }
 
                 DB::table('notifications')->insert([
-                    'id' => Str::uuid()->toString(), // <-- Wajib: Generate UUID manual
                     'user_id' => $laravelUserId,
                     'title' => 'Revisi Pengajuan Buku',
                     'message' => $messageFormat,
@@ -650,7 +644,6 @@ class NotificationController extends Controller
                 }
 
                 DB::table('notifications')->insert([
-                    'id' => Str::uuid()->toString(), // <-- Wajib: Generate UUID manual
                     'user_id' => $laravelUserId,
                     'title' => $title,
                     'message' => $messageFormat,
@@ -712,7 +705,6 @@ class NotificationController extends Controller
 
                 if (! $notifExists) {
                     DB::table('notifications')->insert([
-                        'id' => Str::uuid()->toString(), // <-- Wajib: Generate UUID manual
                         'user_id' => $laravelUserId,
                         'title' => 'Pembayaran Penghargaan Buku',
                         'message' => $message,
@@ -790,7 +782,6 @@ class NotificationController extends Controller
 
                 if (! $notifExists) {
                     DB::table('notifications')->insert([
-                        'id' => Str::uuid()->toString(), // <-- Wajib: Generate UUID manual
                         'user_id' => $laravelUserId,
                         'title' => 'Dana Insentif Buku Telah Cair',
                         'message' => $message,
@@ -801,9 +792,11 @@ class NotificationController extends Controller
                         'updated_at' => Carbon::now(),
                     ]);
 
-                    Log::info('[Dosen Payment Success] Notification created', [
-                        'user_id' => $laravelUser->id,
+                    Log::info('[Dosen Payment Success] Created notification', [
+                        'user_id' => $laravelUserId,
                         'book_id' => $book->id,
+                        'book_title' => $book->title,
+                        'payment_date' => $book->payment_date,
                         'reference_key' => $referenceKey,
                     ]);
                 } else {
@@ -897,7 +890,6 @@ class NotificationController extends Controller
 
                 if (! $notifExists) {
                     $notificationsToInsert[] = [
-                        'id' => Str::uuid()->toString(), // <-- Wajib: Generate UUID manual
                         'user_id' => $laravelUserId,
                         'title' => 'Pengajuan Buku Baru',
                         'message' => $messageFormat,
@@ -985,7 +977,6 @@ class NotificationController extends Controller
 
             if (! $notifExists) {
                 DB::table('notifications')->insert([
-                    'id' => Str::uuid()->toString(), // <-- Wajib: Generate UUID manual
                     'user_id' => $laravelUser->id,
                     'title' => $title,
                     'message' => $message,
@@ -1012,7 +1003,7 @@ class NotificationController extends Controller
     {
         $request->validate([
             'note' => 'required|string|max:2000',
-            'notification_id' => 'required|string', // <-- ID Notifikasi sekarang string (UUID)
+            'notification_id' => 'required|integer',
         ]);
 
         try {
@@ -1059,7 +1050,6 @@ class NotificationController extends Controller
             // 2. Mark notification as read
             DB::table('notifications')
                 ->where('id', $request->notification_id)
-                ->where('user_id', $laravelUser->id)
                 ->update([
                     'is_read' => true,
                     'updated_at' => now(),
@@ -1089,7 +1079,6 @@ class NotificationController extends Controller
 
                     if (! $existingNotif) {
                         DB::table('notifications')->insert([
-                            'id' => Str::uuid()->toString(), // <-- Wajib: Generate UUID manual
                             'user_id' => $inviter->id,
                             'title' => 'Review Buku Selesai',
                             'message' => $message,
@@ -1130,7 +1119,10 @@ class NotificationController extends Controller
             return response()->json(['error' => 'Gagal mengirim review'], 500);
         }
     }
-    
+
+    /**
+     * Kirim notifikasi pencairan dana berhasil ke Dosen pengaju
+     */
     public static function sendBookPaymentSuccessNotification($bookId, $bookTitle, $dosenUserId)
     {
         try {

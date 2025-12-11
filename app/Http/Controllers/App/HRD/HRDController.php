@@ -21,7 +21,7 @@ class HRDController extends Controller
     public function index()
     {
         try {
-            // Ambil semua buku dengan status APPROVED_CHIEF SAJA (exclude PAID)
+            // ✅ Ambil semua buku dengan status APPROVED_CHIEF SAJA (exclude PAID)
             $books = DB::table('book_submissions')
                 ->select(
                     'book_submissions.id',
@@ -32,7 +32,7 @@ class HRDController extends Controller
                     'users.name as nama_dosen'
                 )
                 ->join('users', 'book_submissions.user_id', '=', 'users.id')
-                ->where('book_submissions.status', 'APPROVED_CHIEF') // Hanya APPROVED_CHIEF
+                ->where('book_submissions.status', 'APPROVED_CHIEF') // ✅ Hanya APPROVED_CHIEF
                 ->orderBy('book_submissions.created_at', 'desc')
                 ->get();
 
@@ -52,7 +52,6 @@ class HRDController extends Controller
                 'books' => $formattedBooks->toArray(),
             ]);
 
-            // Path Inertia: Mengasumsikan file frontend sekarang adalah page.jsx
             return Inertia::render('app/hrd/kita/page', [
                 'submissions' => $formattedBooks,
             ]);
@@ -75,8 +74,7 @@ class HRDController extends Controller
     public function storePencairan(Request $request)
     {
         $validated = $request->validate([
-            // ✅ PERBAIKAN: book_id harus berupa UUID string
-            'book_id' => 'required|string|uuid|exists:book_submissions,id', 
+            'book_id' => 'required|integer|exists:book_submissions,id',
             'payment_date' => 'required|date',
         ]);
 
@@ -107,7 +105,7 @@ class HRDController extends Controller
                 'submitter_user_id' => $book->user_id,
             ]);
 
-            // Update status menjadi PAID dan simpan tanggal pencairan
+            // ✅ Update status menjadi PAID dan simpan tanggal pencairan
             $book->update([
                 'status' => 'PAID',
                 'payment_date' => $paymentDate,
@@ -119,15 +117,15 @@ class HRDController extends Controller
                 'payment_date' => $paymentDate,
             ]);
 
-            // Catat log aktivitas (Memerlukan SubmissionLog.php dikonfigurasi UUID yang benar)
-            SubmissionLog::create([ 
+            // Catat log aktivitas
+            SubmissionLog::create([
                 'book_submission_id' => $bookId,
-                'user_id' => Auth::id(), 
+                'user_id' => Auth::id(),
                 'action' => 'PAYMENT_DISBURSED',
                 'note' => "Dana penghargaan dicairkan oleh HRD pada tanggal {$paymentDate}",
             ]);
 
-            // 🔥 KIRIM NOTIFIKASI KE DOSEN PENGAJU (Memerlukan perbaikan UUID di NotificationController)
+            // 🔥 KIRIM NOTIFIKASI KE DOSEN PENGAJU
             NotificationController::sendBookPaymentSuccessNotification(
                 $bookId,
                 $book->title,
@@ -142,7 +140,7 @@ class HRDController extends Controller
                 'notification_sent_to' => $book->user_id,
             ]);
 
-            // Redirect dengan reload halaman
+            // ✅ Redirect dengan reload halaman
             return redirect()->route('hrd.kita.index')
                 ->with('success', 'Pencairan dana berhasil diproses!');
 
@@ -155,7 +153,6 @@ class HRDController extends Controller
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            // Mengembalikan pesan error spesifik jika log berfungsi.
             return back()->with('error', 'Gagal memproses pencairan: '.$e->getMessage());
         }
     }

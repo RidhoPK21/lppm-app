@@ -96,7 +96,7 @@ class PenghargaanBukuController extends Controller
                 'book_submission_id' => $book->id,
                 'user_id' => $userId,
                 'name' => $dosenName,
-                'role' => 'FIRST',
+                'role' => 'FIRST_AUTHOR',
                 'affiliation' => 'Institut Teknologi Del',
             ]);
 
@@ -106,7 +106,7 @@ class PenghargaanBukuController extends Controller
                     BookAuthor::create([
                         'book_submission_id' => $book->id,
                         'name' => $cleanName,
-                        'role' => 'MEMBER',
+                        'role' => 'CO_AUTHOR',
                         'affiliation' => 'External/Other',
                     ]);
                 }
