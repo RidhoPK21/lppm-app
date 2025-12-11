@@ -4,8 +4,9 @@ namespace Tests\Unit\Provider;
 
 use App\Providers\AppServiceProvider;
 use Illuminate\Cache\RateLimiting\Limit;
-use Illuminate\Http\Client\Request;
+use Illuminate\Http\Request; 
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\URL;
 use Mockery;
 use PHPUnit\Framework\Attributes\Test;
@@ -16,6 +17,7 @@ class AppServiceProviderTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        // Bersihkan limit sebelum test dimulai
         RateLimiter::clear('req-limit:127.0.0.1');
         Mockery::close();
     }
@@ -166,7 +168,7 @@ class AppServiceProviderTest extends TestCase
         // =====================================
         // Arrange (Persiapan)
         // =====================================
-        $request = Mockery::mock(\Illuminate\Http\Request::class);
+        $request = Mockery::mock(Request::class);
         $headers = ['Retry-After' => 300];
 
         $responseCallback = function ($request, array $headers) {
@@ -199,7 +201,7 @@ class AppServiceProviderTest extends TestCase
         // =====================================
         // Arrange (Persiapan)
         // =====================================
-        $request = Mockery::mock(\Illuminate\Http\Request::class);
+        $request = Mockery::mock(Request::class);
         $headers = [];
 
         $responseCallback = function ($request, array $headers) {
@@ -230,16 +232,22 @@ class AppServiceProviderTest extends TestCase
         // =====================================
         RateLimiter::clear('req-limit:127.0.0.1');
 
+        // Definisikan route khusus test ini yang menggunakan middleware throttle
+        Route::get('/api/test-limit', function () {
+            return response()->json(['status' => 'ok']);
+        })->middleware('throttle:req-limit');
+
         // =====================================
         // Act (Aksi)
         // =====================================
-        // Kirim request sebanyak batas maksimum (200 kali)
-        for ($i = 0; $i < 300; $i++) {
-            $response = $this->getJson('/api/test-limit');
-            $response->assertOk();
+        
+        // Batas adalah 60 request per menit.
+        // Kita kirim tepat 60 request yang seharusnya berhasil (200 OK).
+        for ($i = 0; $i < 60; $i++) {
+            $this->getJson('/api/test-limit')->assertOk();
         }
 
-        // Kirim request ke-301 -> seharusnya sudah kena limit
+        // Request ke-61 seharusnya gagal (429 Too Many Requests)
         $response = $this->getJson('/api/test-limit');
 
         // =====================================

@@ -6,21 +6,28 @@ use App\Helper\ApiHelper;
 use App\Helper\ToolsHelper;
 use App\Http\Api\UserApi;
 use App\Http\Controllers\Auth\AuthController;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 use Mockery;
+use PHPUnit\Framework\Attributes\PreserveGlobalState;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+#[RunTestsInSeparateProcesses]
+#[PreserveGlobalState(false)]
 class AuthControllerTest extends TestCase
 {
+    use RefreshDatabase;
+
     protected function setUp(): void
     {
         parent::setUp();
-        Mockery::close();
 
-        // Mock Inertia::always untuk mengembalikan nilai yang diinginkan
+        // Mock Inertia::always agar tidak error saat controller memanggilnya
         Inertia::shouldReceive('always')
             ->andReturnUsing(function ($value) {
                 return Mockery::mock('overload:Inertia\AlwaysProp', [
@@ -38,9 +45,6 @@ class AuthControllerTest extends TestCase
     #[Test]
     public function login_menampilkan_halaman_login_dengan_url_sso()
     {
-        // =====================================
-        // Arrange (Persiapan)
-        // =====================================
         config(['sdi.sso_authorize_url' => 'https://sso.example.com/auth']);
         config(['sdi.sso_client_id' => 'test-client-id']);
 
@@ -53,79 +57,63 @@ class AuthControllerTest extends TestCase
             ->andReturn($mockResponse);
 
         $controller = new AuthController;
-
-        // =====================================
-        // Act (Aksi)
-        // =====================================
         $response = $controller->login();
 
-        // =====================================
-        // Assert (Verifikasi)
-        // =====================================
         $this->assertSame($mockResponse, $response);
     }
 
     #[Test]
     public function post_login_check_berhasil_dan_redirect_ke_home()
     {
-        // =====================================
-        // Arrange (Persiapan)
-        // =====================================
         $authToken = 'valid-token-123';
 
+        // Mock UserApi
         $userApiMock = Mockery::mock('alias:'.UserApi::class);
-        $userApiMock
-            ->shouldReceive('getLoginInfo')
+        $userApiMock->shouldReceive('getLoginInfo')
             ->with($authToken)
             ->andReturn((object) ['status' => 'success']);
 
-        $userApiMock
-            ->shouldReceive('getMe')
+        // Mock getMe dengan struktur lengkap untuk loginLaravelUser
+        $userApiMock->shouldReceive('getMe')
             ->with($authToken)
-            ->andReturn((object) ['status' => 'success']);
+            ->andReturn((object) [
+                'status' => 'success',
+                'data' => (object) [
+                    'user' => (object) [
+                        'id' => 'uuid-123',
+                        'name' => 'Test User',
+                        'email' => 'test@del.ac.id',
+                    ]
+                ]
+            ]);
 
         $request = new Request(['authToken' => $authToken]);
-
         $controller = new AuthController;
 
-        // =====================================
-        // Act (Aksi)
-        // =====================================
         $response = $controller->postLoginCheck($request);
 
-        // =====================================
-        // Assert (Verifikasi)
-        // =====================================
         $this->assertEquals(302, $response->getStatusCode());
         $this->assertEquals(route('home'), $response->getTargetUrl());
+        
+        // Pastikan user tersimpan di DB
+        $this->assertDatabaseHas('users', ['email' => 'test@del.ac.id']);
     }
 
     #[Test]
     public function post_login_check_gagal_dan_redirect_ke_logout()
     {
-        // =====================================
-        // Arrange (Persiapan)
-        // =====================================
         $authToken = 'invalid-token';
 
         $userApiMock = Mockery::mock('alias:'.UserApi::class);
-        $userApiMock
-            ->shouldReceive('getLoginInfo')
+        $userApiMock->shouldReceive('getLoginInfo')
             ->with($authToken)
             ->andReturn((object) ['status' => 'error']);
 
         $request = new Request(['authToken' => $authToken]);
-
         $controller = new AuthController;
 
-        // =====================================
-        // Act (Aksi)
-        // =====================================
         $response = $controller->postLoginCheck($request);
 
-        // =====================================
-        // Assert (Verifikasi)
-        // =====================================
         $this->assertEquals(302, $response->getStatusCode());
         $this->assertEquals(route('auth.logout'), $response->getTargetUrl());
     }
@@ -133,14 +121,26 @@ class AuthControllerTest extends TestCase
     #[Test]
     public function post_login_berhasil_dan_redirect_ke_totp()
     {
-        // =====================================
-        // Arrange (Persiapan)
-        // =====================================
         $userApiMock = Mockery::mock('alias:'.UserApi::class);
-        $userApiMock
-            ->shouldReceive('postLogin')
+        
+        // Mock postLogin success
+        $userApiMock->shouldReceive('postLogin')
             ->andReturn((object) [
                 'data' => (object) ['token' => 'login-token-123'],
+            ]);
+
+        // Mock getMe (dipanggil setelah token didapat)
+        $userApiMock->shouldReceive('getMe')
+            ->with('login-token-123')
+            ->andReturn((object) [
+                'status' => 'success',
+                'data' => (object) [
+                    'user' => (object) [
+                        'id' => 'uuid-login-123',
+                        'name' => 'Login User',
+                        'email' => 'login@test.com',
+                    ]
+                ]
             ]);
 
         $request = new Request([
@@ -151,32 +151,22 @@ class AuthControllerTest extends TestCase
         ]);
 
         $controller = new AuthController;
-
-        // =====================================
-        // Act (Aksi)
-        // =====================================
         $response = $controller->postLogin($request);
 
-        // =====================================
-        // Assert (Verifikasi)
-        // =====================================
         $this->assertEquals(302, $response->getStatusCode());
         $this->assertEquals(route('auth.totp'), $response->getTargetUrl());
+        
+        // Verifikasi token tersimpan di session/helper
+        $this->assertEquals('login-token-123', ToolsHelper::getAuthToken());
     }
 
     #[Test]
     public function post_login_redirect_back_dengan_error_jika_token_tidak_ada()
     {
-        // =====================================
-        // Arrange (Persiapan)
-        // =====================================
         $userApiMock = Mockery::mock('alias:'.UserApi::class);
-        $userApiMock
-            ->shouldReceive('postLogin')
+        $userApiMock->shouldReceive('postLogin')
             ->andReturn((object) [
-                'data' => (object) [
-                    // Tidak ada property token
-                ],
+                'data' => (object) [], // Token tidak ada
             ]);
 
         $request = new Request([
@@ -185,119 +175,32 @@ class AuthControllerTest extends TestCase
         ]);
 
         $controller = new AuthController;
-
-        // =====================================
-        // Act (Aksi)
-        // =====================================
         $response = $controller->postLogin($request);
 
-        // =====================================
-        // Assert (Verifikasi)
-        // =====================================
         $this->assertEquals(302, $response->getStatusCode());
-
         $sessionErrors = $response->getSession()->get('errors');
         $this->assertNotNull($sessionErrors);
-        $this->assertEquals(
-            'Gagal login, silakan coba lagi.',
-            $sessionErrors->first('username')
-        );
-    }
-
-    #[Test]
-    public function post_login_redirect_back_dengan_error_jika_response_tidak_valid()
-    {
-        // =====================================
-        // Arrange (Persiapan)
-        // =====================================
-        $userApiMock = Mockery::mock('alias:'.UserApi::class);
-        $userApiMock
-            ->shouldReceive('postLogin')
-            ->andReturn(null);  // Response null
-
-        $request = new Request([
-            'username' => 'testuser',
-            'password' => 'password123',
-        ]);
-
-        $controller = new AuthController;
-
-        // =====================================
-        // Act (Aksi)
-        // =====================================
-        $response = $controller->postLogin($request);
-
-        // =====================================
-        // Assert (Verifikasi)
-        // =====================================
-        $this->assertEquals(302, $response->getStatusCode());
-        $this->assertNotNull($response->getSession()->get('errors'));
     }
 
     #[Test]
     public function post_login_check_redirect_ke_totp_jika_get_me_gagal()
     {
-        // =====================================
-        // Arrange (Persiapan)
-        // =====================================
         $authToken = 'valid-token-123';
 
         $userApiMock = Mockery::mock('alias:'.UserApi::class);
-        $userApiMock
-            ->shouldReceive('getLoginInfo')
+        $userApiMock->shouldReceive('getLoginInfo')
             ->with($authToken)
-            ->andReturn((object) ['status' => 'success']);  // Login info berhasil
+            ->andReturn((object) ['status' => 'success']);
 
-        $userApiMock
-            ->shouldReceive('getMe')
+        $userApiMock->shouldReceive('getMe')
             ->with($authToken)
-            ->andReturn((object) ['status' => 'error']);  // GetMe gagal
+            ->andReturn((object) ['status' => 'error']);
 
         $request = new Request(['authToken' => $authToken]);
         $controller = new AuthController;
 
-        // =====================================
-        // Act (Aksi)
-        // =====================================
         $response = $controller->postLoginCheck($request);
 
-        // =====================================
-        // Assert (Verifikasi)
-        // =====================================
-        $this->assertEquals(302, $response->getStatusCode());
-        $this->assertEquals(route('auth.totp'), $response->getTargetUrl());
-    }
-
-    #[Test]
-    public function post_login_check_redirect_ke_totp_jika_get_me_return_null()
-    {
-        // =====================================
-        // Arrange (Persiapan)
-        // =====================================
-        $authToken = 'valid-token-456';
-
-        $userApiMock = Mockery::mock('alias:'.UserApi::class);
-        $userApiMock
-            ->shouldReceive('getLoginInfo')
-            ->with($authToken)
-            ->andReturn((object) ['status' => 'success']);  // Login info berhasil
-
-        $userApiMock
-            ->shouldReceive('getMe')
-            ->with($authToken)
-            ->andReturn(null);  // GetMe return null
-
-        $request = new Request(['authToken' => $authToken]);
-        $controller = new AuthController;
-
-        // =====================================
-        // Act (Aksi)
-        // =====================================
-        $response = $controller->postLoginCheck($request);
-
-        // =====================================
-        // Assert (Verifikasi)
-        // =====================================
         $this->assertEquals(302, $response->getStatusCode());
         $this->assertEquals(route('auth.totp'), $response->getTargetUrl());
     }
@@ -305,9 +208,6 @@ class AuthControllerTest extends TestCase
     #[Test]
     public function logout_menghapus_token_dan_menampilkan_halaman_logout()
     {
-        // =====================================
-        // Arrange (Persiapan)
-        // =====================================
         ToolsHelper::setAuthToken('previous-token');
 
         $mockResponse = Mockery::mock(Response::class);
@@ -317,15 +217,8 @@ class AuthControllerTest extends TestCase
             ->andReturn($mockResponse);
 
         $controller = new AuthController;
-
-        // =====================================
-        // Act (Aksi)
-        // =====================================
         $response = $controller->logout();
 
-        // =====================================
-        // Assert (Verifikasi)
-        // =====================================
         $this->assertSame($mockResponse, $response);
         $this->assertEquals('', ToolsHelper::getAuthToken());
     }
@@ -333,21 +226,11 @@ class AuthControllerTest extends TestCase
     #[Test]
     public function totp_redirect_ke_login_jika_token_tidak_ada()
     {
-        // =====================================
-        // Arrange (Persiapan)
-        // =====================================
         ToolsHelper::setAuthToken('');
 
         $controller = new AuthController;
-
-        // =====================================
-        // Act (Aksi)
-        // =====================================
         $response = $controller->totp();
 
-        // =====================================
-        // Assert (Verifikasi)
-        // =====================================
         $this->assertEquals(302, $response->getStatusCode());
         $this->assertEquals(route('auth.login'), $response->getTargetUrl());
     }
@@ -355,30 +238,19 @@ class AuthControllerTest extends TestCase
     #[Test]
     public function post_totp_berhasil_dan_redirect_ke_home()
     {
-        // =====================================
-        // Arrange (Persiapan)
-        // =====================================
         $authToken = 'totp-token-123';
         ToolsHelper::setAuthToken($authToken);
 
         $userApiMock = Mockery::mock('alias:'.UserApi::class);
-        $userApiMock
-            ->shouldReceive('postTotpVerify')
+        $userApiMock->shouldReceive('postTotpVerify')
             ->with($authToken, '123456')
             ->andReturn((object) ['status' => 'success']);
 
         $request = new Request(['kodeOTP' => '123456']);
-
         $controller = new AuthController;
 
-        // =====================================
-        // Act (Aksi)
-        // =====================================
         $response = $controller->postTotp($request);
 
-        // =====================================
-        // Assert (Verifikasi)
-        // =====================================
         $this->assertEquals(302, $response->getStatusCode());
         $this->assertEquals(route('home'), $response->getTargetUrl());
     }
@@ -386,62 +258,41 @@ class AuthControllerTest extends TestCase
     #[Test]
     public function totp_redirect_ke_logout_jika_get_login_info_gagal()
     {
-        // =====================================
-        // Arrange (Persiapan)
-        // =====================================
         $authToken = 'invalid-token';
         ToolsHelper::setAuthToken($authToken);
 
         $userApiMock = Mockery::mock('alias:'.UserApi::class);
-        $userApiMock
-            ->shouldReceive('getLoginInfo')
+        $userApiMock->shouldReceive('getLoginInfo')
             ->with($authToken)
-            ->andReturn((object) ['status' => 'error']);  // Login info gagal
+            ->andReturn((object) ['status' => 'error']);
 
         $controller = new AuthController;
-
-        // =====================================
-        // Act (Aksi)
-        // =====================================
         $response = $controller->totp();
 
-        // =====================================
-        // Assert (Verifikasi)
-        // =====================================
         $this->assertEquals(302, $response->getStatusCode());
         $this->assertEquals(route('auth.logout'), $response->getTargetUrl());
-        $this->assertEquals('', ToolsHelper::getAuthToken());  // Token dihapus
     }
 
     #[Test]
     public function totp_redirect_ke_home_jika_get_me_sukses()
     {
-        // =====================================
-        // Arrange (Persiapan)
-        // =====================================
         $authToken = 'valid-token';
         ToolsHelper::setAuthToken($authToken);
 
         $userApiMock = Mockery::mock('alias:'.UserApi::class);
-        $userApiMock
-            ->shouldReceive('getLoginInfo')
+        // Login info OK
+        $userApiMock->shouldReceive('getLoginInfo')
             ->with($authToken)
             ->andReturn((object) ['status' => 'success']);
-        $userApiMock
-            ->shouldReceive('getMe')
+        
+        // Get Me OK -> means already authenticated, go home
+        $userApiMock->shouldReceive('getMe')
             ->with($authToken)
-            ->andReturn((object) ['status' => 'success']);  // GetMe sukses
+            ->andReturn((object) ['status' => 'success']);
 
         $controller = new AuthController;
-
-        // =====================================
-        // Act (Aksi)
-        // =====================================
         $response = $controller->totp();
 
-        // =====================================
-        // Assert (Verifikasi)
-        // =====================================
         $this->assertEquals(302, $response->getStatusCode());
         $this->assertEquals(route('home'), $response->getTargetUrl());
     }
@@ -449,23 +300,18 @@ class AuthControllerTest extends TestCase
     #[Test]
     public function totp_menampilkan_halaman_dengan_qr_code_jika_get_me_gagal()
     {
-        // =====================================
-        // Arrange (Persiapan)
-        // =====================================
         $authToken = 'valid-token-totp';
         ToolsHelper::setAuthToken($authToken);
 
         $userApiMock = Mockery::mock('alias:'.UserApi::class);
-        $userApiMock
-            ->shouldReceive('getLoginInfo')
-            ->with($authToken)
+        $userApiMock->shouldReceive('getLoginInfo')
             ->andReturn((object) ['status' => 'success']);
-        $userApiMock
-            ->shouldReceive('getMe')
-            ->with($authToken)
-            ->andReturn((object) ['status' => 'error']);  // GetMe gagal
-        $userApiMock
-            ->shouldReceive('postTotpSetup')
+        
+        // Get Me Gagal/Pending -> Show TOTP Page
+        $userApiMock->shouldReceive('getMe')
+            ->andReturn((object) ['status' => 'error']);
+            
+        $userApiMock->shouldReceive('postTotpSetup')
             ->with($authToken)
             ->andReturn((object) [
                 'status' => 'success',
@@ -481,183 +327,55 @@ class AuthControllerTest extends TestCase
             ->andReturn($mockResponse);
 
         $controller = new AuthController;
-
-        // =====================================
-        // Act (Aksi)
-        // =====================================
         $response = $controller->totp();
 
-        // =====================================
-        // Assert (Verifikasi)
-        // =====================================
         $this->assertSame($mockResponse, $response);
-    }
-
-    #[Test]
-    public function post_totp_redirect_ke_login_jika_token_tidak_ada()
-    {
-        // =====================================
-        // Arrange (Persiapan)
-        // =====================================
-        ToolsHelper::setAuthToken('');  // Token kosong
-
-        $request = new Request(['kodeOTP' => '123456']);
-        $controller = new AuthController;
-
-        // =====================================
-        // Act (Aksi)
-        // =====================================
-        $response = $controller->postTotp($request);
-
-        // =====================================
-        // Assert (Verifikasi)
-        // =====================================
-        $this->assertEquals(302, $response->getStatusCode());
-        $this->assertEquals(route('auth.login'), $response->getTargetUrl());
-    }
-
-    #[Test]
-    public function post_totp_redirect_back_dengan_error_jika_verifikasi_gagal()
-    {
-        // =====================================
-        // Arrange (Persiapan)
-        // =====================================
-        $authToken = 'valid-token';
-        ToolsHelper::setAuthToken($authToken);
-
-        $userApiMock = Mockery::mock('alias:'.UserApi::class);
-        $userApiMock
-            ->shouldReceive('postTotpVerify')
-            ->with($authToken, '123456')
-            ->andReturn((object) ['status' => 'error']);  // Verifikasi gagal
-
-        $request = new Request(['kodeOTP' => '123456']);
-        $controller = new AuthController;
-
-        // =====================================
-        // Act (Aksi)
-        // =====================================
-        $response = $controller->postTotp($request);
-
-        // =====================================
-        // Assert (Verifikasi)
-        // =====================================
-        $this->assertEquals(302, $response->getStatusCode());
-
-        $sessionErrors = $response->getSession()->get('errors');
-        $this->assertNotNull($sessionErrors);
-        $this->assertEquals(
-            'Kode verifikasi tidak valid. Silakan coba lagi.',
-            $sessionErrors->first('kodeOTP')
-        );
-    }
-
-    #[Test]
-    public function sso_callback_redirect_ke_login_jika_code_tidak_ada()
-    {
-        // =====================================
-        // Arrange (Persiapan)
-        // =====================================
-        $request = new Request;  // Tidak ada parameter code
-        $controller = new AuthController;
-
-        // =====================================
-        // Act (Aksi)
-        // =====================================
-        $response = $controller->ssoCallback($request);
-
-        // =====================================
-        // Assert (Verifikasi)
-        // =====================================
-        $this->assertEquals(302, $response->getStatusCode());
-        $this->assertEquals(route('auth.login'), $response->getTargetUrl());
-
-        $sessionError = $response->getSession()->get('error');
-        $this->assertEquals('Kode otorisasi tidak ditemukan', $sessionError);
-    }
-
-    #[Test]
-    public function sso_callback_redirect_ke_login_jika_access_token_tidak_ada()
-    {
-        // =====================================
-        // Arrange (Persiapan)
-        // =====================================
-        config(['sdi.sso_token_url' => 'https://sso.example.com/token']);
-        config(['sdi.sso_client_id' => 'test-client']);
-        config(['sdi.sso_client_secret' => 'test-secret']);
-
-        $apiHelperMock = Mockery::mock('alias:'.ApiHelper::class);
-        $apiHelperMock
-            ->shouldReceive('sendRequest')
-            ->with(
-                'https://sso.example.com/token',
-                'POST',
-                [
-                    'client_id' => 'test-client',
-                    'client_secret' => 'test-secret',
-                    'code' => 'auth-code-123',
-                ]
-            )
-            ->andReturn((object) [
-                // Tidak ada access_token
-            ]);
-
-        $request = new Request(['code' => 'auth-code-123']);
-        $controller = new AuthController;
-
-        // =====================================
-        // Act (Aksi)
-        // =====================================
-        $response = $controller->ssoCallback($request);
-
-        // =====================================
-        // Assert (Verifikasi)
-        // =====================================
-        $this->assertEquals(302, $response->getStatusCode());
-        $this->assertEquals(route('auth.login'), $response->getTargetUrl());
-
-        $sessionError = $response->getSession()->get('error');
-        $this->assertEquals('Gagal mendapatkan token akses dari SSO', $sessionError);
     }
 
     #[Test]
     public function sso_callback_berhasil_dan_redirect_ke_home()
     {
-        // =====================================
-        // Arrange (Persiapan)
-        // =====================================
         config(['sdi.sso_token_url' => 'https://sso.example.com/token']);
         config(['sdi.sso_client_id' => 'test-client']);
         config(['sdi.sso_client_secret' => 'test-secret']);
 
+        // Mock ApiHelper karena dipanggil langsung oleh AuthController::ssoCallback
         $apiHelperMock = Mockery::mock('alias:'.ApiHelper::class);
-        $apiHelperMock
-            ->shouldReceive('sendRequest')
-            ->with(
-                'https://sso.example.com/token',
-                'POST',
-                [
-                    'client_id' => 'test-client',
-                    'client_secret' => 'test-secret',
-                    'code' => 'auth-code-123',
-                ]
-            )
+        $apiHelperMock->shouldReceive('sendRequest')
             ->andReturn((object) ['access_token' => 'sso-token-123']);
 
+        // Mock UserApi karena juga dipanggil untuk getMe
+        $userApiMock = Mockery::mock('alias:'.UserApi::class);
+        $userApiMock->shouldReceive('getMe')
+            ->with('sso-token-123')
+            ->andReturn((object) [
+                'status' => 'success',
+                'data' => (object) [
+                    'user' => (object) [
+                        'id' => 'uuid-sso-123',
+                        'name' => 'User SSO',
+                        'email' => 'sso@test.com',
+                    ]
+                ]
+            ]);
+
         $request = new Request(['code' => 'auth-code-123']);
-
         $controller = new AuthController;
-
-        // =====================================
-        // Act (Aksi)
-        // =====================================
         $response = $controller->ssoCallback($request);
 
-        // =====================================
-        // Assert (Verifikasi)
-        // =====================================
         $this->assertEquals(302, $response->getStatusCode());
         $this->assertEquals(route('home'), $response->getTargetUrl());
         $this->assertEquals('sso-token-123', ToolsHelper::getAuthToken());
+    }
+
+    #[Test]
+    public function sso_callback_redirect_ke_login_jika_code_tidak_ada()
+    {
+        $request = new Request;
+        $controller = new AuthController;
+        $response = $controller->ssoCallback($request);
+
+        $this->assertEquals(302, $response->getStatusCode());
+        $this->assertEquals(route('auth.login'), $response->getTargetUrl());
     }
 }

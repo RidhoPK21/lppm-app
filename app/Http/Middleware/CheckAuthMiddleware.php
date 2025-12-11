@@ -30,7 +30,6 @@ class CheckAuthMiddleware
 
         if (! isset($response->data->user)) {
             Log::warning('API User data not found in response', [
-                // PERBAIKAN 1: Hapus '?? []' karena (array) null sudah return []
                 'response_keys' => array_keys((array) $response->data),
             ]);
 
@@ -116,7 +115,6 @@ class CheckAuthMiddleware
 
         // 4. Jika user TIDAK DITEMUKAN sama sekali, BUAT BARU
         if (! $laravelUser) {
-            // PERBAIKAN 2: Gunakan config() daripada env() untuk production safety
             $appDomain = parse_url(config('app.url'), PHP_URL_HOST) ?? 'example.com';
             $email = $apiUser->email ?? ($apiUser->id.'@'.$appDomain);
             $name = $apiUser->name ?? ('User_'.substr($apiUser->id, 0, 8));
@@ -189,7 +187,6 @@ class CheckAuthMiddleware
         }
 
         // 5. PASTIKAN mapping dibuat jika belum
-        // PERBAIKAN 3: Hapus '&& $laravelUser' karena PHPStan tahu variabel ini not-null di sini
         if ($needToCreateMapping && isset($apiUser->id)) {
             $this->createIdMapping($apiUser->id, $laravelUser->id);
         }
@@ -260,16 +257,6 @@ class CheckAuthMiddleware
 
         // 11. Set auth data ke request (sebagai object)
         $request->attributes->set('auth', $apiUser);
-
-        // 12. PERBAIKAN: JANGAN gunakan merge() dengan object stdClass
-        // Gunakan array_merge pada input yang sudah ada, bukan merge object
-        // Hapus baris ini karena menyebabkan error:
-        // $request->merge([
-        //     'laravel_user' => $laravelUser,
-        //     'api_user' => $apiUser
-        // ]);
-
-        // Sebagai gantinya, kita bisa set data dalam attributes atau session
         $request->attributes->set('laravel_user', $laravelUser);
 
         // Atau jika perlu di input, convert ke array terlebih dahulu
@@ -355,6 +342,4 @@ class CheckAuthMiddleware
             return false;
         }
     }
-
-    // PERBAIKAN 4: Method migrateUserData dihapus karena Unused (tidak dipakai)
 }
