@@ -23,9 +23,8 @@ import {
     Download,
 } from "lucide-react";
 import { route } from "ziggy-js";
-import Swal from "sweetalert2"; // <--- Tambahkan ini
 
-export default function DetailBukuPage({ book }) {
+export default function DetailBukuPage({ book, user }) {
     const breadcrumbs = [
         { title: "Penghargaan", url: "#" },
         { title: "Buku", url: route("app.penghargaan.buku.index") },
@@ -58,7 +57,7 @@ export default function DetailBukuPage({ book }) {
     if (isDraft) {
         if (isDocumentsComplete) {
             displayStatus = "Draft (Siap Kirim)";
-            statusVariant = "success"; // Menganggap 'success' sudah didefinisikan dalam Badge
+            statusVariant = "success";
         } else {
             displayStatus = "Draft (Belum Lengkap)";
             statusVariant = "secondary";
@@ -67,7 +66,6 @@ export default function DetailBukuPage({ book }) {
         const s = book.status.toLowerCase();
         if (s.includes("menunggu") || s.includes("submitted"))
             statusVariant = "warning";
-        // Menganggap 'warning' sudah didefinisikan dalam Badge
         else if (s.includes("disetujui") || s.includes("approved"))
             statusVariant = "default";
         else if (s.includes("ditolak") || s.includes("rejected"))
@@ -76,44 +74,23 @@ export default function DetailBukuPage({ book }) {
             statusVariant = "success";
     }
 
-    // --- HANDLER KIRIM DENGAN SWEETALERT2 ---
+    // --- HANDLER KIRIM ---
     const handleSubmit = () => {
-        Swal.fire({
-            title: "Konfirmasi Pengajuan",
-            text: "Apakah Anda yakin data sudah benar? Pengajuan akan dikirim ke LPPM untuk proses verifikasi.",
-            icon: "warning", // Ubah ke 'info', 'question', atau ikon lain jika perlu
-            showCancelButton: true,
-            confirmButtonColor: "#3b82f6", // Warna Biru (Primary)
-            cancelButtonColor: "#6b7280", // Warna Abu-abu (Secondary/Muted)
-            confirmButtonText: "Ya, Kirim Pengajuan!",
-            cancelButtonText: "Batal",
-        }).then((result) => {
-            if (result.isConfirmed) {
-                // Lakukan pengiriman data jika pengguna mengkonfirmasi
-                router.post(
-                    route("app.penghargaan.buku.submit", { id: book.id })
-                );
-
-                // Opsi: Tampilkan SweetAlert "Loading/Mengirim" sebelum post jika diperlukan,
-                // dan setelah response dari Inersia baru tampilkan Success/Error.
-                // Karena InertiaJS/Laravel, biasanya notifikasi success akan di-handle
-                // melalui Flash Message setelah redirect/refresh.
-            }
-        });
+        if (
+            confirm(
+                "Apakah Anda yakin data sudah benar? Pengajuan akan dikirim ke LPPM."
+            )
+        ) {
+            router.post(route("app.penghargaan.buku.submit", { id: book.id }));
+        }
     };
-    // ----------------------------------------
 
     const handleReviewFile = () => {
-        window.open(
-            route("app.penghargaan.buku.preview-pdf", { id: book.id }),
-            "_blank"
-        );
+        window.open(route("app.penghargaan.buku.preview-pdf", { id: book.id }), "_blank");
     };
 
     const handleDownloadPdf = () => {
-        window.location.href = route("app.penghargaan.buku.download-pdf", {
-            id: book.id,
-        });
+        window.location.href = route("app.penghargaan.buku.download-pdf", { id: book.id });
     };
 
     const getLinkUrl = (link) => {
@@ -160,7 +137,7 @@ export default function DetailBukuPage({ book }) {
                         {displayStatus}
                     </Badge>
                 </div>
-
+                
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Kolom Kiri: Informasi Utama */}
                     <div className="lg:col-span-2 space-y-6">
@@ -253,23 +230,19 @@ export default function DetailBukuPage({ book }) {
                                         {links.map((link, idx) => {
                                             const url = getLinkUrl(link);
                                             const name = getLinkName(link, idx);
-
+                                            
                                             return (
                                                 <div
                                                     key={idx}
                                                     className="flex items-center p-3 rounded-md border hover:bg-muted transition-colors group"
                                                 >
-                                                    {/* UBAH: text-blue-500 -> text-primary */}
-                                                    <File className="h-5 w-5 text-primary mr-3" />
+                                                    <File className="h-5 w-5 text-blue-500 mr-3" />
                                                     <div className="flex-1 truncate">
-                                                        {/* UBAH: text-blue-600 -> text-primary */}
-                                                        <p className="text-sm font-medium text-primary">
+                                                        <p className="text-sm font-medium text-blue-600">
                                                             {name}
                                                             {!url && (
-                                                                // UBAH: text-red-500 -> text-destructive
-                                                                <span className="text-destructive ml-2 text-xs">
-                                                                    (Belum
-                                                                    Diunggah)
+                                                                <span className="text-red-500 ml-2 text-xs">
+                                                                    (Belum Diunggah)
                                                                 </span>
                                                             )}
                                                         </p>
@@ -284,8 +257,7 @@ export default function DetailBukuPage({ book }) {
                                                                 <ExternalLink className="h-3 w-3" />
                                                             </a>
                                                         ) : (
-                                                            // UBAH: text-red-400 -> text-destructive
-                                                            <p className="text-xs text-destructive italic">
+                                                            <p className="text-xs text-red-400 italic">
                                                                 Wajib diisi
                                                             </p>
                                                         )}
@@ -315,8 +287,7 @@ export default function DetailBukuPage({ book }) {
                                 <div className="space-y-6">
                                     <div className="flex gap-3">
                                         <div className="mt-0.5">
-                                            {/* UBAH: text-green-500 -> text-primary */}
-                                            <CheckCircle className="h-5 w-5 text-primary" />
+                                            <CheckCircle className="h-5 w-5 text-green-500" />
                                         </div>
                                         <div>
                                             <p className="font-medium text-sm">
@@ -339,13 +310,12 @@ export default function DetailBukuPage({ book }) {
                                                 <AlertCircle
                                                     className={`h-5 w-5 ${
                                                         isDocumentsComplete
-                                                            ? "text-primary" // UBAH: text-green-500 -> text-primary
-                                                            : "text-amber-500" // UBAH: text-yellow-500 -> text-amber-500 (standard warning shade)
+                                                            ? "text-green-500"
+                                                            : "text-yellow-500"
                                                     }`}
                                                 />
                                             ) : (
-                                                // UBAH: text-yellow-500 -> text-amber-500
-                                                <Clock className="h-5 w-5 text-amber-500" />
+                                                <Clock className="h-5 w-5 text-yellow-500" />
                                             )}
                                         </div>
                                         <div>
@@ -370,8 +340,7 @@ export default function DetailBukuPage({ book }) {
                                     <Button
                                         onClick={handleReviewFile}
                                         variant="outline"
-                                        // UBAH: hardcoded purple -> border-primary text-primary hover:bg-primary/5
-                                        className="w-full border-primary text-primary hover:bg-primary/5"
+                                        className="w-full border-purple-600 text-purple-600 hover:bg-purple-50"
                                     >
                                         <FileText className="mr-2 h-4 w-4" />
                                         Review File PDF
@@ -383,8 +352,7 @@ export default function DetailBukuPage({ book }) {
                                     <Button
                                         onClick={handleDownloadPdf}
                                         variant="outline"
-                                        // UBAH: hardcoded blue -> border-primary text-primary hover:bg-primary/5
-                                        className="w-full border-primary text-primary hover:bg-primary/5"
+                                        className="w-full border-blue-600 text-blue-600 hover:bg-blue-50"
                                     >
                                         <Download className="mr-2 h-4 w-4" />
                                         Download Surat Permohonan
@@ -400,14 +368,9 @@ export default function DetailBukuPage({ book }) {
                                         )}
                                         className="w-full"
                                     >
-                                        <Button
-                                            variant="outline"
-                                            className="w-full"
-                                        >
+                                        <Button variant="outline" className="w-full">
                                             <FileText className="mr-2 h-4 w-4" />
-                                            {isDocumentsComplete
-                                                ? "Edit Dokumen"
-                                                : "Lengkapi Dokumen"}
+                                            {isDocumentsComplete ? "Edit Dokumen" : "Lengkapi Dokumen"}
                                         </Button>
                                     </Link>
                                 )}
@@ -415,10 +378,8 @@ export default function DetailBukuPage({ book }) {
                                 {/* TOMBOL 4: KIRIM PENGAJUAN */}
                                 {isDraft && isDocumentsComplete && (
                                     <Button
-                                        onClick={handleSubmit} // Menggunakan SweetAlert
-                                        // UBAH: hardcoded green -> variant="default" (Primary)
-                                        variant="default"
-                                        className="w-full shadow-md"
+                                        onClick={handleSubmit}
+                                        className="w-full bg-green-600 hover:bg-green-700 text-white shadow-md"
                                     >
                                         <Send className="mr-2 h-4 w-4" />
                                         Kirim Pengajuan ke LPPM
@@ -427,8 +388,7 @@ export default function DetailBukuPage({ book }) {
 
                                 {/* INFO: Jika Sudah Dikirim */}
                                 {!isDraft && (
-                                    // UBAH: hardcoded blue -> bg-primary/10 text-primary border-primary/20
-                                    <div className="w-full p-3 bg-primary/10 text-primary text-center rounded-md text-sm font-medium border border-primary/20">
+                                    <div className="w-full p-3 bg-blue-50 text-blue-800 text-center rounded-md text-sm font-medium border border-blue-200">
                                         <CheckCircle className="inline-block w-4 h-4 mr-2 mb-0.5" />
                                         Pengajuan berhasil dikirim ke LPPM.
                                     </div>

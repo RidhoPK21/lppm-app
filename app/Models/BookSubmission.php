@@ -43,11 +43,13 @@ class BookSubmission extends Model
         return $this->hasMany(BookAuthor::class, 'book_submission_id');
     }
 
-    public function user()
+
+     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
     }
 
+    
     // Relasi dengan SubmissionLog
     public function logs()
     {

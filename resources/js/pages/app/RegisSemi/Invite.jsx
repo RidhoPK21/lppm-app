@@ -23,32 +23,21 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-// Buat komponen Badge sederhana yang theme-aware
+// Buat komponen Badge sederhana
 const Badge = ({ children, variant = "default", className = "" }) => {
-    const baseStyles =
-        "inline-flex items-center rounded-full px-2 py-1 text-xs font-medium";
-
+    const baseStyles = "inline-flex items-center rounded-full px-2 py-1 text-xs font-medium";
+    
     const variants = {
-        // Menggunakan kelas tema Shadcn
-        default: "bg-secondary text-secondary-foreground",
-        // Varian Success (menggunakan warna Primary/Success dari tema)
-        success: "bg-primary/10 text-primary border border-primary/20",
-        destructive:
-            "bg-destructive/10 text-destructive border border-destructive/20",
-        outline: "border border-input text-foreground",
-        // Menghapus blue, yellow, red, green hardcoded
+        default: "bg-gray-100 text-gray-800",
+        green: "bg-green-100 text-green-800",
+        blue: "bg-blue-100 text-blue-800",
+        yellow: "bg-yellow-100 text-yellow-800",
+        red: "bg-red-100 text-red-800",
+        outline: "border border-gray-300 text-gray-700",
     };
-
-    // Peta lama ke varian baru
-    let variantKey = variant;
-    if (variant === "green" || variant === "blue") {
-        variantKey = "success";
-    } else if (variant === "red" || variant === "yellow") {
-        variantKey = "destructive"; // Atau buat 'warning' jika dibutuhkan
-    }
-
-    const variantStyle = variants[variantKey] || variants.default;
-
+    
+    const variantStyle = variants[variant] || variants.default;
+    
     return (
         <span className={`${baseStyles} ${variantStyle} ${className}`}>
             {children}
@@ -82,70 +71,148 @@ export default function Invite({ book, availableReviewers = [], flash }) {
 
     // Filter tambahan: hanya tampilkan yang punya akses Dosen
     if (filterDosenOnly) {
-        filteredReviewers = filteredReviewers.filter(
-            (user) => user.has_dosen_akses
-        );
+        filteredReviewers = filteredReviewers.filter(user => user.has_dosen_akses);
     }
+
+    // Handler Undang - Menggunakan approach yang benar untuk Inertia
+    const handleInvite = async (userId) => {
+        setProcessingId(userId);
+        
+        try {
+            const response = await fetch(route("regis-semi.store-invite", book.id), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({
+                    user_id: userId,
+                }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                toast.success(data.message || "Undangan berhasil dikirim");
+                
+                // Update local state untuk menandai reviewer sebagai sudah diundang
+                setLocalReviewers(prevReviewers => 
+                    prevReviewers.map(reviewer => 
+                        reviewer.user_id === userId 
+                            ? { ...reviewer, is_invited: true }
+                            : reviewer
+                    )
+                );
+            } else {
+                toast.error(data.message || "Gagal mengundang reviewer");
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            toast.error("Terjadi kesalahan saat mengundang reviewer");
+        } finally {
+            setProcessingId(null);
+        }
+    };
+
+    // Alternatif: Menggunakan window.fetch secara langsung
+    const handleInviteAlternative = (userId) => {
+        setProcessingId(userId);
+        
+        // Buat form data untuk POST request
+        const formData = new FormData();
+        formData.append('user_id', userId);
+        
+        // Gunakan fetch API dengan proper headers
+        window.fetch(route("regis-semi.store-invite", book.id), {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+            },
+            body: formData,
+        })
+        .then(response => response.json())
+        .then(data => {
+            setProcessingId(null);
+            
+            if (data.success || data.message === 'Undangan berhasil dikirim') {
+                toast.success(data.message || "Undangan berhasil dikirim");
+                
+                // Update local state
+                setLocalReviewers(prevReviewers => 
+                    prevReviewers.map(reviewer => 
+                        reviewer.user_id === userId 
+                            ? { ...reviewer, is_invited: true }
+                            : reviewer
+                    )
+                );
+            } else {
+                toast.error(data.message || "Gagal mengundang reviewer");
+            }
+        })
+        .catch(error => {
+            setProcessingId(null);
+            console.error('Error:', error);
+            toast.error("Terjadi kesalahan jaringan");
+        });
+    };
 
     // Handler dengan approach terbaik - kombinasi
     const handleInviteFinal = (userId) => {
         setProcessingId(userId);
-
+        
         // Menggunakan window.axios jika tersedia (Laravel default)
         if (window.axios) {
-            window.axios
-                .post(route("regis-semi.store-invite", book.id), {
-                    user_id: userId,
-                })
-                .then((response) => {
-                    setProcessingId(null);
-
-                    if (response.data.success || response.data.message) {
-                        toast.success(
-                            response.data.message || "Undangan berhasil dikirim"
-                        );
-
-                        // Update local state
-                        setLocalReviewers((prevReviewers) =>
-                            prevReviewers.map((reviewer) =>
-                                reviewer.user_id === userId
-                                    ? { ...reviewer, is_invited: true }
-                                    : reviewer
-                            )
-                        );
-                    }
-                })
-                .catch((error) => {
-                    setProcessingId(null);
-
-                    if (error.response) {
-                        // Server responded with error
-                        const errorMessage =
-                            error.response.data?.message ||
-                            error.response.data?.error ||
-                            "Gagal mengundang reviewer";
-                        toast.error(errorMessage);
-                    } else if (error.request) {
-                        // No response received
-                        toast.error("Tidak ada respons dari server");
-                    } else {
-                        // Something else
-                        toast.error("Terjadi kesalahan");
-                    }
-                });
+            window.axios.post(route("regis-semi.store-invite", book.id), {
+                user_id: userId
+            })
+            .then(response => {
+                setProcessingId(null);
+                
+                if (response.data.success || response.data.message) {
+                    toast.success(response.data.message || "Undangan berhasil dikirim");
+                    
+                    // Update local state
+                    setLocalReviewers(prevReviewers => 
+                        prevReviewers.map(reviewer => 
+                            reviewer.user_id === userId 
+                                ? { ...reviewer, is_invited: true }
+                                : reviewer
+                        )
+                    );
+                }
+            })
+            .catch(error => {
+                setProcessingId(null);
+                
+                if (error.response) {
+                    // Server responded with error
+                    const errorMessage = error.response.data?.message || 
+                                       error.response.data?.error || 
+                                       "Gagal mengundang reviewer";
+                    toast.error(errorMessage);
+                } else if (error.request) {
+                    // No response received
+                    toast.error("Tidak ada respons dari server");
+                } else {
+                    // Something else
+                    toast.error("Terjadi kesalahan");
+                }
+            });
         } else {
-            // Fallback to fetch (disederhanakan)
-            toast.error("Axios tidak tersedia. Gagal mengundang reviewer.");
-            setProcessingId(null);
+            // Fallback to fetch
+            handleInviteAlternative(userId);
         }
     };
 
     // Hitung statistik berdasarkan localReviewers
     const stats = {
         totalReviewers: localReviewers.length,
-        withDosenAkses: localReviewers.filter((r) => r.has_dosen_akses).length,
-        available: localReviewers.filter((r) => !r.is_invited).length,
-        invited: localReviewers.filter((r) => r.is_invited).length,
+        withDosenAkses: localReviewers.filter(r => r.has_dosen_akses).length,
+        available: localReviewers.filter(r => !r.is_invited).length,
+        invited: localReviewers.filter(r => r.is_invited).length,
         filteredCount: filteredReviewers.length,
     };
 
@@ -172,7 +239,7 @@ export default function Invite({ book, availableReviewers = [], flash }) {
                         <p className="text-sm text-muted-foreground">
                             Cari dosen yang kompeten untuk menilai buku:{" "}
                             <span className="font-medium text-foreground">
-                                &quot;{book.title}&quot;
+                                "{book.title}"
                             </span>
                         </p>
                     </div>
@@ -192,27 +259,16 @@ export default function Invite({ book, availableReviewers = [], flash }) {
                                 />
                             </div>
                             <Button
-                                // UBAH: Gunakan variant default (primary)
-                                variant={
-                                    filterDosenOnly ? "default" : "outline"
-                                }
+                                variant={filterDosenOnly ? "default" : "outline"}
                                 size="sm"
-                                // UBAH: Hapus hardcoded green class
-                                className="h-12 whitespace-nowrap"
-                                onClick={() =>
-                                    setFilterDosenOnly(!filterDosenOnly)
-                                }
+                                className="h-12 whitespace-nowrap bg-green-600 hover:bg-green-700"
+                                onClick={() => setFilterDosenOnly(!filterDosenOnly)}
                             >
                                 <Filter className="mr-2 h-4 w-4" />
-                                {filterDosenOnly
-                                    ? "Hanya Dosen"
-                                    : "Semua Akses"}
+                                {filterDosenOnly ? "Hanya Dosen" : "Semua Akses"}
                             </Button>
                             <div className="text-sm text-muted-foreground whitespace-nowrap">
-                                <span className="font-medium">
-                                    {stats.filteredCount}
-                                </span>{" "}
-                                tersedia
+                                <span className="font-medium">{stats.filteredCount}</span> tersedia
                             </div>
                         </div>
 
@@ -221,27 +277,18 @@ export default function Invite({ book, availableReviewers = [], flash }) {
                                 filteredReviewers.map((reviewer) => (
                                     <Card
                                         key={reviewer.user_id}
-                                        // UBAH: border-l-green-500 -> border-l-primary, bg-green-50/30 -> bg-primary/10
                                         className={`hover:border-primary/50 transition-colors ${
-                                            reviewer.has_dosen_akses
-                                                ? "border-l-4 border-l-primary bg-primary/10"
-                                                : ""
+                                            reviewer.has_dosen_akses ? 'border-l-4 border-l-green-500 bg-green-50/30' : ''
                                         }`}
                                     >
                                         <CardContent className="p-4 flex items-center justify-between">
                                             <div className="flex items-start gap-4">
                                                 <Avatar className="h-10 w-10">
                                                     <AvatarImage
-                                                        // UBAH: background=4ade80 -> gunakan warna primary (atau biarkan default)
-                                                        src={`https://ui-avatars.com/api/?name=${encodeURIComponent(
-                                                            reviewer.name
-                                                        )}&background=10b981&color=ffffff`}
+                                                        src={`https://ui-avatars.com/api/?name=${encodeURIComponent(reviewer.name)}&background=4ade80`}
                                                     />
-                                                    {/* UBAH: bg-green-100 text-green-800 -> bg-primary/10 text-primary */}
-                                                    <AvatarFallback className="bg-primary/10 text-primary">
-                                                        {reviewer.name.charAt(
-                                                            0
-                                                        )}
+                                                    <AvatarFallback className="bg-green-100 text-green-800">
+                                                        {reviewer.name.charAt(0)}
                                                     </AvatarFallback>
                                                 </Avatar>
                                                 <div className="flex-1">
@@ -250,8 +297,7 @@ export default function Invite({ book, availableReviewers = [], flash }) {
                                                         <h4 className="font-semibold text-sm md:text-base">
                                                             {reviewer.name}
                                                             {reviewer.has_dosen_akses && (
-                                                                // UBAH: text-green-500 -> text-primary
-                                                                <BadgeCheck className="inline ml-2 h-4 w-4 text-primary" />
+                                                                <BadgeCheck className="inline ml-2 h-4 w-4 text-green-500" />
                                                             )}
                                                         </h4>
                                                     </div>
@@ -264,41 +310,21 @@ export default function Invite({ book, availableReviewers = [], flash }) {
                                                     <div className="flex items-center gap-2 mt-1">
                                                         <Shield className="h-3 w-3 text-muted-foreground" />
                                                         <p className="text-xs text-muted-foreground font-mono">
-                                                            ID:{" "}
-                                                            {reviewer.user_id.substring(
-                                                                0,
-                                                                8
-                                                            )}
-                                                            ...
+                                                            ID: {reviewer.user_id.substring(0, 8)}...
                                                         </p>
                                                     </div>
-
+                                                    
                                                     {/* Hanya tampilkan badge Dosen saja */}
                                                     {reviewer.has_dosen_akses && (
                                                         <div className="flex flex-wrap gap-1 mt-2">
-                                                            {/* MENGGUNAKAN BADGE THEME-AWARE */}
-                                                            <Badge
-                                                                variant="success"
-                                                                className="text-xs"
-                                                            >
+                                                            <Badge variant="green" className="text-xs">
                                                                 Dosen
                                                             </Badge>
-                                                            {!filterDosenOnly &&
-                                                                reviewer.akses_list &&
-                                                                reviewer
-                                                                    .akses_list
-                                                                    .length >
-                                                                    1 && (
-                                                                    <span className="text-xs text-muted-foreground ml-1">
-                                                                        (
-                                                                        {reviewer
-                                                                            .akses_list
-                                                                            .length -
-                                                                            1}{" "}
-                                                                        akses
-                                                                        lainnya)
-                                                                    </span>
-                                                                )}
+                                                            {!filterDosenOnly && reviewer.akses_list && reviewer.akses_list.length > 1 && (
+                                                                <span className="text-xs text-muted-foreground ml-1">
+                                                                    ({reviewer.akses_list.length - 1} akses lainnya)
+                                                                </span>
+                                                            )}
                                                         </div>
                                                     )}
                                                 </div>
@@ -309,8 +335,7 @@ export default function Invite({ book, availableReviewers = [], flash }) {
                                                     <Button
                                                         variant="secondary"
                                                         disabled
-                                                        // UBAH: Hapus hardcoded green, gunakan secondary/outline dan text-primary
-                                                        className="gap-2 text-primary border border-primary/20 bg-primary/10 hover:bg-primary/10"
+                                                        className="gap-2 bg-green-100 text-green-700 hover:bg-green-100 border border-green-200"
                                                     >
                                                         <CheckCircle2 className="h-4 w-4" />
                                                         Terundang
@@ -318,24 +343,11 @@ export default function Invite({ book, availableReviewers = [], flash }) {
                                                 ) : (
                                                     <Button
                                                         size="sm"
-                                                        onClick={() =>
-                                                            handleInviteFinal(
-                                                                reviewer.user_id
-                                                            )
-                                                        }
-                                                        disabled={
-                                                            processingId ===
-                                                            reviewer.user_id
-                                                        }
-                                                        // UBAH: Hapus hardcoded green, gunakan variant default
-                                                        variant={
-                                                            reviewer.has_dosen_akses
-                                                                ? "default"
-                                                                : "outline"
-                                                        }
+                                                        onClick={() => handleInviteFinal(reviewer.user_id)}
+                                                        disabled={processingId === reviewer.user_id}
+                                                        className={reviewer.has_dosen_akses ? "bg-green-600 hover:bg-green-700" : ""}
                                                     >
-                                                        {processingId ===
-                                                        reviewer.user_id ? (
+                                                        {processingId === reviewer.user_id ? (
                                                             <>
                                                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                                                 Mengundang...
@@ -357,12 +369,9 @@ export default function Invite({ book, availableReviewers = [], flash }) {
                                     {search ? (
                                         <div className="space-y-2">
                                             <Search className="h-12 w-12 mx-auto text-muted-foreground" />
-                                            <p>
-                                                Tidak ditemukan dosen dengan
-                                                pencarian &quot;{search}&quot;.
-                                            </p>
-                                            <Button
-                                                variant="outline"
+                                            <p>Tidak ditemukan dosen dengan pencarian "{search}".</p>
+                                            <Button 
+                                                variant="outline" 
                                                 size="sm"
                                                 onClick={() => setSearch("")}
                                             >
@@ -372,20 +381,12 @@ export default function Invite({ book, availableReviewers = [], flash }) {
                                     ) : filterDosenOnly ? (
                                         <div className="space-y-2">
                                             <Filter className="h-12 w-12 mx-auto text-muted-foreground" />
-                                            <p>
-                                                Tidak ada reviewer dengan akses
-                                                Dosen.
-                                            </p>
-                                            <p className="text-sm">
-                                                Coba matikan filter &quot;Hanya
-                                                Dosen&quot;.
-                                            </p>
-                                            <Button
-                                                variant="outline"
+                                            <p>Tidak ada reviewer dengan akses Dosen.</p>
+                                            <p className="text-sm">Coba matikan filter "Hanya Dosen".</p>
+                                            <Button 
+                                                variant="outline" 
                                                 size="sm"
-                                                onClick={() =>
-                                                    setFilterDosenOnly(false)
-                                                }
+                                                onClick={() => setFilterDosenOnly(false)}
                                             >
                                                 Tampilkan Semua Akses
                                             </Button>
@@ -393,14 +394,8 @@ export default function Invite({ book, availableReviewers = [], flash }) {
                                     ) : (
                                         <div className="space-y-2">
                                             <Users className="h-12 w-12 mx-auto text-muted-foreground" />
-                                            <p>
-                                                Tidak ada data reviewer
-                                                tersedia.
-                                            </p>
-                                            <p className="text-sm">
-                                                Semua reviewer sudah diundang
-                                                atau tidak ada data.
-                                            </p>
+                                            <p>Tidak ada data reviewer tersedia.</p>
+                                            <p className="text-sm">Semua reviewer sudah diundang atau tidak ada data.</p>
                                         </div>
                                     )}
                                 </div>
@@ -419,47 +414,29 @@ export default function Invite({ book, availableReviewers = [], flash }) {
                             </CardHeader>
                             <CardContent className="text-sm space-y-3 text-muted-foreground">
                                 <p className="flex items-start gap-2">
-                                    {/* UBAH: text-green-500 -> text-primary */}
-                                    <BadgeCheck className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                                    <BadgeCheck className="h-4 w-4 text-green-500 flex-shrink-0 mt-0.5" />
                                     <span>
-                                        <strong>
-                                            Semua yang ditampilkan adalah Dosen
-                                        </strong>
-                                        .
+                                        <strong>Semua yang ditampilkan adalah Dosen</strong>.
                                     </span>
                                 </p>
                                 <p className="flex items-start gap-2">
-                                    {/* UBAH: text-blue-500 -> text-primary */}
-                                    <Filter className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                                    <Filter className="h-4 w-4 text-blue-500 flex-shrink-0 mt-0.5" />
                                     <span>
-                                        Filter{" "}
-                                        <strong>&quot;Hanya Dosen&quot;</strong>{" "}
-                                        aktif - hanya menampilkan user dengan
-                                        akses Dosen.
+                                        Filter <strong>"Hanya Dosen"</strong> aktif - hanya menampilkan user dengan akses Dosen.
                                     </span>
                                 </p>
                                 <p>
-                                    • User mungkin memiliki akses lain (Admin,
-                                    Staff, dll), tetapi yang relevan untuk
-                                    review buku adalah akses{" "}
-                                    <strong>Dosen</strong>.
+                                    • User mungkin memiliki akses lain, tetapi yang relevan untuk review buku adalah akses <strong>Dosen</strong>.
                                 </p>
                                 <p>
-                                    • Anda dapat mengundang lebih dari satu
-                                    reviewer.
+                                    • Anda dapat mengundang lebih dari satu reviewer.
                                 </p>
                             </CardContent>
                         </Card>
 
-                        <Card
-                            // UBAH: border-green-200 -> border-primary/20, bg-green-50/30 -> bg-primary/10
-                            className="border-primary/20 bg-primary/10"
-                        >
+                        <Card className="border-green-200 bg-green-50/30">
                             <CardHeader>
-                                <CardTitle
-                                    // UBAH: text-green-800 -> text-primary
-                                    className="text-base flex items-center gap-2 text-primary"
-                                >
+                                <CardTitle className="text-base flex items-center gap-2 text-green-800">
                                     <BadgeCheck className="h-5 w-5" />
                                     Statistik Dosen
                                 </CardTitle>
@@ -467,21 +444,14 @@ export default function Invite({ book, availableReviewers = [], flash }) {
                             <CardContent className="space-y-3">
                                 <div className="flex justify-between items-center">
                                     <span className="text-sm">Total Dosen</span>
-                                    {/* UBAH: text-green-700 -> text-primary */}
-                                    <span className="font-semibold text-primary">
-                                        {stats.totalReviewers}
-                                    </span>
+                                    <span className="font-semibold text-green-700">{stats.totalReviewers}</span>
                                 </div>
                                 <div className="flex justify-between items-center">
                                     <div className="flex items-center gap-2">
-                                        {/* UBAH: text-green-500 -> text-primary */}
-                                        <BadgeCheck className="h-3 w-3 text-primary" />
-                                        <span className="text-sm">
-                                            Dengan Akses Dosen
-                                        </span>
+                                        <BadgeCheck className="h-3 w-3 text-green-500" />
+                                        <span className="text-sm">Dengan Akses Dosen</span>
                                     </div>
-                                    {/* UBAH: text-green-600 -> text-primary */}
-                                    <span className="font-semibold text-primary">
+                                    <span className="font-semibold text-green-600">
                                         {stats.withDosenAkses}
                                     </span>
                                 </div>
@@ -493,29 +463,15 @@ export default function Invite({ book, availableReviewers = [], flash }) {
                                 </div>
                                 <div className="flex justify-between items-center">
                                     <span className="text-sm">Terundang</span>
-                                    {/* UBAH: text-blue-600 -> text-primary */}
-                                    <span className="font-semibold text-primary">
+                                    <span className="font-semibold text-blue-600">
                                         {stats.invited}
                                     </span>
                                 </div>
-                                {/* UBAH: border-green-200 -> border-primary/20 */}
-                                <div className="pt-2 border-t border-primary/20">
+                                <div className="pt-2 border-t border-green-200">
                                     <div className="flex justify-between items-center">
-                                        <span className="text-sm">
-                                            Mode Tampilan
-                                        </span>
-                                        {/* MENGGUNAKAN BADGE THEME-AWARE */}
-                                        <Badge
-                                            variant={
-                                                filterDosenOnly
-                                                    ? "success"
-                                                    : "outline"
-                                            }
-                                            className="text-xs"
-                                        >
-                                            {filterDosenOnly
-                                                ? "Hanya Dosen"
-                                                : "Semua Akses"}
+                                        <span className="text-sm">Mode Tampilan</span>
+                                        <Badge variant={filterDosenOnly ? "green" : "outline"} className="text-xs">
+                                            {filterDosenOnly ? "Hanya Dosen" : "Semua Akses"}
                                         </Badge>
                                     </div>
                                 </div>
@@ -531,25 +487,15 @@ export default function Invite({ book, availableReviewers = [], flash }) {
                             </CardHeader>
                             <CardContent className="text-sm space-y-2 text-muted-foreground">
                                 <p>
-                                    Sistem hanya menampilkan user yang memiliki{" "}
-                                    <strong>akses Dosen</strong>.
+                                    Sistem hanya menampilkan user yang memiliki <strong>akses Dosen</strong>.
                                 </p>
                                 <p>
-                                    User mungkin memiliki akses lain (Admin,
-                                    Staff, dll), tetapi untuk review buku hanya
-                                    status <strong>Dosen</strong> yang relevan.
+                                    User mungkin memiliki akses lain (Admin, Staff, dll), tetapi untuk review buku hanya status <strong>Dosen</strong> yang relevan.
                                 </p>
                                 <div className="mt-2 pt-2 border-t">
-                                    <p className="font-medium text-foreground">
-                                        Prinsip Seleksi:
-                                    </p>
-                                    <p className="text-xs mt-1">
-                                        1. Memiliki akses Dosen (wajib)
-                                    </p>
-                                    <p className="text-xs">
-                                        2. Akses lain tidak ditampilkan untuk
-                                        fokus pada kapasitas sebagai reviewer
-                                    </p>
+                                    <p className="font-medium text-foreground">Prinsip Seleksi:</p>
+                                    <p className="text-xs mt-1">1. Memiliki akses Dosen (wajib)</p>
+                                    <p className="text-xs">2. Akses lain tidak ditampilkan untuk fokus pada kapasitas sebagai reviewer</p>
                                 </div>
                             </CardContent>
                         </Card>

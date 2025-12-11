@@ -12,7 +12,7 @@ class CheckRole
         $auth = $request->attributes->get('auth');
 
         // Ambil akses user, pastikan array
-        if (! isset($auth->akses)) {
+        if (!isset($auth->akses)) {
             $aksesUser = [];
         } elseif (is_string($auth->akses)) {
             $aksesUser = array_map('trim', explode(',', $auth->akses));
@@ -23,7 +23,7 @@ class CheckRole
         }
 
         // Ambil roles user dari service user
-        $rolesUser = isset($auth->roles) ? (array) $auth->roles : [];
+        $rolesUser = isset($auth->roles) ? (array)$auth->roles : [];
         $rolesUser = array_map('trim', $rolesUser);
 
         // rolesRequired bisa string dengan "|" untuk kombinasi
@@ -48,7 +48,7 @@ class CheckRole
         }
 
         // Jika tidak punya akses, abort 403 tanpa view
-        if (! $hasAccess) {
+        if (!$hasAccess) {
             abort(403, 'You do not have access to this page.');
         }
 

@@ -55,10 +55,10 @@ export default function Staff({ book }) {
 
     if (!book) return <div>Loading data...</div>;
     const links = Array.isArray(book.drive_link) ? book.drive_link : [];
-
+    
     // Cek apakah ada PDF
     const hasPdfFile = book.pdf_path ? true : false;
-
+    
     // Tautan pertama (dianggap sebagai tautan folder utama)
     const documentLink = links.length > 0 ? links[0] : null;
 
@@ -98,28 +98,16 @@ export default function Staff({ book }) {
                 {/* HEADER */}
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                        <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={handleAction}
-                        >
+                        <Button variant="outline" size="icon" onClick={handleAction}>
                             <ArrowLeft className="h-4 w-4" />
                         </Button>
                         <div>
-                            <h1 className="text-2xl font-bold">
-                                Verifikasi Buku
-                            </h1>
-                            <p className="text-sm text-gray-500">
-                                Pengusul: {book.dosen}
-                            </p>
+                            <h1 className="text-2xl font-bold">Verifikasi Buku</h1>
+                            <p className="text-sm text-gray-500">Pengusul: {book.dosen}</p>
                         </div>
                     </div>
                     <Badge
-                        variant={
-                            book.status === "APPROVED_CHIEF"
-                                ? "success"
-                                : "outline"
-                        }
+                        variant={book.status === "APPROVED_CHIEF" ? "success" : "outline"}
                     >
                         {book.status_label}
                     </Badge>
@@ -129,29 +117,22 @@ export default function Staff({ book }) {
                 <Card>
                     <CardContent className="p-6 space-y-4">
                         <SideBySideFormField label="Judul Buku">
-                            {/* UBAH: bg-gray-50 -> bg-muted (theme-aware) */}
-                            <Input
-                                value={book.title || ""}
-                                readOnly
-                                className="bg-muted"
-                            />
+                            <Input value={book.title || ""} readOnly className="bg-gray-50" />
                         </SideBySideFormField>
 
                         <SideBySideFormField label="ISBN">
-                            {/* UBAH: bg-gray-50 -> bg-muted (theme-aware) */}
                             <Input
                                 value={book.isbn || ""}
                                 readOnly
-                                className="bg-muted font-mono"
+                                className="bg-gray-50 font-mono"
                             />
                         </SideBySideFormField>
 
                         <SideBySideFormField label="Penerbit">
-                            {/* UBAH: bg-gray-50 -> bg-muted (theme-aware) */}
                             <Input
                                 value={book.publisher || ""}
                                 readOnly
-                                className="bg-muted"
+                                className="bg-gray-50"
                             />
                         </SideBySideFormField>
 
@@ -161,8 +142,7 @@ export default function Staff({ book }) {
                                 <StackedFormField label="File PDF Buku">
                                     <div className="space-y-2">
                                         <div className="flex items-center gap-2">
-                                            {/* UBAH: text-green-600 -> text-primary (theme-aware) */}
-                                            <FileType className="h-5 w-5 text-primary" />
+                                            <FileType className="h-5 w-5 text-green-600" />
                                             <span className="text-sm font-medium text-gray-700">
                                                 PDF Surat Permohonan Tersedia
                                             </span>
@@ -174,50 +154,34 @@ export default function Staff({ book }) {
 
                         {/* LIST DOKUMEN */}
                         <div className="mt-8 pt-4 border-t">
-                            {/* UBAH: text-gray-900 -> text-foreground (theme-aware) */}
-                            <h3 className="font-semibold mb-4 text-foreground">
+                            <h3 className="font-semibold mb-4 text-gray-900">
                                 Dokumen Pendukung
                             </h3>
 
                             {links.length > 0 ? (
                                 <div className="space-y-3">
                                     {links.map((link, idx) => {
-                                        const isPdf =
-                                            link &&
-                                            (link
-                                                .toLowerCase()
-                                                .includes(".pdf") ||
-                                                link.includes(
-                                                    "drive.google.com/file"
-                                                ));
-
+                                        const isPdf = link && (
+                                            link.toLowerCase().includes('.pdf') ||
+                                            link.includes('drive.google.com/file')
+                                        );
+                                        
                                         return (
                                             <StackedFormField
                                                 key={idx}
-                                                label={`Dokumen #${idx + 1}${
-                                                    isPdf ? " (PDF)" : ""
-                                                }`}
+                                                label={`Dokumen #${idx + 1}${isPdf ? ' (PDF)' : ''}`}
                                             >
                                                 <div className="flex gap-2">
                                                     <Input
                                                         value={link}
                                                         readOnly
-                                                        // UBAH: hardcoded colors -> bg-muted, text-primary (theme-aware)
-                                                        className={`bg-muted text-primary underline cursor-pointer`}
+                                                        className={`bg-gray-50 ${isPdf ? 'text-purple-600' : 'text-blue-600'} underline cursor-pointer`}
                                                     />
-                                                    <a
-                                                        href={link}
-                                                        target="_blank"
-                                                        rel="noreferrer"
-                                                    >
+                                                    <a href={link} target="_blank" rel="noreferrer">
                                                         <Button
                                                             variant="outline"
                                                             size="icon"
-                                                            title={
-                                                                isPdf
-                                                                    ? "Buka PDF"
-                                                                    : "Buka Link"
-                                                            }
+                                                            title={isPdf ? "Buka PDF" : "Buka Link"}
                                                         >
                                                             {isPdf ? (
                                                                 <FileType className="h-4 w-4" />
@@ -232,7 +196,7 @@ export default function Staff({ book }) {
                                     })}
                                 </div>
                             ) : (
-                                <div className="flex items-center gap-2 text-yellow-800 bg-yellow-100 p-3 rounded-md">
+                                <div className="flex items-center gap-2 text-amber-600 bg-amber-50 p-3 rounded-md">
                                     <AlertCircle className="h-4 w-4" />
                                     <p className="text-sm">
                                         Tidak ada link dokumen pendukung.
@@ -246,10 +210,9 @@ export default function Staff({ book }) {
                 {/* --- TOMBOL UTAMA (DIUBAH MENJADI 3 KOLOM) --- */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {/* 1. Buka Folder Dokumen */}
-                    <Button
-                        variant="secondary"
-                        // UBAH: border-gray-200 -> border-input (theme-aware)
-                        className="h-12 border border-input"
+                    <Button 
+                        variant="secondary" 
+                        className="h-12 border border-gray-200"
                         onClick={handleOpenDocument}
                         disabled={!documentLink}
                     >
@@ -261,14 +224,8 @@ export default function Staff({ book }) {
                     {hasPdfFile ? (
                         <Button
                             variant="outline"
-                            // UBAH: hardcoded blue -> border-primary text-primary hover:bg-primary/5 (theme-aware)
-                            className="h-12 border-primary text-primary hover:bg-primary/5"
-                            onClick={() =>
-                                window.open(
-                                    route("regis-semi.download-pdf", book.id),
-                                    "_blank"
-                                )
-                            }
+                            className="h-12 border-blue-600 text-blue-600 hover:bg-blue-50"
+                            onClick={() => window.open(route("regis-semi.download-pdf", book.id), "_blank")}
                         >
                             <FileType className="mr-2 h-5 w-5" />
                             Download PDF
@@ -276,8 +233,7 @@ export default function Staff({ book }) {
                     ) : (
                         <Button
                             variant="outline"
-                            // UBAH: hardcoded gray -> border-input text-muted-foreground hover:bg-muted (theme-aware)
-                            className="h-12 border-input text-muted-foreground hover:bg-muted"
+                            className="h-12 border-gray-300 text-gray-400 hover:bg-gray-50"
                             disabled
                         >
                             <FileType className="mr-2 h-5 w-5" />
@@ -288,13 +244,8 @@ export default function Staff({ book }) {
                     {/* 3. Tombol TOLAK */}
                     <Button
                         onClick={() => setIsRejectOpen(true)}
-                        // UBAH: hardcoded red -> variant="destructive" (theme-aware)
-                        variant="destructive"
-                        className="h-12"
-                        disabled={
-                            book.status === "APPROVED_CHIEF" ||
-                            book.status === "REJECTED"
-                        }
+                        className="bg-red-600 hover:bg-red-700 h-12 text-white"
+                        disabled={book.status === "APPROVED_CHIEF" || book.status === "REJECTED"}
                     >
                         <XCircle className="mr-2 h-5 w-5" /> Tolak
                     </Button>
@@ -305,13 +256,11 @@ export default function Staff({ book }) {
             <Dialog open={isRejectOpen} onOpenChange={setIsRejectOpen}>
                 <DialogContent className="sm:max-w-[500px]">
                     <DialogHeader>
-                        {/* UBAH: text-red-600 -> text-destructive (theme-aware) */}
-                        <DialogTitle className="text-destructive">
+                        <DialogTitle className="text-red-600">
                             Tolak Pengajuan
                         </DialogTitle>
                         <DialogDescription>
-                            Berikan alasan penolakan agar dosen dapat
-                            memperbaikinya.
+                            Berikan alasan penolakan agar dosen dapat memperbaikinya.
                         </DialogDescription>
                     </DialogHeader>
 
@@ -328,10 +277,7 @@ export default function Staff({ book }) {
                         />
 
                         <DialogFooter>
-                            <Button
-                                variant="outline"
-                                onClick={() => setIsRejectOpen(false)}
-                            >
+                            <Button variant="outline" onClick={() => setIsRejectOpen(false)}>
                                 Batal
                             </Button>
 

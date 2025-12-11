@@ -36,11 +36,11 @@ class RegisSemi extends Model
 
         static::creating(function ($model) {
             // Jika status tidak diisi, set default
-            if (! $model->status) {
+            if (!$model->status) {
                 $model->status = 'PENDING';
             }
             // Set invited_at jika membuat undangan baru
-            if (! $model->invited_at && $model->status === 'PENDING') {
+            if (!$model->invited_at && $model->status === 'PENDING') {
                 $model->invited_at = now();
             }
         });

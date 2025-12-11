@@ -11,7 +11,7 @@ use Inertia\Inertia;
 
 class AdminPenghargaanBukuController extends Controller
 {
-    public function index(Request $request)
+     public function index(Request $request)
     {
         $search = $request->input('search');
 
@@ -20,9 +20,9 @@ class AdminPenghargaanBukuController extends Controller
             ->where('status', '!=', 'DRAFT');
 
         if ($search) {
-            $query->where(function ($q) use ($search) {
+            $query->where(function($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
-                    ->orWhere('user_id', 'like', "%{$search}%");
+                  ->orWhere('user_id', 'like', "%{$search}%");
             });
         }
 
@@ -32,10 +32,10 @@ class AdminPenghargaanBukuController extends Controller
         // Debug info
         Log::info('Admin Penghargaan Buku - Dosen Filter', [
             'total_dosen_ids' => count($dosenUserIds),
-            'sample_ids' => array_slice($dosenUserIds, 0, 5),
+            'sample_ids' => array_slice($dosenUserIds, 0, 5)
         ]);
 
-        if (! empty($dosenUserIds)) {
+        if (!empty($dosenUserIds)) {
             $query->whereIn('user_id', $dosenUserIds);
         } else {
             $query->where('user_id', null);
@@ -59,7 +59,7 @@ class AdminPenghargaanBukuController extends Controller
                 'id' => $book->id,
                 'judul' => $book->title,
                 'user_id' => $book->user_id,
-                'nama_dosen' => 'Dosen ('.substr($book->user_id, 0, 8).')',
+                'nama_dosen' => 'Dosen (' . substr($book->user_id, 0, 8) . ')',
                 'penulis_display' => $authorName,
                 'isbn' => $book->isbn,
                 'tanggal_pengajuan' => $book->updated_at->format('d M Y'),
@@ -79,7 +79,7 @@ class AdminPenghargaanBukuController extends Controller
                 'total_submissions' => $mappedSubmissions->count(),
                 'with_dosen_akses' => $mappedSubmissions->where('has_dosen_akses', true)->count(),
                 'unique_dosen' => count(array_unique($mappedSubmissions->pluck('user_id')->toArray())),
-            ],
+            ]
         ]);
     }
 

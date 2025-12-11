@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class BookAuthor extends Model
 {
@@ -16,7 +16,7 @@ class BookAuthor extends Model
         'user_id',
         'name',
         'role',
-        'affiliation',
+        'affiliation'
     ];
 
     // Relasi balik ke Buku
