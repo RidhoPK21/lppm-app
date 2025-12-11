@@ -4,21 +4,19 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\HakAksesModel;
-use Illuminate\Http\JsonResponse;
 
 class DosenController extends Controller
 {
     /**
      * Mendapatkan semua user_id dosen dari tabel HakAkses
      */
-    public function getDosenFromHakAkses(): JsonResponse
+    public function getDosenFromHakAkses()
     {
         try {
             // Ambil semua user_id dengan akses 'Dosen'
             $dosenData = HakAksesModel::where('akses', 'Dosen')
                 ->get(['user_id', 'akses', 'created_at'])
-                // ✅ PERBAIKAN: Tambahkan Type Hint (HakAksesModel $item)
-                ->map(function (HakAksesModel $item) {
+                ->map(function ($item) {
                     return [
                         'user_id' => $item->user_id,
                         'akses' => $item->akses,

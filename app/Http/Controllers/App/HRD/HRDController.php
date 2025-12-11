@@ -22,7 +22,6 @@ class HRDController extends Controller
     {
         try {
             // ✅ Ambil semua buku dengan status APPROVED_CHIEF SAJA (exclude PAID)
-            // Menggunakan DB::table untuk performa (hasilnya berupa object stdClass)
             $books = DB::table('book_submissions')
                 ->select(
                     'book_submissions.id',
@@ -32,14 +31,13 @@ class HRDController extends Controller
                     'book_submissions.status',
                     'users.name as nama_dosen'
                 )
-                // Pastikan kolom book_submissions.user_id di database bertipe CHAR(36)/UUID
+                // Pastikan tipe data kolom user_id di kedua tabel cocok (sama-sama UUID atau Integer)
                 ->join('users', 'book_submissions.user_id', '=', 'users.id')
-                ->where('book_submissions.status', 'APPROVED_CHIEF')
+                ->where('book_submissions.status', 'APPROVED_CHIEF') // ✅ Hanya APPROVED_CHIEF
                 ->orderBy('book_submissions.created_at', 'desc')
                 ->get();
 
-            // ✅ PERBAIKAN: Type hint (object $book) karena hasil dari DB::table
-            $formattedBooks = $books->map(function (object $book) {
+            $formattedBooks = $books->map(function ($book) {
                 return [
                     'id' => $book->id,
                     'judul' => $book->judul,
@@ -52,8 +50,10 @@ class HRDController extends Controller
 
             Log::info('[HRD Index] Books loaded', [
                 'count' => $formattedBooks->count(),
+                'books' => $formattedBooks->toArray(),
             ]);
 
+            // Sesuaikan string ini dengan lokasi file React Anda: 'app/home/kita-page.jsx'
             return Inertia::render('app/home/kita-page', [
                 'submissions' => $formattedBooks,
             ]);
@@ -64,6 +64,7 @@ class HRDController extends Controller
                 'trace' => $e->getTraceAsString(),
             ]);
 
+            // Sesuaikan string ini dengan lokasi file React Anda: 'app/home/kita-page.jsx'
             return Inertia::render('app/home/kita-page', [
                 'submissions' => [], // Return array kosong jika error
             ]);
@@ -75,7 +76,8 @@ class HRDController extends Controller
      */
     public function storePencairan(Request $request)
     {
-        // ⚠️ CATATAN: Rule 'integer' dihapus dari book_id agar support UUID
+        // PERUBAHAN KECIL: Menghapus rule 'integer' pada book_id agar support UUID.
+        // Jika ID masih integer, ini tetap aman.
         $validated = $request->validate([
             'book_id' => 'required|exists:book_submissions,id',
             'payment_date' => 'required|date',
@@ -87,7 +89,7 @@ class HRDController extends Controller
             $bookId = $validated['book_id'];
             $paymentDate = $validated['payment_date'];
 
-            // Ambil data buku (Return: BookSubmission Model)
+            // Ambil data buku
             $book = BookSubmission::findOrFail($bookId);
 
             // Validasi status harus APPROVED_CHIEF
@@ -117,12 +119,14 @@ class HRDController extends Controller
 
             Log::info('[HRD Payment] Book status updated to PAID', [
                 'book_id' => $bookId,
+                'payment_date' => $paymentDate,
             ]);
 
             // Catat log aktivitas
+            // Auth::id() aman digunakan meskipun UUID (return string)
             SubmissionLog::create([
                 'book_submission_id' => $bookId,
-                'user_id' => Auth::id(), // Auth::id() return string UUID
+                'user_id' => Auth::id(),
                 'action' => 'PAYMENT_DISBURSED',
                 'note' => "Dana penghargaan dicairkan oleh HRD pada tanggal {$paymentDate}",
             ]);
@@ -142,6 +146,7 @@ class HRDController extends Controller
                 'notification_sent_to' => $book->user_id,
             ]);
 
+            // ✅ Redirect dengan reload halaman
             return redirect()->route('hrd.kita.index')
                 ->with('success', 'Pencairan dana berhasil diproses!');
 

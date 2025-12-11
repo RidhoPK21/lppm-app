@@ -4,11 +4,9 @@ namespace App\Http\Controllers\App\Profile;
 
 use App\Http\Controllers\Controller;
 use App\Models\Profile;
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-use Inertia\Inertia;
 
 class ProfileController extends Controller
 {
@@ -17,13 +15,11 @@ class ProfileController extends Controller
      */
     public function index()
     {
-        /** @var \App\Models\User $user */
         $user = Auth::user();
         $userId = $user->id;
 
         // Ambil data dari database (profile).
         // Jika profile BELUM ADA, buat entry baru.
-        /** @var Profile $profile */
         $profile = Profile::firstOrCreate(
             ['user_id' => $userId],
             [
@@ -40,16 +36,21 @@ class ProfileController extends Controller
             'photo' => $user->photo ?? '/images/default-avatar.png',
 
             // Data yang bisa diedit (dari DB Profile).
-            // Pastikan Model Profile memiliki property ini (nidn, prodi, dll)
-            'NIDN' => $profile->nidn ?? '',
-            'ProgramStudi' => $profile->prodi ?? '',
-            'SintaID' => $profile->sinta_id ?? '',
-            'ScopusID' => $profile->scopus_id ?? '',
+            // Menggunakan nama field yang sama dengan di database (snake_case)
+            // Namun, untuk kompatibilitas dengan frontend yang sudah ada,
+            // kita akan menggunakan nama aslinya (NIDN, ProgramStudi, dll.)
+            // yang diambil dari atribut Eloquent yang sesuai (nidn, prodi, dll.).
+            // Eloquent secara otomatis akan mapping ke atribut yang benar.
+            // **PENTING: Di sini kita menggunakan nama atribut Eloquent (yang sudah diperbaiki ke snake_case)**
+            'NIDN' => $profile->nidn ?? '',           // DIGANTI: Dari $profile->NIDN
+            'ProgramStudi' => $profile->prodi ?? '',  // DIGANTI: Dari $profile->Prodi, penamaan ProgramStudi untuk Frontend
+            'SintaID' => $profile->sinta_id ?? '',    // DIGANTI: Dari $profile->SintaID
+            'ScopusID' => $profile->scopus_id ?? '',  // DIGANTI: Dari $profile->ScopusID
         ];
 
         Log::info('Profile Data Merged:', $merged);
 
-        return Inertia::render('Profile/Index', [
+        return inertia('Profile/Index', [
             'user' => $merged,
         ]);
     }
@@ -59,7 +60,6 @@ class ProfileController extends Controller
      */
     public function update(Request $request)
     {
-        /** @var \App\Models\User $user */
         $user = Auth::user();
 
         $validated = $request->validate([
@@ -78,6 +78,8 @@ class ProfileController extends Controller
 
         $profile->save();
 
+        // 🚨 PERBAIKAN UTAMA: Ganti response()->json dengan redirect() atau Inertia::location()
+        // Menggunakan redirect back() dengan flash message. Inertia akan me-reload props.
         return back()->with('success', 'Profil akademik berhasil diperbarui!');
     }
 }

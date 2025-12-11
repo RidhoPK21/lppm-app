@@ -5,7 +5,6 @@ namespace App\Http\Controllers\App\Penghargaan;
 use App\Http\Controllers\Controller;
 use App\Models\BookSubmission;
 use App\Models\HakAksesModel;
-use App\Models\User; // ✅ Tambahkan ini
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
@@ -16,15 +15,15 @@ class AdminPenghargaanBukuController extends Controller
     {
         $search = $request->input('search');
 
-        // Tambahkan 'user' lagi agar kita bisa ambil Nama Dosen
+        // PERUBAHAN 1: Tambahkan 'user' lagi agar kita bisa ambil Nama Dosen
         $query = BookSubmission::with(['authors', 'user'])
             ->where('status', '!=', 'DRAFT');
 
-        // Logic Search disesuaikan
+        // PERUBAHAN 2: Logic Search disesuaikan
         if ($search) {
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
-                    // Search berdasarkan Nama User
+                  // Search berdasarkan Nama User (lebih berguna daripada search UUID)
                     ->orWhereHas('user', function ($userQuery) use ($search) {
                         $userQuery->where('name', 'like', "%{$search}%");
                     });
@@ -32,6 +31,7 @@ class AdminPenghargaanBukuController extends Controller
         }
 
         // Ambil user_id yang memiliki akses Dosen
+        // Pastikan HakAksesModel mengembalikan array string UUID
         $dosenUserIds = HakAksesModel::getUserIdsWithDosenAkses();
 
         Log::info('Admin Penghargaan Buku - Dosen Filter', [
@@ -41,13 +41,13 @@ class AdminPenghargaanBukuController extends Controller
         if (! empty($dosenUserIds)) {
             $query->whereIn('user_id', $dosenUserIds);
         } else {
+            // Jika tidak ada dosen ditemukan, jangan tampilkan apa-apa (atau sesuai kebijakan)
             $query->whereNull('user_id');
         }
 
         $submissions = $query->orderBy('updated_at', 'desc')->get();
 
-        // ✅ PERBAIKAN: Type hint (BookSubmission $book)
-        $mappedSubmissions = $submissions->map(function (BookSubmission $book) {
+        $mappedSubmissions = $submissions->map(function ($book) {
             // Logic Penulis
             $firstAuthor = $book->authors->where('role', 'FIRST_AUTHOR')->first();
             $authorName = $firstAuthor ? $firstAuthor->name : ($book->authors->first()->name ?? '-');
@@ -61,17 +61,14 @@ class AdminPenghargaanBukuController extends Controller
             $userAkses = HakAksesModel::getAksesByUserId($book->user_id);
             $hasDosenAkses = in_array('Dosen', $userAkses);
 
-            // ✅ PERBAIKAN: Definisikan variabel user secara eksplisit untuk PHPStan
-            /** @var User|null $bookUser */
-            $bookUser = $book->user;
-
             return [
                 'id' => $book->id,
                 'judul' => $book->title,
                 'user_id' => $book->user_id,
 
-                // Gunakan variabel $bookUser yang sudah didefinisikan
-                'nama_dosen' => $bookUser ? $bookUser->name : 'User Unknown ('.substr($book->user_id, 0, 8).')',
+                // PERUBAHAN 3: Tampilkan Nama Asli User, bukan potongan UUID
+                // Jika user terhapus/null, fallback ke potongan ID
+                'nama_dosen' => $book->user ? $book->user->name : 'User Unknown ('.substr($book->user_id, 0, 8).')',
 
                 'penulis_display' => $authorName,
                 'isbn' => $book->isbn,
