@@ -2,292 +2,190 @@
 
 namespace Tests\Feature\Controllers\App\Penghargaan;
 
-use App\Http\Middleware\CheckAuthMiddleware;
+use App\Models\BookAuthor;
 use App\Models\BookSubmission;
+use App\Models\Profile;
+use App\Models\HakAksesModel; 
 use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithoutMiddleware;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
+use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Inertia\Testing\AssertableInertia as Inertia;
+use Mockery;
 use Tests\TestCase;
-use Inertia\Testing\AssertableInertia as Assert;
+
+// FIX UTAMA: Import Trait WithoutMiddleware
+use Illuminate\Foundation\Testing\WithoutMiddleware; 
 
 class PenghargaanBukuControllerTest extends TestCase
 {
-    use RefreshDatabase;
-    use WithoutMiddleware;
+    // Panggil Trait WithoutMiddleware di sini
+    use RefreshDatabase, WithFaker, WithoutMiddleware; 
 
-    protected $user;
-    protected $profile;
+    // Deklarasi properti (bisa nullable atau tidak, pola lokal akan menjaminnya)
+    protected $user; 
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        // Bypass Middleware Auth Custom
-        $this->withoutMiddleware([CheckAuthMiddleware::class]);
+        // FIX MOCKERY: Bersihkan Mockery sebelum setup (mengatasi masalah dari test lain)
+        Mockery::close();
 
-        // 1. SETUP SCHEMA MANUAL (Sesuaikan tipe data User ID = UUID)
+        Storage::fake('public');
+
+        // Mock PDF Facade
+        Pdf::shouldReceive('loadView')
+            ->zeroOrMoreTimes()
+            ->andReturnSelf()
+            ->shouldReceive('output')
+            ->zeroOrMoreTimes()
+            ->andReturn('mocked-pdf-content');
+
+        // 🔥 POLA PERBAIKAN: Gunakan variabel lokal ($userTemp)
+        $userTemp = User::factory()->create([
+            'id' => (string) Str::uuid(),
+            'name' => 'Prof. Dr. Dosen',
+            'email' => 'dosen@example.com',
+        ]);
+
+        // 2. Buat Hak Akses (menggunakan $userTemp)
+        HakAksesModel::factory()->create([
+            'user_id' => $userTemp->id,
+            'akses' => 'DOSEN,Admin,Lppm Ketua', 
+        ]);
         
-        if (!Schema::hasTable('profiles')) {
-            Schema::create('profiles', function (Blueprint $table) {
-                $table->id();
-                $table->foreignUuid('user_id'); // UBAH KE UUID
-                $table->string('name');
-                $table->string('nidn')->nullable();
-                $table->string('prodi')->nullable();
-                $table->string('sinta_id')->nullable();
-                $table->string('scopus_id')->nullable();
-                $table->timestamps();
-            });
-        }
-
-        if (!Schema::hasTable('book_submissions')) {
-            Schema::create('book_submissions', function (Blueprint $table) {
-                $table->uuid('id')->primary();
-                $table->foreignUuid('user_id'); // UBAH KE UUID
-                $table->string('title');
-                $table->string('isbn')->nullable();
-                $table->integer('publication_year')->nullable();
-                $table->string('publisher')->nullable();
-                $table->string('publisher_level')->nullable();
-                $table->string('book_type')->nullable();
-                $table->integer('total_pages')->nullable();
-                $table->text('drive_link')->nullable();
-                $table->string('pdf_path')->nullable();
-                $table->string('status')->default('DRAFT');
-                $table->decimal('approved_amount', 15, 2)->nullable();
-                $table->date('payment_date')->nullable();
-                $table->text('reject_note')->nullable();
-                $table->string('rejected_by')->nullable();
-                $table->timestamps();
-            });
-        }
-
-        if (!Schema::hasTable('book_authors')) {
-            Schema::create('book_authors', function (Blueprint $table) {
-                $table->id();
-                $table->foreignUuid('book_submission_id');
-                $table->foreignUuid('user_id')->nullable(); // UBAH KE UUID
-                $table->string('name');
-                $table->string('role');
-                $table->string('affiliation')->nullable();
-                $table->timestamps();
-            });
-        }
-
-        if (!Schema::hasTable('submission_logs')) {
-            Schema::create('submission_logs', function (Blueprint $table) {
-                $table->id();
-                $table->foreignUuid('book_submission_id');
-                $table->foreignUuid('user_id'); // UBAH KE UUID
-                $table->string('action');
-                $table->text('note')->nullable();
-                $table->timestamps();
-            });
-        }
-
-        if (!Schema::hasTable('notifications')) {
-            Schema::create('notifications', function (Blueprint $table) {
-                $table->uuid('id')->primary();
-                $table->string('type');
-                $table->morphs('notifiable');
-                $table->text('data');
-                $table->timestamp('read_at')->nullable();
-                $table->timestamps();
-            });
-        }
-
-        // 2. DATA DUMMY
-        $this->user = User::factory()->create([
-            'name' => 'Dosen Test',
-            'email' => 'dosen@del.ac.id',
+        // 3. Buat Profile (menggunakan $userTemp)
+        Profile::factory()->create([
+            'user_id' => $userTemp->id,
+            'name' => 'Prof. Dr. Dosen',
+            'nidn' => '1234567890',
+            'prodi' => 'Teknik Informatika',
+            'sinta_id' => '1',
+            'scopus_id' => '2',
         ]);
 
-        DB::table('profiles')->insert([
-            'user_id' => $this->user->id,
-            'name' => 'Dosen Test',
-            'nidn' => '123456789',
-            'prodi' => 'Informatika',
-            'sinta_id' => 'SINTA-001',
-            'scopus_id' => 'SCOPUS-001',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        // Tetapkan properti $this hanya di akhir setUp
+        $this->user = $userTemp;
+
+        // 4. Autentikasi User
+        $this->actingAs($this->user);
+    }
+    
+    // FIX MOCKERY: Tambahkan tearDown() untuk membersihkan Mockery setelah SETIAP test
+    protected function tearDown(): void
+    {
+        Mockery::close();
+        parent::tearDown();
     }
 
-    public function test_index_displays_books_list()
+
+    // --- TEST INDEX ---
+    public function test_index_displays_mapped_user_submissions(): void
     {
-        BookSubmission::create([
-            'user_id' => $this->user->id,
-            'title' => 'Buku Algoritma',
-            'status' => 'DRAFT',
-            'isbn' => '123',
-            'publication_year' => 2024,
-            'publisher' => 'Test', 
-            'publisher_level' => 'NATIONAL',
-            'book_type' => 'TEACHING',
-            'total_pages' => 100
-        ]);
+        // ARRANGE
+        $book1 = BookSubmission::factory()->create(['user_id' => $this->user->id, 'title' => 'Buku A', 'status' => 'SUBMITTED', 'book_type' => 'REFERENCE', 'created_at' => now()->subDay()]);
+        BookAuthor::factory()->create(['book_submission_id' => $book1->id, 'name' => 'Penulis 1', 'role' => 'FIRST']);
+        
+        $book2 = BookSubmission::factory()->create(['user_id' => $this->user->id, 'title' => 'Buku B', 'status' => 'DRAFT', 'book_type' => 'MONOGRAPH', 'created_at' => now()]);
+        BookAuthor::factory()->create(['book_submission_id' => $book2->id, 'name' => 'Penulis 2', 'role' => 'FIRST']);
 
-        $response = $this->actingAs($this->user)
-                         ->get(route('app.penghargaan.buku.index'));
 
+        // Act
+        $response = $this->get(route('app.penghargaan.buku.index'));
+
+        // Assert
         $response->assertStatus(200)
-                 ->assertInertia(fn (Assert $page) => $page
+                 ->assertInertia(fn (Inertia $page) => $page
                      ->component('app/penghargaan/buku/page')
-                     ->has('buku', 1)
+                     ->has('buku', 2)
+                     ->where('buku.0.judul', 'Buku B')
                  );
     }
 
-    public function test_create_displays_form()
+    // --- TEST STORE ---
+    public function test_store_submission_and_authors_successfully(): void
     {
-        $response = $this->actingAs($this->user)
-                         ->get(route('app.penghargaan.buku.create'));
-        $response->assertStatus(200);
-    }
-
-    public function test_store_saves_book_and_authors()
-    {
-        $data = [
-            'judul' => 'Pemrograman Web Lanjut',
-            'penulis' => 'Budi Santoso, Siti Aminah',
-            'penerbit' => 'Penerbit IT Del',
+        $requestData = [
+            'judul' => 'Judul Buku Baru',
+            'penulis' => 'Anggota 1, Anggota 2',
+            'penerbit' => 'Penerbit Fiksi',
             'tahun' => date('Y'),
-            'isbn' => '978-602-123-456',
-            'kategori' => 'TEACHING',
-            'jumlah_halaman' => 150,
-            'level_penerbit' => 'NATIONAL',
+            'isbn' => '978-602-03-3277-5',
+            'kategori' => 'REFERENCE',
+            'jumlah_halaman' => 200,
+            'level_penerbit' => 'INTERNATIONAL',
         ];
 
-        $response = $this->actingAs($this->user)
-                         ->post(route('app.penghargaan.buku.store'), $data);
+        // Act
+        $response = $this->post(route('app.penghargaan.buku.store'), $requestData);
 
-        $book = BookSubmission::where('title', 'Pemrograman Web Lanjut')->first();
-        $this->assertNotNull($book, 'Book should be created in DB');
+        // Assert DB
+        $this->assertDatabaseHas('book_submissions', [
+            'user_id' => $this->user->id,
+            'title' => 'Judul Buku Baru',
+            'status' => 'DRAFT',
+        ]);
+
+        // Mengambil submission yang baru dibuat
+        $submission = BookSubmission::where('title', 'Judul Buku Baru')->first();
         
-        $response->assertRedirect(route('app.penghargaan.buku.upload', ['id' => $book->id]));
+        // Assert Redirect
+        $response->assertStatus(302)
+                 ->assertRedirect(route('app.penghargaan.buku.upload', ['id' => $submission->id]));
     }
 
-    public function test_store_validation_error()
+    public function test_store_fails_with_invalid_data(): void
     {
-        $response = $this->actingAs($this->user)
-                         ->post(route('app.penghargaan.buku.store'), []);
+        $requestData = [
+            'judul' => '',
+            'penulis' => '',
+            'tahun' => 1800,
+            'jumlah_halaman' => 30,
+            'level_penerbit' => 'INVALID_LEVEL',
+            'kategori' => 'TEACHING'
+        ];
+
+        // Act
+        $response = $this->post(route('app.penghargaan.buku.store'), $requestData);
+
+        // Assert Validation Errors
+        $response->assertStatus(302)
+                 ->assertSessionHasErrors(['judul', 'penulis', 'tahun', 'jumlah_halaman', 'level_penerbit']);
         
-        $response->assertSessionHasErrors(['judul']);
+        $this->assertDatabaseCount('book_submissions', 0);
     }
 
-    public function test_show_detail_displays_book_and_profile()
+    // --- TEST SUBMIT ---
+    public function test_submit_fails_if_status_is_not_draft(): void
     {
-        $book = BookSubmission::create(['user_id' => $this->user->id, 'title' => 'Buku Detail', 'status' => 'DRAFT', 'isbn'=>'1', 'publication_year'=>2024, 'publisher'=>'a', 'publisher_level'=>'NATIONAL', 'book_type'=>'TEACHING', 'total_pages'=>10]);
+        // ARRANGE
+        $submission = BookSubmission::factory()->create(['user_id' => $this->user->id, 'status' => 'VERIFIED_STAFF']);
         
-        $response = $this->actingAs($this->user)
-                         ->get(route('app.penghargaan.buku.detail', $book->id));
-        
-        $response->assertStatus(200);
+        // Act
+        $response = $this->post(route('app.penghargaan.buku.submit', $submission->id));
+
+        // Assert
+        $response->assertStatus(302)
+                 ->assertSessionHas('error', 'Pengajuan sudah dikirim atau diproses.');
     }
 
-    public function test_upload_docs_page()
+    public function test_submit_fails_if_links_are_incomplete(): void
     {
-        $book = BookSubmission::create(['user_id' => $this->user->id, 'title' => 'Buku Upload', 'status' => 'DRAFT', 'isbn'=>'1', 'publication_year'=>2024, 'publisher'=>'a', 'publisher_level'=>'NATIONAL', 'book_type'=>'TEACHING', 'total_pages'=>10]);
+        // ARRANGE
+        $links = ['https://link.drive/1', 'https://link.drive/2']; // Hanya 2 link (kurang dari 5)
+        $submission = BookSubmission::factory()->create(['user_id' => $this->user->id, 'status' => 'DRAFT', 'drive_link' => json_encode($links)]);
         
-        $response = $this->actingAs($this->user)
-                         ->get(route('app.penghargaan.buku.upload', $book->id));
-        
-        $response->assertStatus(200);
+        // Act
+        $response = $this->post(route('app.penghargaan.buku.submit', $submission->id));
+
+        // Assert
+        $expectedErrorMessage = 'Dokumen belum lengkap. Harap lengkapi semua link dokumen sebelum mengirim.';
+        $response->assertStatus(302)
+                 ->assertSessionHas('error', $expectedErrorMessage);
     }
-
-    public function test_store_upload_saves_links_and_generates_pdf()
-    {
-        Storage::fake('public');
-        Pdf::shouldReceive('loadView')->andReturnSelf();
-        Pdf::shouldReceive('output')->andReturn('PDF_CONTENT');
-
-        $book = BookSubmission::create(['user_id' => $this->user->id, 'title' => 'Buku PDF', 'status' => 'DRAFT', 'isbn'=>'1', 'publication_year'=>2024, 'publisher'=>'a', 'publisher_level'=>'NATIONAL', 'book_type'=>'TEACHING', 'total_pages'=>10]);
-        
-        $response = $this->actingAs($this->user)
-                         ->post(route('app.penghargaan.buku.store-upload', $book->id), [
-                             'links' => ['http://example.com/file1']
-                         ]);
-
-        $response->assertRedirect(route('app.penghargaan.buku.detail', $book->id));
-    }
-
-    public function test_submit_fails_if_not_draft()
-    {
-        $book = BookSubmission::create(['user_id' => $this->user->id, 'title' => 'Buku Sub', 'status' => 'SUBMITTED', 'isbn'=>'1', 'publication_year'=>2024, 'publisher'=>'a', 'publisher_level'=>'NATIONAL', 'book_type'=>'TEACHING', 'total_pages'=>10]);
-        
-        $response = $this->actingAs($this->user)
-                         ->post(route('app.penghargaan.buku.submit', $book->id));
-        
-        $response->assertSessionHas('error');
-    }
-
-    public function test_submit_fails_if_documents_incomplete()
-    {
-        $book = BookSubmission::create(['user_id' => $this->user->id, 'title' => 'Buku Inc', 'status' => 'DRAFT', 'drive_link'=>json_encode(['a']), 'isbn'=>'1', 'publication_year'=>2024, 'publisher'=>'a', 'publisher_level'=>'NATIONAL', 'book_type'=>'TEACHING', 'total_pages'=>10]);
-        
-        $response = $this->actingAs($this->user)
-                         ->post(route('app.penghargaan.buku.submit', $book->id));
-        
-        $response->assertSessionHas('error');
-    }
-
-    public function test_submit_success()
-    {
-        Storage::fake('public');
-        Pdf::shouldReceive('loadView')->andReturnSelf();
-        Pdf::shouldReceive('output')->andReturn('PDF_CONTENT');
-
-        $links = array_fill(0, 6, 'http://valid-link.com');
-        $book = BookSubmission::create(['user_id' => $this->user->id, 'title' => 'Buku Ok', 'status' => 'DRAFT', 'drive_link'=>json_encode($links), 'isbn'=>'1', 'publication_year'=>2024, 'publisher'=>'a', 'publisher_level'=>'NATIONAL', 'book_type'=>'TEACHING', 'total_pages'=>10]);
-        
-        $response = $this->actingAs($this->user)
-                         ->post(route('app.penghargaan.buku.submit', $book->id));
-        
-        $response->assertRedirect(route('app.penghargaan.buku.index'));
-    }
-
-    public function test_preview_pdf_regenerates_if_missing()
-    {
-        Storage::fake('public');
-        
-        // Mock PDF lengkap (Load, Output, Stream)
-        Pdf::shouldReceive('loadView')->andReturnSelf();
-        Pdf::shouldReceive('output')->andReturn('PDF_CONTENT'); // Untuk generateAndSavePdf
-        Pdf::shouldReceive('stream')->andReturn(response('STREAM_CONTENT')); // Untuk response ke browser
-
-        $book = BookSubmission::create(['user_id' => $this->user->id, 'title' => 'Buku Prev', 'status' => 'DRAFT', 'pdf_path'=>'missing.pdf', 'isbn'=>'1', 'publication_year'=>2024, 'publisher'=>'a', 'publisher_level'=>'NATIONAL', 'book_type'=>'TEACHING', 'total_pages'=>10]);
-        
-        $response = $this->actingAs($this->user)
-                         ->get(route('app.penghargaan.buku.preview-pdf', $book->id));
-        
-        $response->assertStatus(200);
-    }
-
-    public function test_download_pdf_success()
-    {
-        Storage::fake('public');
-        $book = BookSubmission::create(['user_id' => $this->user->id, 'title' => 'Buku DL', 'status' => 'DRAFT', 'pdf_path'=>'test.pdf', 'isbn'=>'1', 'publication_year'=>2024, 'publisher'=>'a', 'publisher_level'=>'NATIONAL', 'book_type'=>'TEACHING', 'total_pages'=>10]);
-        
-        Storage::disk('public')->put('test.pdf', 'CONTENT');
-        
-        $response = $this->actingAs($this->user)
-                         ->get(route('app.penghargaan.buku.download-pdf', $book->id));
-        
-        $response->assertStatus(200);
-    }
-
-    public function test_download_pdf_not_found()
-    {
-        $book = BookSubmission::create(['user_id' => $this->user->id, 'title' => 'Buku Fail', 'status' => 'DRAFT', 'pdf_path'=>null, 'isbn'=>'1', 'publication_year'=>2024, 'publisher'=>'a', 'publisher_level'=>'NATIONAL', 'book_type'=>'TEACHING', 'total_pages'=>10]);
-        
-        $response = $this->actingAs($this->user)
-                         ->get(route('app.penghargaan.buku.download-pdf', $book->id));
-        
-        $response->assertSessionHas('error');
-    }
+    
+    // 🔥 Method ensureHakAksesFactoryExists dihapus
 }

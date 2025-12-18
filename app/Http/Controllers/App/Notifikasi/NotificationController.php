@@ -624,6 +624,8 @@ class NotificationController extends Controller
         }
     }
 
+    // ... (Kode sebelumnya)
+
     public function submitReview(Request $request, $bookId)
     {
         $request->validate([
@@ -644,69 +646,75 @@ class NotificationController extends Controller
                 return response()->json(['error' => 'User tidak ditemukan'], 404);
             }
 
-            DB::beginTransaction();
+            // =================================================================
+            // 🔥 PERBAIKAN: Gunakan DB::transaction() untuk memastikan atomisitas
+            // =================================================================
+            DB::transaction(function () use ($bookId, $laravelUser, $request) {
+                
+                $bookReviewer = \App\Models\BookReviewer::where('book_submission_id', $bookId)
+                    ->where('user_id', $laravelUser->id)
+                    ->first();
 
-            $bookReviewer = \App\Models\BookReviewer::where('book_submission_id', $bookId)
-                ->where('user_id', $laravelUser->id)
-                ->first();
+                if (! $bookReviewer) {
+                    // Ini akan menyebabkan exception yang ditangkap di luar
+                    throw new \Exception('Data reviewer tidak ditemukan');
+                }
 
-            if (! $bookReviewer) {
-                DB::rollBack();
+                $bookReviewer->update([
+                    'note' => $request->note,
+                    'status' => 'ACCEPTED',
+                    'reviewed_at' => now(),
+                ]);
 
-                return response()->json(['error' => 'Data reviewer tidak ditemukan'], 404);
-            }
+                // Update notifikasi jadi terbaca
+                Notification::where('id', $request->notification_id)->update(['is_read' => true]);
 
-            $bookReviewer->update([
-                'note' => $request->note,
-                'status' => 'ACCEPTED',
-                'reviewed_at' => now(),
-            ]);
+                $book = \App\Models\BookSubmission::find($bookId);
+                if (! $book) {
+                    throw new \Exception('Buku tidak ditemukan');
+                }
 
-            // Update notifikasi jadi terbaca
-            Notification::where('id', $request->notification_id)->update(['is_read' => true]);
+                // Kirim notifikasi balik ke pengundang (LPPM Ketua)
+                if ($bookReviewer->invited_by) {
+                    $inviter = User::find($bookReviewer->invited_by);
 
-            $book = \App\Models\BookSubmission::find($bookId);
-            if (! $book) {
-                DB::rollBack();
+                    if ($inviter) {
+                        $message = "Review Selesai: Hasil penilaian buku '{$book->title}' telah tersedia.";
+                        $referenceKey = 'REVIEW_COMPLETE_'.$bookId.'_'.$laravelUser->id;
 
-                return response()->json(['error' => 'Buku tidak ditemukan'], 404);
-            }
+                        $existingNotif = Notification::where('reference_key', $referenceKey)->exists();
 
-            // Kirim notifikasi balik ke pengundang (LPPM Ketua)
-            if ($bookReviewer->invited_by) {
-                $inviter = User::find($bookReviewer->invited_by);
-
-                if ($inviter) {
-                    $message = "Review Selesai: Hasil penilaian buku '{$book->title}' telah tersedia.";
-                    $referenceKey = 'REVIEW_COMPLETE_'.$bookId.'_'.$laravelUser->id;
-
-                    $existingNotif = Notification::where('reference_key', $referenceKey)->exists();
-
-                    if (! $existingNotif) {
-                        // ✅ PERBAIKAN: Gunakan Model::create
-                        Notification::create([
-                            'user_id' => $inviter->id,
-                            'title' => 'Review Buku Selesai',
-                            'message' => $message,
-                            'type' => 'Sukses',
-                            'is_read' => false,
-                            'reference_key' => $referenceKey,
-                        ]);
+                        if (! $existingNotif) {
+                            Notification::create([
+                                'user_id' => $inviter->id,
+                                'title' => 'Review Buku Selesai',
+                                'message' => $message,
+                                'type' => 'Sukses',
+                                'is_read' => false,
+                                'reference_key' => $referenceKey,
+                            ]);
+                        }
                     }
                 }
-            }
-
-            DB::commit();
+            });
+            // =================================================================
 
             return redirect()->back()->with('success', 'Review berhasil dikirim');
 
         } catch (\Exception $e) {
-            DB::rollBack();
+            // 🔥 PERBAIKAN: Tidak perlu DB::rollBack() karena DB::transaction() yang menanganinya
             Log::error('[Submit Review] Error', ['error' => $e->getMessage()]);
 
-            return response()->json(['error' => 'Gagal mengirim review'], 500);
+            // Cek apakah ini Exception yang kita buat di dalam transaction
+            $errorMessage = $e->getMessage() === 'Data reviewer tidak ditemukan' || $e->getMessage() === 'Buku tidak ditemukan'
+                            ? $e->getMessage()
+                            : 'Gagal mengirim review';
+
+            return response()->json(['error' => $errorMessage], 500);
         }
     }
+
+// ... (Sisa kode tanpa perubahan)
 
     public static function sendBookPaymentSuccessNotification($bookId, $bookTitle, $dosenUserId)
     {

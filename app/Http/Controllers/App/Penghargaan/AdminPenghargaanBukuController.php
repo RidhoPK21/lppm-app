@@ -51,7 +51,7 @@ class AdminPenghargaanBukuController extends Controller
         // PERBAIKAN DI SINI: Tambahkan Type Hint (BookSubmission $book)
         $mappedSubmissions = $submissions->map(function (BookSubmission $book) {
             // Logic Penulis
-            $firstAuthor = $book->authors->where('role', 'FIRST_AUTHOR')->first();
+            $firstAuthor = $book->authors->where('role', 'FIRST')->first();
             $authorName = $firstAuthor ? $firstAuthor->name : ($book->authors->first()->name ?? '-');
             $countOthers = $book->authors->count() - 1;
 

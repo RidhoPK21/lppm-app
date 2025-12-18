@@ -106,17 +106,23 @@ class CheckRoleTest extends TestCase
     }
 
     // 6. Test Deny Access (403)
+    // 6. Test Deny Access (403)
     public function test_denies_access_if_role_mismatch()
     {
         // User: Mahasiswa, Req: Dosen
         $request = $this->createRequestWithAuth(['Mahasiswa'], []);
         $middleware = new CheckRole();
 
-        $this->expectException(\Symfony\Component\HttpKernel\Exception\HttpException::class);
-        $this->expectExceptionCode(403);
-        $this->expectExceptionMessage('You do not have access to this page.');
-
-        $middleware->handle($request, $this->getNextClosure(), 'Dosen');
+        try {
+            $middleware->handle($request, $this->getNextClosure(), 'Dosen');
+            
+            // Jika baris di atas tidak melempar error, berarti test gagal (harusnya error)
+            $this->fail('Expected HttpException 403 was not thrown.');
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+            // Assert Status Code HTTP benar-benar 403
+            $this->assertEquals(403, $e->getStatusCode());
+            $this->assertEquals('You do not have access to this page.', $e->getMessage());
+        }
     }
 
     // 7. Coverage: Parsing Edge Cases (Else Block & Isset)

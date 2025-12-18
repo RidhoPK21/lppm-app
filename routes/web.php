@@ -11,6 +11,7 @@ use App\Http\Controllers\App\RegisSemi\RegisSemiController;
 use App\Http\Controllers\App\Todo\TodoController;
 use App\Http\Controllers\Auth\AuthController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\App\Penghargaan\AdminPenghargaanBukuController; // WAJIB
 
 Route::middleware(['throttle:req-limit', 'handle.inertia'])->group(function () {
 
@@ -67,6 +68,15 @@ Route::middleware(['throttle:req-limit', 'handle.inertia'])->group(function () {
         //     Route::post('/change', [TodoController::class, 'postChange'])->name('todo.change-post');
         //     Route::post('/delete', [TodoController::class, 'postDelete'])->name('todo.delete-post');
         // });
+
+        Route::middleware(['auth', 'verified'])->prefix('app/admin/penghargaan')->name('app.admin.penghargaan.')->group(function () {
+    
+    // 🔥 PENTING: Daftarkan rute Admin Penghargaan Buku
+    Route::get('buku', [AdminPenghargaanBukuController::class, 'index'])->name('buku.index'); 
+    
+    // Jika Anda memiliki rute detail:
+    // Route::get('buku/{id}', [AdminPenghargaanBukuController::class, 'show'])->name('buku.detail');
+});
 
         // ------------------- REGIS SEMI (LPPM) -------------------
         Route::middleware('role:LppmKetua|Lppm Staff')->prefix('regis-semi')->name('regis-semi.')->group(function () {

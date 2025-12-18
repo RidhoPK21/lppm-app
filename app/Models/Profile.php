@@ -32,7 +32,6 @@ class Profile extends Model
         'prodi',      // Program Studi
         'sinta_id',
         'scopus_id',
-        // 'google_scholar_id', // Opsional: Tambahkan jika perlu
     ];
 
     protected $casts = [

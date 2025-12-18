@@ -5,6 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+// 🔥 WAJIB: Impor BelongsTo untuk relasi balik
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
 
 /**
  * @property string $id
@@ -16,6 +21,7 @@ use Illuminate\Support\Str;
 
 class HakAksesModel extends Model
 {
+    use HasFactory, HasUuids;
     protected $table = 'm_hak_akses';
 
     protected $primaryKey = 'id';
@@ -31,6 +37,12 @@ class HakAksesModel extends Model
     ];
 
     public $timestamps = true;
+
+    // 🔥 WAJIB: Tambahkan relasi BelongsTo ke Model User
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id', 'id');
+    }
 
     // Generate UUID otomatis jika tidak dikirim
     protected static function boot()
@@ -110,7 +122,7 @@ class HakAksesModel extends Model
     /**
      * Mendapatkan semua user_id dengan akses tertentu
      *
-     * @param  string|array  $akses  Bisa string atau array akses
+     * @param  string|array  $akses  Bisa string atau array akses
      */
     public static function getUserIdsByAkses($akses)
     {
