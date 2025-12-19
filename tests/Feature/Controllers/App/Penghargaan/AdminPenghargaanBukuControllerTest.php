@@ -12,9 +12,13 @@ use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Inertia;
 use Tests\TestCase;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses; // Perhatikan ada akhiran 'es'
+use PHPUnit\Framework\Attributes\PreserveGlobalState;
 
 use Illuminate\Foundation\Testing\WithoutMiddleware; 
 
+#[RunTestsInSeparateProcesses] // Ini BOLEH untuk level Class
+#[PreserveGlobalState(false)] // 🔥 WAJIB ADA
 class AdminPenghargaanBukuControllerTest extends TestCase
 {
     use RefreshDatabase, WithFaker, WithoutMiddleware; 

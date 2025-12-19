@@ -75,8 +75,8 @@ class HakAksesModel extends Model
                 'ha.akses',
                 // PERBAIKAN: Gunakan single quotes untuk PostgreSQL
                 DB::raw("CASE 
-                    WHEN ha.akses::text LIKE '%Dosen%' THEN true 
-                    ELSE false 
+                    WHEN ha.akses LIKE '%Dosen%' THEN 1 -- Gunakan 1/0 untuk boolean universal
+                    ELSE 0
                 END as has_dosen_akses")
             )
             ->orderBy('u.name')

@@ -18,61 +18,52 @@ class NotificationController extends Controller
      * Tampilkan halaman notifikasi dan buat notifikasi yang diperlukan.
      */
     public function index(Request $request)
-    {
-        $authUser = $request->attributes->get('auth');
+{
+    $authUser = $request->attributes->get('auth');
 
-        // Ambil user Laravel berdasarkan email/ID dari API Auth
-        $laravelUser = User::where('email', $authUser->email ?? null)->first();
-        // Fallback jika email tidak ada, coba cari berdasarkan ID (UUID friendly)
-        if (! $laravelUser && isset($authUser->id)) {
-            $laravelUser = User::find($authUser->id);
-        }
+    // 1. Ambil user Laravel (Tetap di luar try karena ini pondasi data)
+    $laravelUser = User::where('email', $authUser->email ?? null)->first();
+    if (!$laravelUser && isset($authUser->id)) {
+        $laravelUser = User::find($authUser->id);
+    }
 
-        $notifications = [];
-        $filters = [
-            'search' => $request->input('search', ''),
-            'filter' => $request->input('filter', 'semua'),
-            'sort' => $request->input('sort', 'terbaru'),
-        ];
+    // Default filters
+    $filters = [
+        'search' => $request->input('search', ''),
+        'filter' => $request->input('filter', 'semua'),
+        'sort' => $request->input('sort', 'terbaru'),
+    ];
 
-        if (! $laravelUser) {
-            Log::error('Laravel User not found for notification page access', ['api_auth' => $authUser]);
+    // Jika user tidak ditemukan, langsung return early
+    if (!$laravelUser) {
+        Log::error('Laravel User not found for notification page access', ['api_auth' => $authUser]);
+        return Inertia::render('app/notifikasi/page', [
+            'notifications' => [],
+            'filters' => $filters,
+            'booksForReview' => [],
+        ]);
+    }
 
-            return Inertia::render('app/notifikasi/page', [
-                'notifications' => [],
-                'filters' => $filters,
-                'booksForReview' => [],
-            ]);
-        }
-
-        // Ambil hak akses user
+    // 2. Bungkus seluruh sisa logika dalam try-catch untuk keamanan 
+    try {
+        // --- Ambil Hak Akses ---
         $hakAkses = DB::table('m_hak_akses')
-            ->where('user_id', $laravelUser->id) // Gunakan ID Laravel yg sudah pasti UUID
+            ->where('user_id', $laravelUser->id)
             ->first();
 
-        // Fallback cek pakai API ID jika di m_hak_akses masih pakai ID lama
-        if (! $hakAkses && isset($authUser->id)) {
+        if (!$hakAkses && isset($authUser->id)) {
             $hakAkses = DB::table('m_hak_akses')->where('user_id', $authUser->id)->first();
         }
 
-        $userAccess = [];
-        if ($hakAkses) {
-            $userAccess = array_map('trim', explode(',', $hakAkses->akses));
-        }
-
-        $isLPPM = ! empty(array_intersect(['Lppm Staff', 'Lppm Ketua'], $userAccess));
-        $isDosen = ! empty(array_intersect(['Dosen'], $userAccess));
+        $userAccess = $hakAkses ? array_map('trim', explode(',', $hakAkses->akses)) : [];
+        
+        // Cek Role
+        $isLPPM = !empty(array_intersect(['Lppm Staff', 'Lppm Ketua'], $userAccess));
+        $isDosen = !empty(array_intersect(['Dosen'], $userAccess));
         $userAccessLower = array_map('strtolower', $userAccess);
         $isHRD = in_array('hrd', $userAccessLower);
 
-        Log::info('User access check', [
-            'user_id' => $laravelUser->id,
-            'is_lppm' => $isLPPM,
-            'is_dosen' => $isDosen,
-            'is_hrd' => $isHRD,
-        ]);
-
-        // --- Proses Pembuatan Notifikasi (Pemicu) ---
+        // --- Pemicu Notifikasi (Triggering) ---
         $this->createWelcomeNotification($laravelUser->id);
 
         if ($isLPPM) {
@@ -92,102 +83,100 @@ class NotificationController extends Controller
         // --- Query Data Notifikasi ---
         $query = Notification::where('user_id', $laravelUser->id)
             ->where(function ($q) use ($isLPPM, $isDosen, $isHRD) {
-                $q->whereNull('reference_key')
-                    ->orWhere('type', 'System');
+                $q->whereNull('reference_key')->orWhere('type', 'System');
 
                 if ($isDosen) {
                     $q->orWhere('reference_key', 'like', 'REJECT_%')
-                        ->orWhere('reference_key', 'like', 'PAYMENT_SUCCESS_%')
-                        ->orWhere('reference_key', 'like', 'REVIEWER_INVITE_%');
+                      ->orWhere('reference_key', 'like', 'PAYMENT_SUCCESS_%')
+                      ->orWhere('reference_key', 'like', 'REVIEWER_INVITE_%');
                 }
-
                 if ($isLPPM) {
                     $q->orWhere('reference_key', 'like', 'SUBMISSION_%')
-                        ->orWhere('reference_key', 'like', 'REVISION_%')
-                        ->orWhere('reference_key', 'like', 'REVIEW_COMPLETE_%');
+                      ->orWhere('reference_key', 'like', 'REVISION_%')
+                      ->orWhere('reference_key', 'like', 'REVIEW_COMPLETE_%');
                 }
-
                 if ($isHRD) {
                     $q->orWhere('reference_key', 'like', 'PAYMENT_CHIEF_%');
                 }
             });
 
-        // Apply search
-        if (! empty($filters['search'])) {
+        // Filter & Search
+        if (!empty($filters['search'])) {
             $query->where(function ($q) use ($filters) {
                 $q->where('title', 'like', "%{$filters['search']}%")
-                    ->orWhere('message', 'like', "%{$filters['search']}%");
+                  ->orWhere('message', 'like', "%{$filters['search']}%");
             });
         }
 
-        // Apply filter
         if ($filters['filter'] === 'belum_dibaca') {
             $query->where('is_read', false);
         } elseif ($filters['filter'] !== 'semua') {
             $query->where('type', $filters['filter']);
         }
 
-        // Apply sort
-        if ($filters['sort'] === 'terbaru') {
-            $query->orderBy('created_at', 'desc');
-        } else {
-            $query->orderBy('created_at', 'asc');
-        }
+        // Sorting
+        $query->orderBy('created_at', $filters['sort'] === 'terbaru' ? 'desc' : 'asc');
 
-        // Get notifications
+        // Map Data (Hapus int casting untuk UUID)
         $notifications = $query->get()->map(function ($notif) {
             return [
-                'id' => $notif->id, // ✅ PERBAIKAN: Hapus (int) casting agar UUID string aman
-                'user_id' => $notif->user_id,
-                'title' => $notif->title,
-                'message' => $notif->message,
-                'type' => $notif->type,
-                'is_read' => (bool) $notif->is_read,
-                'created_at' => $notif->created_at,
-                'updated_at' => $notif->updated_at,
+                'id'            => $notif->id, 
+                'user_id'       => $notif->user_id,
+                'title'         => $notif->title,
+                'message'       => $notif->message,
+                'type'          => $notif->type,
+                'is_read'       => (bool) $notif->is_read,
+                'created_at'    => $notif->created_at,
                 'reference_key' => $notif->reference_key,
             ];
         })->toArray();
 
-        // === Ambil detail buku untuk notifikasi reviewer ===
+        // --- Ambil Detail Reviewer ---
         $booksForReview = [];
+        foreach ($notifications as $notif) {
+            if (isset($notif['reference_key']) && strpos($notif['reference_key'], 'REVIEWER_INVITE_') === 0) {
+                $parts = explode('_', $notif['reference_key']);
+                if (count($parts) >= 3) {
+                    $bookId = $parts[2];
+                    $bookDetail = DB::table('book_submissions as bs')
+                        ->leftJoin('users as u', 'bs.user_id', '=', 'u.id')
+                        ->where('bs.id', $bookId)
+                        ->select('bs.id', 'bs.title', 'bs.isbn', 'u.name as user_name')
+                        ->first();
 
-        $reviewInviteNotifs = array_filter($notifications, function ($notif) {
-            return strpos($notif['reference_key'] ?? '', 'REVIEWER_INVITE_') === 0;
-        });
-
-        foreach ($reviewInviteNotifs as $notif) {
-            $parts = explode('_', $notif['reference_key']);
-            // Format: REVIEWER_INVITE_{BOOK_ID}_{USER_ID}
-            if (count($parts) >= 3) {
-                $bookId = $parts[2];
-
-                $bookDetail = DB::table('book_submissions as bs')
-                    ->leftJoin('users as u', 'bs.user_id', '=', 'u.id')
-                    ->where('bs.id', $bookId)
-                    ->select('bs.id', 'bs.title', 'bs.isbn', 'bs.publisher', 'bs.drive_link', 'bs.created_at', 'u.name as user_name')
-                    ->first();
-
-                if ($bookDetail) {
-                    $booksForReview[$notif['id']] = [
-                        'id' => $bookDetail->id, // ✅ PERBAIKAN: Hapus (int) casting
-                        'title' => $bookDetail->title,
-                        'isbn' => $bookDetail->isbn,
-                        'publisher' => $bookDetail->publisher,
-                        'drive_link' => $bookDetail->drive_link,
-                        'user_name' => $bookDetail->user_name,
-                        'created_at' => $bookDetail->created_at,
-                    ];
+                    if ($bookDetail) {
+                        $booksForReview[$notif['id']] = [
+                            'id'        => $bookDetail->id,
+                            'title'     => $bookDetail->title,
+                            'isbn'      => $bookDetail->isbn,
+                            'user_name' => $bookDetail->user_name,
+                        ];
+                    }
                 }
             }
         }
 
         return Inertia::render('app/notifikasi/page', [
-            'notifications' => $notifications,
-            'filters' => $filters,
+            'notifications'  => $notifications,
+            'filters'        => $filters,
             'booksForReview' => $booksForReview,
         ]);
+
+    } catch (\Exception $e) {
+        // Tangkap semua error database atau sistem di sini
+        Log::error('Notification Page Error: ' . $e->getMessage(), [
+            'user_id' => $laravelUser->id,
+            'trace'   => $e->getTraceAsString()
+        ]);
+
+        return Inertia::render('app/notifikasi/page', [
+            'notifications'  => [],
+            'filters'        => $filters,
+            'booksForReview' => [],
+            'error'          => 'Gagal memuat beberapa data notifikasi.'
+        ]);
     }
+}
 
     // --- Helper Methods ---
 
