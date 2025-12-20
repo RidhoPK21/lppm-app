@@ -1,0 +1,35 @@
+url: http://127.0.0.1:8000/auth/login
+name: notifikasi dosen
+---
+- launchApp
+- tapOn:
+    id: inputUsername
+    index: 1
+- inputText: ifs23019
+- tapOn:
+    id: inputPassword
+    index: 1
+- inputText: Hiumamba1721
+- tapOn: Masuk
+- assertVisible: "👋 Hay, Anny Klaudya Hutabarat"
+- tapOn: Hak Akses
+- assertVisible:
+    text: "Hak Akses"
+    index: 0
+- tapOn:
+    point: 85%,36%
+- tapOn: "Ubah"
+- tapOn:
+    text: Hrd
+    index: 1
+- tapOn: Dosen
+- tapOn: Simpan
+- assertVisible:
+    text: "Hak Akses"
+    index: 0
+- tapOn: "Beranda"
+- tapOn:
+    point: "81%,5%"
+- assertVisible: "Notifikasi"
+- takeScreenshot:
+    path: results/notifikasi dosen

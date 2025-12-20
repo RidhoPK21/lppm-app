@@ -58,7 +58,7 @@ return new class extends Migration
 
             $table->foreign('book_submission_id')->references('id')->on('book_submissions')->onDelete('cascade');
         });
-        
+
         // 4. book_reviewers (Opsional, tapi sebaiknya dimasukkan)
         Schema::create('book_reviewers', function (Blueprint $table) {
             $table->uuid('id')->primary();

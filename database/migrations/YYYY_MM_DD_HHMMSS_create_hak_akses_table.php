@@ -14,15 +14,15 @@ return new class extends Migration
         Schema::create('m_hak_akses', function (Blueprint $table) {
             // Berdasarkan HakAksesModel.ts
             $table->uuid('id')->primary();
-            
+
             // user_id
             $table->uuid('user_id');
-            
+
             // akses
             $table->text('akses'); // Tipe data TEXT atau STRING yang cukup besar
-            
+
             $table->timestamps();
-            
+
             // Foreign Key ke users
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
         });

@@ -22,15 +22,15 @@ class HRDTestData
                 'tanggal_pengajuan' => '2024-03-12 14:20:00',
                 'status' => 'APPROVED_CHIEF',
                 'nama_dosen' => 'Dr. Siti Fatimah, M.Pd.',
-            ]
+            ],
         ]);
     }
-    
+
     public static function getEmptyBooks()
     {
         return collect([]);
     }
-    
+
     public static function getBookSubmissionMock()
     {
         return [

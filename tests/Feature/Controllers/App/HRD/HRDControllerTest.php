@@ -3,14 +3,12 @@
 namespace Tests\Feature\Controllers\App\HRD;
 
 use App\Models\BookSubmission;
-use App\Models\SubmissionLog;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Inertia;
-use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use PHPUnit\Framework\Attributes\PreserveGlobalState;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -21,7 +19,9 @@ class HRDControllerTest extends TestCase
     use RefreshDatabase;
 
     protected $hrdUser;
+
     protected $dosenUser;
+
     protected $notificationMock;
 
     protected function setUp(): void
@@ -102,7 +102,7 @@ class HRDControllerTest extends TestCase
         $this->assertDatabaseHas('submission_logs', [
             'book_submission_id' => $book->id,
             'action' => 'PAYMENT_DISBURSED',
-            'user_id' => $this->hrdUser->id
+            'user_id' => $this->hrdUser->id,
         ]);
     }
 
@@ -130,14 +130,14 @@ class HRDControllerTest extends TestCase
      */
     /**
      * TEST: Menutup catch block pada index (Baris 73-82)
-     * Strategi: Gunakan DB::shouldReceive secara parsial 
+     * Strategi: Gunakan DB::shouldReceive secara parsial
      */
-  #[Test]
+    #[Test]
     public function test_index_returns_empty_on_exception()
     {
         // Gunakan spy agar tidak perlu mendefinisikan semua method
         $spy = \Mockery::spy('Illuminate\Database\DatabaseManager');
-        $spy->shouldReceive('table')->andThrow(new \Exception("Query Error"));
+        $spy->shouldReceive('table')->andThrow(new \Exception('Query Error'));
         DB::swap($spy);
 
         $response = $this->get(route('hrd.kita.index'));
@@ -149,7 +149,7 @@ class HRDControllerTest extends TestCase
             );
     }
 
- /**
+    /**
      * TEST: Menutup catch block pada storePencairan (Baris 155-164)
      * Teknik: Menggunakan Model Event untuk melempar Exception secara natural
      */
@@ -163,7 +163,7 @@ class HRDControllerTest extends TestCase
         // Ini akan dieksekusi tepat saat Controller memanggil $book->update()
         BookSubmission::saving(function ($model) use ($book) {
             if ($model->id === $book->id) {
-                throw new \Exception("Simulated Database Error During Update");
+                throw new \Exception('Simulated Database Error During Update');
             }
         });
 
@@ -177,10 +177,10 @@ class HRDControllerTest extends TestCase
         // Response harus 302 karena controller menangkap error dan melakukan return back()
         $response->assertStatus(302);
         $response->assertSessionHas('error');
-        
+
         $errorMessage = session('error');
         $this->assertStringContainsString('Gagal memproses pencairan', $errorMessage);
-        
+
         // Pastikan status TIDAK berubah menjadi PAID karena sudah di-rollback
         $this->assertEquals('APPROVED_CHIEF', $book->fresh()->status);
 

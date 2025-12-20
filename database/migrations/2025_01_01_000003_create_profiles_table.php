@@ -18,7 +18,7 @@ return new class extends Migration
 
             // user_id adalah UUID dan harus unik (1:1 relationship)
             $table->uuid('user_id')->unique();
-            
+
             // Kolom-kolom akademik (semua nullable)
             $table->string('name')->nullable();
             $table->string('nidn')->nullable()->comment('NIDN');
@@ -27,7 +27,7 @@ return new class extends Migration
             $table->string('scopus_id')->nullable()->comment('ScopusID');
 
             $table->timestamps();
-            
+
             // Foreign Key ke users
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
         });

@@ -1,0 +1,86 @@
+url: http://127.0.0.1:8000/penghargaan/buku/ajukan
+name: ajukan buku
+---
+- tapOn:
+    id: "judul"
+    index: 1
+- inputText: Berhasil Menggunakan Maestro untuk Otomatisasi Pengujian Aplikasi
+- tapOn:
+    id: "penulis"
+    index: 1
+- inputText: Anny Klaudya Hutabarat
+- tapOn: "Pilih bidang keilmuan"
+- tapOn: "Sistem Informasi"
+- tapOn:
+    id: "penerbit"
+    index: 1
+- inputText: Deepublish
+- tapOn: "Pilih tingkat"
+- tapOn: "Nasional Terakreditasi"
+- tapOn:
+    id: "tahun"
+    index: 1
+- eraseText
+- inputText: "2023"
+- tapOn:
+    id: "isbn"
+    index: 1
+- inputText: "978-623-6927-35-0"
+- scroll
+- tapOn: "Pilih kategori"
+- tapOn:
+    text: "Buku Ajar"
+    index: 0
+- tapOn:
+    id: "jumlah_halaman"
+    index: 1
+- inputText: "250"
+- hideKeyboard
+- tapOn: "Selanjutnya "
+- swipe:
+    start: 50%,50%
+    end: 50%,50%
+    duration: 2000
+- tapOn:
+    id: "link_0"
+    index: 1
+- inputText: "https://example.com/buku-maestro"
+- tapOn:
+    id: "link_1"
+    index: 1
+- inputText: "https://example.com/buku-maestro-2"
+- tapOn:
+    id: "link_2"
+    index: 1
+- inputText: "https://example.com/buku-maestro-3"
+- scroll
+- tapOn:
+    id: "link_3"
+    index: 1
+- inputText: "https://example.com/buku-maestro-4"
+- tapOn:
+    id: "link_4"
+    index: 1
+- inputText: "https://example.com/buku-maestro-5"
+- hideKeyboard
+- tapOn: "Simpan"
+- swipe:
+    start: 50%,50%
+    end: 50%,50%
+    duration: 3000
+- scrollUntilVisible:
+    element:
+      text: "Kirim Pengajuan ke LPPM"
+    direction: DOWN
+    timeout: 10000
+- swipe:
+    start: 50%,80%
+    end: 50%,40%
+    duration: 1000
+- tapOn: "Kirim Pengajuan ke LPPM"
+- assertVisible: "Konfirmasi Pengajuan"
+- assertVisible: "Ya, Kirim Sekarang!"
+- tapOn: "Ya, Kirim Sekarang!"
+- assertVisible: "Penghargaan Buku"
+- takeScreenshot:
+    path: results/ajukan_buku

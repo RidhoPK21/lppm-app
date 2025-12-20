@@ -4,9 +4,9 @@ namespace Tests\Unit\Middleware;
 
 use App\Http\Middleware\CheckRole;
 use Illuminate\Http\Request;
-use Tests\TestCase;
-use Symfony\Component\HttpFoundation\Response;
 use stdClass;
+use Symfony\Component\HttpFoundation\Response;
+use Tests\TestCase;
 
 class CheckRoleTest extends TestCase
 {
@@ -16,9 +16,9 @@ class CheckRoleTest extends TestCase
     protected function createRequestWithAuth($akses = null, $roles = null)
     {
         $request = Request::create('/test', 'GET');
-        
-        $auth = new stdClass();
-        
+
+        $auth = new stdClass;
+
         // Simulasi kondisi property akses
         if ($akses !== 'UNDEFINED') {
             $auth->akses = $akses;
@@ -48,8 +48,8 @@ class CheckRoleTest extends TestCase
     public function test_allows_access_when_akses_is_string_and_matches()
     {
         // akses: "Dosen, Admin" (String)
-        $request = $this->createRequestWithAuth("Dosen, Admin", []);
-        $middleware = new CheckRole();
+        $request = $this->createRequestWithAuth('Dosen, Admin', []);
+        $middleware = new CheckRole;
 
         $response = $middleware->handle($request, $this->getNextClosure(), 'Admin');
 
@@ -61,7 +61,7 @@ class CheckRoleTest extends TestCase
     {
         // akses: ["Dosen", "Staff"] (Array)
         $request = $this->createRequestWithAuth(['Dosen', 'Staff'], []);
-        $middleware = new CheckRole();
+        $middleware = new CheckRole;
 
         $response = $middleware->handle($request, $this->getNextClosure(), 'Staff');
 
@@ -73,7 +73,7 @@ class CheckRoleTest extends TestCase
     {
         // akses kosong, tapi roles punya "Editor"
         $request = $this->createRequestWithAuth([], ['Editor']);
-        $middleware = new CheckRole();
+        $middleware = new CheckRole;
 
         $response = $middleware->handle($request, $this->getNextClosure(), 'Editor');
 
@@ -86,7 +86,7 @@ class CheckRoleTest extends TestCase
         // User punya "Lppm Ketua", tapi route butuh "Dosen"
         // Logika kode: if (in_array('Lppm Ketua', $aksesUser)... $hasAccess = true
         $request = $this->createRequestWithAuth(['Lppm Ketua'], []);
-        $middleware = new CheckRole();
+        $middleware = new CheckRole;
 
         $response = $middleware->handle($request, $this->getNextClosure(), 'Dosen'); // Requirement tidak match
 
@@ -98,7 +98,7 @@ class CheckRoleTest extends TestCase
     {
         // Route butuh: "Admin|Manager", User punya: "Manager"
         $request = $this->createRequestWithAuth(['Manager'], []);
-        $middleware = new CheckRole();
+        $middleware = new CheckRole;
 
         $response = $middleware->handle($request, $this->getNextClosure(), 'Admin|Manager');
 
@@ -111,11 +111,11 @@ class CheckRoleTest extends TestCase
     {
         // User: Mahasiswa, Req: Dosen
         $request = $this->createRequestWithAuth(['Mahasiswa'], []);
-        $middleware = new CheckRole();
+        $middleware = new CheckRole;
 
         try {
             $middleware->handle($request, $this->getNextClosure(), 'Dosen');
-            
+
             // Jika baris di atas tidak melempar error, berarti test gagal (harusnya error)
             $this->fail('Expected HttpException 403 was not thrown.');
         } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
@@ -128,7 +128,7 @@ class CheckRoleTest extends TestCase
     // 7. Coverage: Parsing Edge Cases (Else Block & Isset)
     public function test_handles_edge_cases_for_auth_attributes()
     {
-        $middleware = new CheckRole();
+        $middleware = new CheckRole;
 
         // Case A: Auth->akses tidak di-set (masuk !isset)
         $req1 = $this->createRequestWithAuth('UNDEFINED', []);
@@ -140,7 +140,7 @@ class CheckRoleTest extends TestCase
 
         // Case B: Auth->akses tipe data aneh (masuk block else terakhir)
         // Misal integer, bukan string/array
-        $req2 = $this->createRequestWithAuth(12345, []); 
+        $req2 = $this->createRequestWithAuth(12345, []);
         try {
             $middleware->handle($req2, $this->getNextClosure(), 'Admin');
         } catch (\Exception $e) {

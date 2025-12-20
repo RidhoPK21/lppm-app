@@ -2,14 +2,13 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
-// 🔥 WAJIB: Impor BelongsTo untuk relasi balik
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-
+use Illuminate\Support\Facades\DB;
+// 🔥 WAJIB: Impor BelongsTo untuk relasi balik
+use Illuminate\Support\Str;
 
 /**
  * @property string $id
@@ -18,10 +17,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  */
-
 class HakAksesModel extends Model
 {
     use HasFactory, HasUuids;
+
     protected $table = 'm_hak_akses';
 
     protected $primaryKey = 'id';
@@ -92,7 +91,6 @@ class HakAksesModel extends Model
     {
         // Ambil semua user dengan akses Dosen
         $dosenUsers = self::getDosenUsersWithCompleteInfo();
-
         // Ambil user yang sudah diundang
         $invitedUserIds = \App\Models\BookReviewer::where('book_submission_id', $bookId)
             ->pluck('user_id')
@@ -120,9 +118,7 @@ class HakAksesModel extends Model
     }
 
     /**
-     * Mendapatkan semua user_id dengan akses tertentu
-     *
-     * @param  string|array  $akses  Bisa string atau array akses
+     * @param  string|array  $akses  Bisa string atau array akses
      */
     public static function getUserIdsByAkses($akses)
     {

@@ -1,0 +1,18 @@
+url: http://127.0.0.1:8000/auth/login
+name: Berhasil Login
+---
+- launchApp
+- tapOn:
+    id: inputUsername
+    index: 1
+- inputText: ifs23019
+- tapOn:
+    id: inputPassword
+    index: 1
+- inputText: Hiumamba1721
+- tapOn: Masuk
+- assertVisible: "👋 Hay, Anny Klaudya Hutabarat"
+- takeScreenshot:
+    path: results/login_success
+- runFlow: 02_hak_akses.yaml
+#stopRecording

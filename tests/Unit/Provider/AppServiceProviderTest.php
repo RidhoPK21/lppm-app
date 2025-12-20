@@ -4,7 +4,7 @@ namespace Tests\Unit\Provider;
 
 use App\Providers\AppServiceProvider;
 use Illuminate\Cache\RateLimiting\Limit;
-use Illuminate\Http\Request; 
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\URL;
@@ -240,7 +240,7 @@ class AppServiceProviderTest extends TestCase
         // =====================================
         // Act (Aksi)
         // =====================================
-        
+
         // Batas adalah 60 request per menit.
         // Kita kirim tepat 60 request yang seharusnya berhasil (200 OK).
         for ($i = 0; $i < 60; $i++) {

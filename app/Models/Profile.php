@@ -16,9 +16,8 @@ use Illuminate\Database\Eloquent\Model;
  * @property string|null $scopus_id
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
- * * @property-read \App\Models\User $user
+ *                                                       * @property-read \App\Models\User $user
  */
-
 class Profile extends Model
 {
     use HasFactory, HasUuids;

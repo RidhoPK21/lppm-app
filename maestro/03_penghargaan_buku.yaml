@@ -1,0 +1,12 @@
+url: http://127.0.0.1:8000/penghargaan/buku
+name: Penghargaan Buku
+---
+- tapOn: "Penghargaan"
+- tapOn: "Penghargaan Buku"
+- assertVisible: "Penghargaan Buku"
+- tapOn: "Ajukan Buku Baru"
+- assertVisible: "Formulir Pengajuan Penghargaan Buku"
+- takeScreenshot:
+    path: results/ajukan_buku
+- runFlow: 04_ajukan_buku.yaml
+#stopRecording

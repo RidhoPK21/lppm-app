@@ -1,0 +1,42 @@
+url: http://127.0.0.1:8000/auth/login
+name: ketua lppm setuju
+---
+- launchApp
+- tapOn:
+    id: inputUsername
+    index: 1
+- inputText: ifs23019
+- tapOn:
+    id: inputPassword
+    index: 1
+- inputText: Hiumamba1721
+- tapOn: Masuk
+- assertVisible: "👋 Hay, Anny Klaudya Hutabarat"
+- tapOn: Hak Akses
+- assertVisible:
+    text: "Hak Akses"
+    index: 0
+- tapOn:
+    point: "86%,36%"
+- tapOn: "Ubah"
+- tapOn:
+    text: Lppm Ketua
+    index: 0
+- tapOn: "Hrd"
+- tapOn: "Simpan"
+- assertVisible:
+    text: "Hak Akses"
+    index: 0
+- tapOn: "Beranda"
+- tapOn:
+    point: "59%,36%"
+- tapOn:
+    point: "51%,51%"
+- tapOn:
+    point: "37%,59%"
+- tapOn:
+    point: "63%,59%"
+- tapOn: "23"
+- tapOn: "Kirim"
+- takeScreenshot:
+    path: results/hrd setuju

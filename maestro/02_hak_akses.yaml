@@ -1,0 +1,18 @@
+url: http://127.0.0.1:8000/hak-akses
+name: Hak Akses
+---
+- tapOn: Hak Akses
+- tapOn:
+    point: 85%,36%
+- tapOn: "Ubah"
+- tapOn:
+    text: "Dosen"
+    index: 0
+- tapOn: "Simpan"
+- assertVisible:
+    text: "Hak Akses"
+    index: 0
+- takeScreenshot:
+    path: results/hak_akses
+- runFlow: 03_penghargaan_buku.yaml
+#stopRecording

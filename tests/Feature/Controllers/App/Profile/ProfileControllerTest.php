@@ -2,23 +2,23 @@
 
 namespace Tests\Feature\Controllers\App\Profile;
 
+use App\Models\HakAksesModel;
 use App\Models\Profile;
 use App\Models\User;
-use App\Models\HakAksesModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Foundation\Testing\WithoutMiddleware;
 use Illuminate\Support\Str;
-use Tests\TestCase;
-use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use PHPUnit\Framework\Attributes\PreserveGlobalState;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
+use Tests\TestCase;
 
 #[RunTestsInSeparateProcesses]
 #[PreserveGlobalState(false)]
 class ProfileControllerTest extends TestCase
 {
     // Gunakan trait WithoutMiddleware agar tidak terlempar ke halaman login (Redirect 302)
-    use RefreshDatabase, WithFaker, WithoutMiddleware; 
+    use RefreshDatabase, WithFaker, WithoutMiddleware;
 
     protected $user;
 
@@ -69,7 +69,7 @@ class ProfileControllerTest extends TestCase
         // Jangan gunakan followingRedirects() terlebih dahulu agar kita bisa cek status 302 (back)
         $response = $this->post(route('app.profile.update'), $updateData);
 
-        // ASSERT: 
+        // ASSERT:
         // 1. Controller mengembalikan return back(), yang berarti status 302 (Redirect)
         $response->assertStatus(302);
         $response->assertSessionHas('success', 'Profil akademik berhasil diperbarui!');
@@ -103,7 +103,7 @@ class ProfileControllerTest extends TestCase
 
         // ASSERT
         $response->assertStatus(200);
-        
+
         // Cek apakah data yang dikirim ke Inertia (Props 'user') sudah benar
         $response->assertInertia(fn ($page) => $page
             ->component('Profile/Index')

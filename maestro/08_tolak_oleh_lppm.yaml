@@ -1,0 +1,59 @@
+url: http://127.0.0.1:8000/auth/login
+name: Tolak oleh lppm
+---
+- launchApp
+- tapOn:
+    id: inputUsername
+    index: 1
+- inputText: ifs23019
+- tapOn:
+    id: inputPassword
+    index: 1
+- inputText: Hiumamba1721
+- tapOn: Masuk
+- assertVisible: "👋 Hay, Anny Klaudya Hutabarat"
+- tapOn: Hak Akses
+- assertVisible:
+    text: "Hak Akses"
+    index: 0
+- tapOn:
+    point: 85%,36%
+- tapOn: "Ubah"
+- tapOn:
+    text: "Dosen"
+    index: 0
+- tapOn: Lppm Staff
+- tapOn: "Simpan"
+- assertVisible:
+    text: "Hak Akses"
+    index: 0
+- tapOn: "Penghargaan Masuk"
+- tapOn: "Penghargaan Buku Masuk"
+- assertVisible: "Buku"
+- tapOn:
+    text: "Berhasil Menggunakan Maestro untuk Otomatisasi Pengujian Aplikasi"
+    index: 1
+- swipe:
+    start: 50%,50%
+    end: 50%,50%
+    duration: 2000
+- scrollUntilVisible:
+    element:
+      text: " Tolak"
+    direction: DOWN
+    timeout: 10000
+- swipe:
+    start: 50%,50%
+    end: 50%,50%
+    duration: 2000
+- tapOn:
+    point: "83%,80%"
+- assertVisible: "Tolak Pengajuan"
+- tapOn:
+    id: "note"
+    index: 1
+- inputText: "Maaf, pengajuan anda ditolak karena tidak memenuhi syarat."
+- tapOn: "Kirim Penolakan"
+- assertVisible: "Buku"
+- takeScreenshot:
+    path: results/Tolak_oleh_lppm

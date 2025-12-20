@@ -39,19 +39,19 @@ class HomeControllerTest extends TestCase
         // Kita palsukan Helper agar tidak error mengakses session/cookie
         $mockHelper = Mockery::mock('alias:App\Helper\ToolsHelper');
         $mockHelper->shouldReceive('getAuthToken')
-                   ->andReturn('token-palsu-123');
+            ->andReturn('token-palsu-123');
 
         // 3. JALANKAN REQUEST KE URL LANGSUNG
         // JANGAN pakai route('app.home'), tapi pakai URL yang kita buat di langkah 1.
-        $response = $this->get('/tes-url-beranda'); 
+        $response = $this->get('/tes-url-beranda');
 
         // 4. ASSERTION (Cek Hasil)
         $response->assertStatus(200);
 
         $response->assertInertia(fn (Assert $page) => $page
             ->component('app/home/home-page')
-            ->has('auth')      
-            ->has('pageName') 
+            ->has('auth')
+            ->has('pageName')
             ->where('authToken', 'token-palsu-123') // Pastikan token sesuai mock
         );
     }

@@ -11,7 +11,6 @@ class ConstHelper
      */
     const OPTION_ROLES = [
         'Admin',
-        'Todo',
     ];
 
     /**
@@ -21,7 +20,6 @@ class ConstHelper
      *
      * @example
      * $roles = ConstHelper::getOptionRoles();
-     * // Returns: ['Admin', 'Todo']
      *
      * @uses self::OPTION_ROLES
      */

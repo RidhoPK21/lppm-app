@@ -83,8 +83,8 @@ class AuthControllerTest extends TestCase
                         'id' => 'uuid-123',
                         'name' => 'Test User',
                         'email' => 'test@del.ac.id',
-                    ]
-                ]
+                    ],
+                ],
             ]);
 
         $request = new Request(['authToken' => $authToken]);
@@ -94,7 +94,7 @@ class AuthControllerTest extends TestCase
 
         $this->assertEquals(302, $response->getStatusCode());
         $this->assertEquals(route('home'), $response->getTargetUrl());
-        
+
         // Pastikan user tersimpan di DB
         $this->assertDatabaseHas('users', ['email' => 'test@del.ac.id']);
     }
@@ -122,7 +122,7 @@ class AuthControllerTest extends TestCase
     public function post_login_berhasil_dan_redirect_ke_totp()
     {
         $userApiMock = Mockery::mock('alias:'.UserApi::class);
-        
+
         // Mock postLogin success
         $userApiMock->shouldReceive('postLogin')
             ->andReturn((object) [
@@ -139,8 +139,8 @@ class AuthControllerTest extends TestCase
                         'id' => 'uuid-login-123',
                         'name' => 'Login User',
                         'email' => 'login@test.com',
-                    ]
-                ]
+                    ],
+                ],
             ]);
 
         $request = new Request([
@@ -155,7 +155,7 @@ class AuthControllerTest extends TestCase
 
         $this->assertEquals(302, $response->getStatusCode());
         $this->assertEquals(route('auth.totp'), $response->getTargetUrl());
-        
+
         // Verifikasi token tersimpan di session/helper
         $this->assertEquals('login-token-123', ToolsHelper::getAuthToken());
     }
@@ -284,7 +284,7 @@ class AuthControllerTest extends TestCase
         $userApiMock->shouldReceive('getLoginInfo')
             ->with($authToken)
             ->andReturn((object) ['status' => 'success']);
-        
+
         // Get Me OK -> means already authenticated, go home
         $userApiMock->shouldReceive('getMe')
             ->with($authToken)
@@ -306,11 +306,11 @@ class AuthControllerTest extends TestCase
         $userApiMock = Mockery::mock('alias:'.UserApi::class);
         $userApiMock->shouldReceive('getLoginInfo')
             ->andReturn((object) ['status' => 'success']);
-        
+
         // Get Me Gagal/Pending -> Show TOTP Page
         $userApiMock->shouldReceive('getMe')
             ->andReturn((object) ['status' => 'error']);
-            
+
         $userApiMock->shouldReceive('postTotpSetup')
             ->with($authToken)
             ->andReturn((object) [
@@ -355,8 +355,8 @@ class AuthControllerTest extends TestCase
                         'id' => 'uuid-sso-123',
                         'name' => 'User SSO',
                         'email' => 'sso@test.com',
-                    ]
-                ]
+                    ],
+                ],
             ]);
 
         $request = new Request(['code' => 'auth-code-123']);

@@ -6,7 +6,6 @@ use App\Models\BookReviewer;
 use App\Models\BookSubmission;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Support\Str;
 
 class BookReviewerFactory extends Factory
 {
@@ -32,10 +31,10 @@ class BookReviewerFactory extends Factory
             'invited_by' => User::factory(),
             'invited_at' => now(),
             'reviewed_at' => null,
-            //'is_paid' => false,
+            // 'is_paid' => false,
         ];
     }
-    
+
     public function accepted()
     {
         return $this->state(fn (array $attributes) => [

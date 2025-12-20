@@ -27,7 +27,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $status
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
- * * @property-read \App\Models\User|null $user
+ *                                                       * @property-read \App\Models\User|null $user
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\BookAuthor> $authors
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\BookReviewer> $reviewers
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\SubmissionLog> $logs
@@ -40,10 +40,15 @@ class BookSubmission extends Model
 
     // Konstanta Status
     public const STATUS_DRAFT = 'DRAFT';
+
     public const STATUS_SUBMITTED = 'SUBMITTED';
+
     public const STATUS_IN_REVIEW = 'IN_REVIEW';
+
     public const STATUS_REJECTED = 'REJECTED';
+
     public const STATUS_APPROVED = 'APPROVED';
+
     public const STATUS_PAID = 'PAID';
 
     protected $fillable = [

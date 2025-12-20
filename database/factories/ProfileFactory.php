@@ -33,9 +33,9 @@ class ProfileFactory extends Factory
 
         return [
             'id' => (string) Str::uuid(), // Harus UUID
-            'user_id' => $userId, 
+            'user_id' => $userId,
             'name' => $this->faker->name(),
-            
+
             // Kolom-kolom akademik
             'nidn' => $this->faker->numerify('##########'), // 10 digit NIDN
             'prodi' => $this->faker->randomElement([

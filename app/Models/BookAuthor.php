@@ -15,10 +15,9 @@ use Illuminate\Database\Eloquent\Model;
  * @property string|null $affiliation
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
- * * @property-read \App\Models\BookSubmission $book
+ *                                                       * @property-read \App\Models\BookSubmission $book
  * @property-read \App\Models\User|null $user
  */
-
 class BookAuthor extends Model
 {
     use HasFactory, HasUuids;

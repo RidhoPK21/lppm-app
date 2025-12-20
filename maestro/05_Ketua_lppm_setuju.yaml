@@ -1,0 +1,61 @@
+url: http://127.0.0.1:8000/auth/login
+name: ketua lppm setuju
+---
+- launchApp
+- tapOn:
+    id: inputUsername
+    index: 1
+- inputText: ifs23019
+- tapOn:
+    id: inputPassword
+    index: 1
+- inputText: Hiumamba1721
+- tapOn: Masuk
+- assertVisible: "👋 Hay, Anny Klaudya Hutabarat"
+- tapOn: "Hak Akses"
+- tapOn:
+    point: 85%,36%
+- tapOn: "Ubah"
+- tapOn:
+    text: "Dosen"
+    index: 0
+- tapOn: "Lppm Ketua"
+- hideKeyboard
+- scrollUntilVisible:
+    element:
+      text: "Simpan"
+    direction: DOWN
+- tapOn: "Simpan"
+- assertVisible:
+    text: "Hak Akses"
+    index: 0
+- tapOn: "Penghargaan Masuk"
+- tapOn: "Penghargaan Buku Masuk"
+- assertVisible: "Buku"
+- tapOn:
+    text: "Berhasil Menggunakan Maestro untuk Otomatisasi Pengujian Aplikasi"
+    index: 0
+- swipe:
+    start: 50%,50%
+    end: 50%,50%
+    duration: 2000
+- scrollUntilVisible:
+    element:
+      text: "Lihat Hasil"
+    direction: DOWN
+    timeout: 10000
+- swipe:
+    start: 50%,50%
+    end: 50%,50%
+    duration: 2000
+- tapOn:
+    point: 70%,69%
+- hideKeyboard
+- tapOn:
+    id: "amount"
+    index: 1
+- inputText: "5000000"
+- tapOn:
+    point: "64%,61%"
+- takeScreenshot:
+    path: results/lppm_setuju

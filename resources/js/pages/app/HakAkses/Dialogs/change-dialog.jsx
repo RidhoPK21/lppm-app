@@ -43,7 +43,7 @@ export function HakAksesChangeDialog({
     const { optionRoles = [] } = usePage().props;
 
     // PERBAIKAN: Konsisten menggunakan "Lppm Staff" dengan spasi
-    const defaultRoles = ["Todo", "Lppm Ketua", "Lppm Staff", "Dosen", "Hrd", "Admin", ];
+    const defaultRoles = ["Lppm Ketua", "Lppm Staff", "Dosen", "Hrd", "Admin", ];
     const roles = optionRoles.length > 0 ? optionRoles : defaultRoles;
 
     const [isOpenSelectUser, setIsOpenSelectUser] = useState(false);

@@ -87,7 +87,7 @@ class HakAksesControllerTest extends TestCase
         ]);
 
         // Mock UserApi
-        $userApiMock = Mockery::mock('alias:' . UserApi::class);
+        $userApiMock = Mockery::mock('alias:'.UserApi::class);
         $userApiMock->shouldReceive('postReqUsersByIds')
             ->andReturn((object) [
                 'data' => (object) [
@@ -96,13 +96,13 @@ class HakAksesControllerTest extends TestCase
             ]);
 
         // Mock ToolsHelper Token
-        $toolsMock = Mockery::mock('alias:' . ToolsHelper::class);
+        $toolsMock = Mockery::mock('alias:'.ToolsHelper::class);
         $toolsMock->shouldReceive('getAuthToken')->andReturn('fake-token');
 
         // Mock Inertia Response
         $mockResponse = Mockery::mock(Response::class);
         $capturedProps = [];
-        
+
         Inertia::shouldReceive('render')
             ->once()
             ->with('App/HakAkses/Index', Mockery::capture($capturedProps))
@@ -119,7 +119,7 @@ class HakAksesControllerTest extends TestCase
     public function post_change_berhasil_memperbarui_hak_akses()
     {
         $auth = (object) ['akses' => ['Admin'], 'roles' => []];
-        
+
         // FIX: Buat user asli
         $user = User::factory()->create(['id' => 'user123']);
 
@@ -153,7 +153,7 @@ class HakAksesControllerTest extends TestCase
     public function post_delete_berhasil_menghapus_hak_akses()
     {
         $auth = (object) ['akses' => ['Admin'], 'roles' => []];
-        
+
         // FIX: Buat user asli
         $user = User::factory()->create(['id' => 'user123']);
 
@@ -175,7 +175,7 @@ class HakAksesControllerTest extends TestCase
     public function post_delete_selected_berhasil_menghapus_hak_akses_terpilih()
     {
         $auth = (object) ['akses' => ['Admin'], 'roles' => []];
-        
+
         // FIX: Buat user asli
         $u1 = User::factory()->create(['id' => 'user1']);
         $u2 = User::factory()->create(['id' => 'user2']);

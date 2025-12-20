@@ -17,7 +17,6 @@ use Illuminate\Database\Eloquent\Model; // <--- PENTING
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  */
-
 class Notification extends Model
 {
     use HasFactory, HasUuids; // <--- PENTING

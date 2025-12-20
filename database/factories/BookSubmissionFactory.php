@@ -18,7 +18,7 @@ class BookSubmissionFactory extends Factory
     {
         return [
             'id' => (string) Str::uuid(),
-            'user_id' => User::factory(), 
+            'user_id' => User::factory(),
             'title' => $this->faker->sentence(4),
             'isbn' => $this->faker->isbn13(),
             'publication_year' => $this->faker->numberBetween(2000, date('Y')),
