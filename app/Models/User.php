@@ -53,10 +53,13 @@ class User extends Authenticatable
     /**
      * Relasi ke Model HakAkses (Asumsi 1:1)
      */
-    public function hakAkses(): HasOne
-    {
-        return $this->hasOne(HakAksesModel::class, 'user_id', 'id');
-    }
+    // Di file app/Models/User.php
+
+public function hakAkses()
+{
+    // Sesuaikan 'user_id' dan 'id' dengan struktur tabel database Anda
+    return $this->hasMany(HakAksesModel::class, 'user_id', 'id');
+}
 
     /**
      * Accessor untuk mendapatkan peran (akses) user

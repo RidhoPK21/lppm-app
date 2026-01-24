@@ -35,14 +35,54 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $user = $request->user();
+        $roles = [];
+
+        // --- LOGIKA EKSTRAKSI ROLE ---
+        if ($user) {
+            // 1. Cek Relasi 'hakAkses' (Sesuai User Model Anda)
+            if (method_exists($user, 'hakAkses')) {
+                // Ambil kolom 'akses' yang mungkin berisi "Admin,Lppm Ketua"
+                $rawAkses = $user->hakAkses->pluck('akses')->filter();
+
+                // Loop dan pecah string berdasarkan koma
+                foreach ($rawAkses as $aksesString) {
+                    // Explode: "Admin, Lppm Ketua" -> ["Admin", "Lppm Ketua"]
+                    $splitRoles = explode(',', $aksesString);
+                    
+                    // Bersihkan spasi (trim) dan gabungkan ke array utama
+                    foreach ($splitRoles as $role) {
+                        $roles[] = trim($role);
+                    }
+                }
+            }
+
+            // 2. Fallback: Cek kolom 'role' di tabel user (jika ada)
+            if (empty($roles) && !empty($user->role)) {
+                $roles = [$user->role];
+            }
+            
+            // 3. Pastikan tidak ada duplikat dan index array rapi
+            $roles = array_values(array_unique($roles));
+        }
+
         return [
             ...parent::share($request),
-            'auth' => fn () => $request->attributes->get('auth'),
+            
+            // Kirim ke Frontend (Inertia)
+            'auth' => [
+                'user' => $user,
+                'roles' => $roles, // Array: ["Admin", "Lppm Ketua", "Dosen"]
+                'akses' => $roles, 
+            ],
+            
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),
             ],
+            
             'appName' => config('app.name'),
+            'pageName' => $request->header('X-Page-Name'),
         ];
     }
 }
