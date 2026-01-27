@@ -1,4 +1,5 @@
 import { AppSidebar } from "@/components/app-sidebar";
+import { NavUser } from "@/components/nav-user"; // Added from Code 2
 import { Button } from "@/components/ui/button";
 import {
     Select,
@@ -16,17 +17,16 @@ import {
     SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { useTheme } from "@/providers/theme-provider";
-import { NavUser } from "@/components/nav-user"; // Pastikan ini diimport
 
 import { usePage, Link } from "@inertiajs/react";
 
 import * as Icon from "@tabler/icons-react";
-import { Moon, Sun, Bell } from "lucide-react";
+import { Moon, Sun, Bell, HandCoins } from "lucide-react"; // Added HandCoins from Code 2
 import { Toaster } from "sonner";
 import { route } from "ziggy-js";
 
 export default function AppLayout({ children }) {
-    const { auth, appName, pageName } = usePage().props;
+    const { auth, appName, pageName } = usePage().props || {}; // Added safeguard from Code 2
     const { theme, colorTheme, toggleTheme, setColorTheme } = useTheme();
 
     const colorThemes = [
@@ -41,25 +41,35 @@ export default function AppLayout({ children }) {
     ];
 
     // =========================================================
-    // 1. LOGIKA CEK ROLE
+    // 1. LOGIKA CEK ROLE (GABUNGAN KODE 1 & 2)
     // =========================================================
     const rolesUser = Array.isArray(auth?.roles) ? auth.roles : [];
+    const aksesUser = Array.isArray(auth?.akses) ? auth.akses : []; // Added from Code 2
 
+    // Helper fleksibel untuk cek role & akses
     const hasRole = (roleCheck) => {
+        // Jika array, cek salah satu
         if (Array.isArray(roleCheck)) {
-            return roleCheck.some((r) => rolesUser.includes(r));
+            return roleCheck.some(
+                (r) => rolesUser.includes(r) || aksesUser.includes(r),
+            );
         }
-        return rolesUser.includes(roleCheck);
+        // Single check
+        return rolesUser.includes(roleCheck) || aksesUser.includes(roleCheck);
     };
 
     // =========================================================
-    // 2. DEFINISI MENU (GABUNGAN FITUR SEMINAR & BUKU)
+    // 2. DEFINISI MENU (MERGE ITEM KODE 1 & KODE 2)
     // =========================================================
 
     const navDataUtility = {
         title: "Utilitas",
         items: [
-            { title: "Todo List", url: "#", icon: Icon.IconChecklist }, // Placeholder jika route todo belum ada
+            {
+                title: "Todo List",
+                url: route("todo"),
+                icon: Icon.IconChecklist,
+            },
         ],
     };
 
@@ -76,14 +86,14 @@ export default function AppLayout({ children }) {
         },
     ];
 
-    // STAFF LPPM
+    // STAFF LPPM / ANGGOTA (Merge Code 1 & 2)
     const navDataAnggota = [
         {
             title: "Main",
             items: [
                 {
                     title: "Beranda Staff",
-                    url: route("home"),
+                    url: route("lppm.anggota.home"),
                     icon: Icon.IconHome,
                 },
             ],
@@ -91,23 +101,54 @@ export default function AppLayout({ children }) {
         {
             title: "Staff LPPM",
             items: [
-                // Fitur Seminar (Baru)
                 {
                     title: "Pengajuan Dana",
-                    url: route("lppm.ketua.pengajuan-dana.index"),
+                    url: route("lppm.anggota.pengajuan-dana"),
                     icon: Icon.IconCurrencyDollar,
                 },
-                // Fitur Regis Semi (Lama)
+            ],
+        },
+        // Item baru dari Kode 2
+        {
+            title: "Registrasi Masuk",
+            collapsible: true,
+            items: [
                 {
-                    title: "Arsip Seminar",
+                    title: "Registrasi Jurnal Masuk",
                     url: route("regis-semi.index"),
-                    icon: Icon.IconArchive,
+                    icon: Icon.IconFileCertificate,
+                },
+                {
+                    title: "Registrasi Seminar Masuk",
+                    url: route("regis-semi.index"),
+                    icon: Icon.IconPresentation,
+                },
+            ],
+        },
+        {
+            title: "Penghargaan Masuk",
+            collapsible: true,
+            items: [
+                {
+                    title: "Penghargaan Buku Masuk",
+                    url: route("regis-semi.indexx"),
+                    icon: Icon.IconBook2,
+                },
+                {
+                    title: "Penghargaan Jurnal Masuk",
+                    url: route("regis-semi.index"),
+                    icon: Icon.IconFileCertificate,
+                },
+                {
+                    title: "Penghargaan Seminar Masuk",
+                    url: route("regis-semi.index"),
+                    icon: Icon.IconPresentation,
                 },
             ],
         },
     ];
 
-    // KEUANGAN
+    // KEUANGAN (From Code 1)
     const navDataKeuangan = [
         {
             title: "Main",
@@ -124,14 +165,14 @@ export default function AppLayout({ children }) {
             items: [
                 {
                     title: "Daftar Pembayaran",
-                    url: route("keuangan.pembayaran.index"),
+                    url: route("keuangan.pembayaran"),
                     icon: Icon.IconCash,
                 },
             ],
         },
     ];
 
-    // REVIEWER
+    // REVIEWER (From Code 1)
     const navDataReviewer = [
         {
             title: "Main",
@@ -149,20 +190,44 @@ export default function AppLayout({ children }) {
             groupIcon: Icon.IconNotebook,
             items: [
                 {
-                    title: "Seminar Masuk",
-                    url: route("reviewer.seminar.masuk"),
-                    icon: Icon.IconInbox,
+                    title: "Jurnal",
+                    collapsible: true,
+                    icon: Icon.IconBook,
+                    items: [
+                        {
+                            title: "Masuk",
+                            url: route("reviewer.jurnal.masuk"),
+                            icon: Icon.IconInbox,
+                        },
+                        {
+                            title: "Disetujui",
+                            url: route("reviewer.jurnal.disetujui"),
+                            icon: Icon.IconCircleCheck,
+                        },
+                    ],
                 },
                 {
-                    title: "Riwayat Review",
-                    url: route("reviewer.seminar.disetujui"),
-                    icon: Icon.IconCircleCheck,
+                    title: "Seminar",
+                    collapsible: true,
+                    icon: Icon.IconNotebook,
+                    items: [
+                        {
+                            title: "Masuk",
+                            url: route("reviewer.seminar.masuk"),
+                            icon: Icon.IconInbox,
+                        },
+                        {
+                            title: "Disetujui",
+                            url: route("reviewer.seminar.disetujui"),
+                            icon: Icon.IconCircleCheck,
+                        },
+                    ],
                 },
             ],
         },
     ];
 
-    // KETUA LPPM
+    // KETUA LPPM (Merge Code 1 & 2)
     const navDataKetua = [
         {
             title: "Main",
@@ -175,29 +240,56 @@ export default function AppLayout({ children }) {
             ],
         },
         {
-            title: "Persetujuan",
+            title: "Ketua LPPM",
             items: [
                 {
-                    title: "Pengajuan Dana",
-                    url: route("lppm.ketua.pengajuan-dana.index"),
+                    title: "Persetujuan Dana",
+                    url: route("lppm.ketua.pengajuan-dana"),
                     icon: Icon.IconCurrencyDollar,
                 },
             ],
         },
+        // Item tambahan dari Kode 2 (jika Ketua juga butuh menu masuk)
         {
-            title: "Admin Penghargaan",
+            title: "Registrasi Masuk",
+            collapsible: true,
             items: [
-                // Menu Admin Buku (Fitur Ridho)
                 {
-                    title: "Data Buku Masuk",
-                    url: route("app.admin.penghargaan.buku.index"),
+                    title: "Registrasi Jurnal Masuk",
+                    url: route("regis-semi.index"),
+                    icon: Icon.IconFileCertificate,
+                },
+                {
+                    title: "Registrasi Seminar Masuk",
+                    url: route("regis-semi.index"),
+                    icon: Icon.IconPresentation,
+                },
+            ],
+        },
+        {
+            title: "Penghargaan Masuk",
+            collapsible: true,
+            items: [
+                {
+                    title: "Penghargaan Buku Masuk",
+                    url: route("regis-semi.index"),
                     icon: Icon.IconBook2,
+                },
+                {
+                    title: "Penghargaan Jurnal Masuk",
+                    url: route("regis-semi.index"),
+                    icon: Icon.IconFileCertificate,
+                },
+                {
+                    title: "Penghargaan Seminar Masuk",
+                    url: route("regis-semi.index"),
+                    icon: Icon.IconPresentation,
                 },
             ],
         },
     ];
 
-    // DOSEN (Menu Gabungan)
+    // DOSEN (Updated with items from Code 2)
     const navDataDosen = [
         {
             title: "Main",
@@ -210,28 +302,64 @@ export default function AppLayout({ children }) {
             ],
         },
         {
-            title: "Kegiatan Akademik",
-            collapsible: true,
-            groupIcon: Icon.IconSchool,
+            title: "Dosen",
             items: [
-                // 1. Fitur Seminar (Porman)
                 {
-                    title: "Seminar & Luaran",
+                    title: "Daftar Seminar",
                     url: route("dosen.seminar.index"),
                     icon: Icon.IconPresentation,
                 },
-
-                // 2. Fitur Buku (Ridho) - DIAKTIFKAN KEMBALI
                 {
-                    title: "Insentif Buku",
-                    url: route("app.penghargaan.buku.index"),
+                    title: "Daftar Jurnal",
+                    url: route("registrasi.jurnal"),
                     icon: Icon.IconBook,
+                },
+            ],
+        },
+        // Registrasi (From Code 2)
+        {
+            title: "Registrasi",
+            collapsible: true,
+            groupIcon: HandCoins,
+            items: [
+                {
+                    title: "Seminar",
+                    url: route("regis-semi.index"),
+                    icon: Icon.IconNotebook,
+                },
+                {
+                    title: "Jurnal",
+                    url: route("regis-semi.index"),
+                    icon: Icon.IconBook,
+                },
+            ],
+        },
+        // Penghargaan (From Code 2)
+        {
+            title: "Penghargaan",
+            collapsible: true,
+            groupIcon: Icon.IconAward,
+            items: [
+                {
+                    title: "Penghargaan Buku",
+                    url: route("app.penghargaan.buku.index"),
+                    icon: Icon.IconBook2,
+                },
+                {
+                    title: "Penghargaan Jurnal",
+                    url: route("regis-semi.index"),
+                    icon: Icon.IconFileCertificate,
+                },
+                {
+                    title: "Penghargaan Seminar",
+                    url: route("regis-semi.index"),
+                    icon: Icon.IconPresentation,
                 },
             ],
         },
     ];
 
-    // KPRODI
+    // KPRODI (From Code 1)
     const navDataKprodi = [
         {
             title: "Main",
@@ -255,7 +383,7 @@ export default function AppLayout({ children }) {
         },
     ];
 
-    // HRD
+    // HRD (Merge Code 1 & 2)
     const navDataHRD = [
         {
             title: "Main",
@@ -272,8 +400,19 @@ export default function AppLayout({ children }) {
             items: [
                 {
                     title: "Surat Tugas",
-                    url: route("hrd.seminar.index"),
+                    url: route("hrd.surat-tugas.index"),
                     icon: Icon.IconMail,
+                },
+            ],
+        },
+        // Admin menu from Code 2 inside HRD (if needed specifically, otherwise handled by global Admin)
+        {
+            title: "Admin",
+            items: [
+                {
+                    title: "Hak Akses",
+                    url: route("hak-akses"),
+                    icon: Icon.IconLock,
                 },
             ],
         },
@@ -282,28 +421,23 @@ export default function AppLayout({ children }) {
     // ADMIN
     const navDataAdmin = [
         {
-            title: "Admin System",
+            title: "Admin",
             items: [
                 {
                     title: "Hak Akses",
                     url: route("hak-akses"),
                     icon: Icon.IconLock,
                 },
-                // Admin Buku juga bisa diakses oleh Admin
-                {
-                    title: "Admin Buku",
-                    url: route("app.admin.penghargaan.buku.index"),
-                    icon: Icon.IconBook2,
-                },
             ],
         },
     ];
 
     // =========================================================
-    // 3. LOGIKA MERGE MENU & FILTER PRIORITAS
+    // 3. LOGIKA MERGE MENU & FILTER PRIORITAS DOSEN
     // =========================================================
 
     // TENTUKAN PRIMARY ROLE
+    // Jika User adalah Dosen, maka Dashboard Dosen yang menang.
     let primaryRole = "Guest";
 
     if (hasRole("Dosen")) primaryRole = "Dosen";
@@ -313,40 +447,44 @@ export default function AppLayout({ children }) {
     else if (hasRole("Reviewer")) primaryRole = "Reviewer";
     else if (hasRole("Keuangan")) primaryRole = "Keuangan";
     else if (hasRole(["Hrd", "HRD"])) primaryRole = "Hrd";
-    else if (hasRole(["LppmAnggota", "Lppm Staff"]))
+    else if (hasRole(["LppmAnggota", "Lppm Staff", "Lppm Staff"]))
         primaryRole = "LppmAnggota";
 
     let finalNavData = [];
 
     // FUNGSI PENGGABUNG MENU DENGAN FILTER
     const mergeMenu = (roleName, roleNavData, aliasRoles = []) => {
+        // Cek apakah user punya role ini
         if (hasRole(roleName) || aliasRoles.some((r) => hasRole(r))) {
+            // Filter menu: Jika Grup Menu berjudul "Main", HANYA masukkan jika ini Primary Role user
             const filteredMenu = roleNavData.filter((group) => {
-                // Filter menu "Main" agar tidak duplikat, hanya ambil dari Primary Role
                 if (group.title === "Main") {
                     return primaryRole === roleName;
                 }
                 return true;
             });
+
             finalNavData.push(...filteredMenu);
         }
     };
 
-    // URUTAN EKSEKUSI (Menentukan urutan tampilan di sidebar)
-    mergeMenu("Dosen", navDataDosen); // Dosen paling atas jika dia Dosen
+    // EKSEKUSI PENGGABUNGAN (Urutan menentukan posisi di sidebar)
+    mergeMenu("Admin", navDataAdmin);
+    mergeMenu("Dosen", navDataDosen);
+    mergeMenu("Kprodi", navDataKprodi);
+    mergeMenu("Reviewer", navDataReviewer);
     mergeMenu("LppmKetua", navDataKetua, ["Ketua LPPM"]);
     mergeMenu("LppmAnggota", navDataAnggota, ["Lppm Staff", "Anggota LPPM"]);
-    mergeMenu("Reviewer", navDataReviewer);
-    mergeMenu("Kprodi", navDataKprodi);
     mergeMenu("Keuangan", navDataKeuangan);
     mergeMenu("Hrd", navDataHRD, ["HRD"]);
-    mergeMenu("Admin", navDataAdmin);
 
     // FINALISASI
     if (finalNavData.length === 0) {
+        // Jika tidak punya role sama sekali (Guest), pakai Default
         finalNavData = [...navDataDefault];
     } else {
-        // finalNavData.push(navDataUtility); // Opsional: Tambahkan utilitas di bawah
+        // Jika punya role, tambahkan Utility (Todo List) di paling bawah
+        finalNavData.push(navDataUtility);
     }
 
     // =========================================================
@@ -374,6 +512,7 @@ export default function AppLayout({ children }) {
                     variant="inset"
                 />
                 <SidebarInset>
+                    {/* Header Structure updated from Code 2 */}
                     <header className="flex h-(--header-height) shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height) sticky top-0 z-50 bg-background/95 backdrop-blur-sm">
                         <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
                             <SidebarTrigger className="-ml-1" />
@@ -381,9 +520,11 @@ export default function AppLayout({ children }) {
                                 orientation="vertical"
                                 className="mx-2 data-[orientation=vertical]:h-4"
                             />
-                            <h1 className="text-base font-medium">
+                            {/* Breadcrumb / Title area */}
+                            <h1 className="text-base font-medium hidden md:block">
                                 {pageName}
                             </h1>
+
                             <div className="ml-auto flex items-center gap-2">
                                 <Link href={route("notifications.index")}>
                                     <Button
@@ -401,7 +542,7 @@ export default function AppLayout({ children }) {
                                     value={colorTheme}
                                     onValueChange={setColorTheme}
                                 >
-                                    <SelectTrigger className="w-[130px] hidden sm:flex">
+                                    <SelectTrigger className="w-[120px]">
                                         <SelectValue placeholder="Pilih Tema" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -431,10 +572,8 @@ export default function AppLayout({ children }) {
                                     )}
                                 </Button>
 
-                                {/* USER MENU DI HEADER (Opsional, karena sudah ada di sidebar footer) */}
-                                <div className="hidden md:block">
-                                    <NavUser user={userAccount} />
-                                </div>
+                                {/* Added NavUser from Code 2 for User Profile in Header */}
+                                <NavUser user={userAccount} />
                             </div>
                         </div>
                     </header>

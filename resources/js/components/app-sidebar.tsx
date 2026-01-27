@@ -1,7 +1,3 @@
-/* ============================================================
-   ==========  ORIGINAL IMPORT (TIDAK DIUBAH)  =================
-=============================================================== */
-
 import * as React from "react";
 import { useState } from "react";
 
@@ -21,9 +17,24 @@ import {
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-/* ============================================================
-   ==========  ORIGINAL INTERFACE (TIDAK DIUBAH)  ==============
-=============================================================== */
+/* ============================================================================
+   ===============  TYPE DEFINITIONS  =========================================
+============================================================================ */
+
+export interface MenuItem {
+    title: string;
+    url?: string;
+    icon?: React.ElementType;
+    collapsible?: boolean;
+    items?: MenuItem[];
+}
+
+export interface SidebarGroupType {
+    title: string;
+    collapsible?: boolean;
+    groupIcon?: React.ElementType;
+    items: MenuItem[];
+}
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
     active?: string;
@@ -33,21 +44,117 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
         photo: string;
     };
     appName: string;
-    navData: {
-        title: string;
-        groupIcon?: React.ElementType;
-        collapsible?: boolean;
-        items: {
-            title: string;
-            url: string;
-            icon: React.ElementType;
-        }[];
-    }[];
+    // Menggunakan tipe yang lebih fleksibel (recursive)
+    navData: SidebarGroupType[];
 }
 
-/* ============================================================
-   =============  COMPONENT UTAMA  ==============================
-=============================================================== */
+/* ============================================================================
+   =============  ICON RENDERER  ==============================================
+============================================================================ */
+
+function IconRenderer(IconComponent?: React.ElementType) {
+    return IconComponent ? (
+        <IconComponent className="w-4 h-4 text-muted-foreground" />
+    ) : null;
+}
+
+/* ============================================================================
+   ===============  ACTIVE CHECK HELPER  ======================================
+============================================================================ */
+
+function menuActive(url: string | undefined, currentUrl: string) {
+    if (!url) return "";
+    // Logic from Code 2 (starts with) combined with styling
+    const isActive = currentUrl === url || currentUrl.startsWith(url + "/");
+
+    return cn("hover:bg-primary/5 hover:text-primary", {
+        "bg-primary/5 text-primary border-l-2 border-primary font-medium":
+            isActive,
+    });
+}
+
+/* ============================================================================
+   ===============  RECURSIVE COLLAPSIBLE MENU  ================================
+   (Menggabungkan fitur Collapsible Code 1 & Struktur Code 2)
+============================================================================ */
+
+function CollapsibleMenu({
+    group,
+    activeUrl,
+}: {
+    group: SidebarGroupType | MenuItem;
+    activeUrl: string;
+}) {
+    // Cek apakah ada child yang aktif untuk auto-expand
+    const hasActiveChild = group.items?.some(
+        (item) =>
+            item.url &&
+            (activeUrl === item.url || activeUrl.startsWith(item.url + "/")),
+    );
+
+    const [open, setOpen] = useState(hasActiveChild || false);
+    const isParent = group.items && group.items.length > 0;
+
+    return (
+        <>
+            <SidebarMenuButton
+                onClick={() => setOpen(!open)}
+                className="w-full justify-between font-medium"
+            >
+                <div className="flex items-center gap-2">
+                    {IconRenderer((group as SidebarGroupType).groupIcon)}
+                    {IconRenderer((group as MenuItem).icon)}
+                    <span>{group.title}</span>
+                </div>
+                {isParent &&
+                    (open ? (
+                        <ChevronDown className="w-4 h-4" />
+                    ) : (
+                        <ChevronRight className="w-4 h-4" />
+                    ))}
+            </SidebarMenuButton>
+
+            {open && isParent && (
+                <div className="ml-4 mt-1 border-l border-border pl-3 space-y-1">
+                    {group.items!.map((item) =>
+                        item.collapsible ? (
+                            // Recursive call untuk menu bertingkat
+                            <div key={item.title}>
+                                <CollapsibleMenu
+                                    group={item}
+                                    activeUrl={activeUrl}
+                                />
+                            </div>
+                        ) : (
+                            <SidebarMenuItem
+                                key={item.title}
+                                className="list-none"
+                            >
+                                <SidebarMenuButton
+                                    asChild
+                                    className={menuActive(item.url, activeUrl)}
+                                    size="sm"
+                                >
+                                    <a
+                                        href={item.url}
+                                        className="flex items-center gap-2 pl-1"
+                                    >
+                                        {IconRenderer(item.icon)}
+                                        <span>{item.title}</span>
+                                    </a>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
+                        ),
+                    )}
+                </div>
+            )}
+        </>
+    );
+}
+
+/* ============================================================================
+   ===============  MAIN SIDEBAR COMPONENT  ===================================
+============================================================================ */
 
 export function AppSidebar({
     active = "",
@@ -57,84 +164,86 @@ export function AppSidebar({
     ...props
 }: AppSidebarProps) {
     return (
-        <Sidebar collapsible="offcanvas" {...props}>
+        <Sidebar collapsible="icon" {...props}>
             <SidebarHeader>
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <SidebarMenuButton asChild>
+                        <SidebarMenuButton size="lg" asChild>
                             <a href="#">
-                                <img
-                                    src="/img/logo/sdi-logo-dark.png"
-                                    className="w-6 block dark:hidden"
-                                />
-                                <img
-                                    src="/img/logo/sdi-logo-light.png"
-                                    className="w-6 hidden dark:block"
-                                />
-                                <span>{appName}</span>
+                                {/* MERGED SECTION: 
+                    Menggabungkan container rapi dari Code 2 
+                    dengan logika Dark/Light mode image dari Code 1 
+                */}
+                                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+                                    {/* Logo Dark Mode (muncul saat light theme) */}
+                                    <img
+                                        src="/img/logo/sdi-logo-dark.png"
+                                        alt="Logo"
+                                        className="w-6 block dark:hidden"
+                                    />
+                                    {/* Logo Light Mode (muncul saat dark theme) */}
+                                    <img
+                                        src="/img/logo/sdi-logo-light.png"
+                                        alt="Logo"
+                                        className="w-6 hidden dark:block"
+                                    />
+                                </div>
+
+                                <div className="flex flex-col gap-0.5 leading-none">
+                                    <span className="font-semibold">
+                                        {appName}
+                                    </span>
+                                    <span className="text-xs text-muted-foreground">
+                                        v1.0
+                                    </span>
+                                </div>
                             </a>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>
             </SidebarHeader>
 
-            <SidebarContent>
-                <SidebarGroup>
-                    {/* LOOP MENU */}
-                    {navData.map(
-                        (group: {
-                            title: string;
-                            groupIcon?: React.ElementType;
-                            collapsible?: boolean;
-                            items: {
-                                title: string;
-                                url: string;
-                                icon: React.ElementType;
-                            }[];
-                        }) => (
-                            <div className="mb-2" key={group.title}>
-                                {/* LABEL hanya untuk non-collapsible */}
-                                {!group.collapsible && (
-                                    <SidebarGroupLabel>
-                                        {group.groupIcon && (
-                                            <group.groupIcon className="w-4 h-4 mr-2 text-muted-foreground" />
-                                        )}
-                                        {group.title}
-                                    </SidebarGroupLabel>
-                                )}
+            <SidebarContent className="gap-1">
+                {navData.map((group) => (
+                    <SidebarGroup key={group.title} className="py-0">
+                        {/* Label logic: Show label if not collapsible, not generic 'Main', and has no icon */}
+                        {!group.collapsible &&
+                        !group.groupIcon &&
+                        group.title !== "Main" ? (
+                            <SidebarGroupLabel>{group.title}</SidebarGroupLabel>
+                        ) : null}
 
-                                {/* ==== COLLAPSIBLE MENU ==== */}
-                                {group.collapsible ? (
-                                    <LppmCollapsibleMenu
+                        {group.collapsible ? (
+                            <SidebarMenu className="gap-1">
+                                <SidebarMenuItem>
+                                    <CollapsibleMenu
                                         group={group}
-                                        active={active}
+                                        activeUrl={active}
                                     />
-                                ) : (
-                                    <SidebarMenu>
-                                        {group.items.map((item) => (
-                                            <SidebarMenuItem key={item.title}>
-                                                <SidebarMenuButton
-                                                    asChild
-                                                    className={menuActive(
-                                                        item.title,
-                                                        active
-                                                    )}
-                                                >
-                                                    <a href={item.url}>
-                                                        <item.icon />
-                                                        <span>
-                                                            {item.title}
-                                                        </span>
-                                                    </a>
-                                                </SidebarMenuButton>
-                                            </SidebarMenuItem>
-                                        ))}
-                                    </SidebarMenu>
-                                )}
-                            </div>
-                        )
-                    )}
-                </SidebarGroup>
+                                </SidebarMenuItem>
+                            </SidebarMenu>
+                        ) : (
+                            <SidebarMenu className="gap-1">
+                                {group.items.map((item) => (
+                                    <SidebarMenuItem key={item.title}>
+                                        <SidebarMenuButton
+                                            asChild
+                                            className={menuActive(
+                                                item.url,
+                                                active,
+                                            )}
+                                        >
+                                            <a href={item.url}>
+                                                {IconRenderer(item.icon)}
+                                                <span>{item.title}</span>
+                                            </a>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                ))}
+                            </SidebarMenu>
+                        )}
+                    </SidebarGroup>
+                ))}
             </SidebarContent>
 
             <SidebarFooter>
@@ -142,77 +251,4 @@ export function AppSidebar({
             </SidebarFooter>
         </Sidebar>
     );
-}
-
-/* ============================================================
-   ===========  COMPONENT COLLAPSIBLE MENU  ====================
-=============================================================== */
-
-function LppmCollapsibleMenu({
-    group,
-    active,
-}: {
-    group: {
-        title: string;
-        groupIcon?: React.ElementType;
-        items: {
-            title: string;
-            url: string;
-        }[];
-    };
-    active: string;
-}) {
-    const [open, setOpen] = useState(false);
-
-    return (
-        <>
-            {/* HEADER (MASIH PAKAI ICON!) */}
-            <button
-                onClick={() => setOpen(!open)}
-                className="flex items-center justify-between w-full px-2 py-2 hover:bg-accent rounded-md transition-colors"
-            >
-                <div className="flex items-center gap-2">
-                    {group.groupIcon && (
-                        <group.groupIcon className="w-4 h-4 text-muted-foreground" />
-                    )}
-                    <span className="text-sm font-medium">{group.title}</span>
-                </div>
-
-                {open ? (
-                    <ChevronDown className="w-4 h-4" />
-                ) : (
-                    <ChevronRight className="w-4 h-4" />
-                )}
-            </button>
-
-            {/* SUBMENU — TANPA ICON, ADA BORDER-L */}
-            {open && (
-                <SidebarMenu className="ml-4 border-l border-border pl-4 mt-1 space-y-1">
-                    {group.items.map((item) => (
-                        <SidebarMenuItem key={item.title}>
-                            <SidebarMenuButton
-                                asChild
-                                className={menuActive(item.title, active)}
-                            >
-                                <a href={item.url} className="pl-1">
-                                    <span>{item.title}</span>
-                                </a>
-                            </SidebarMenuButton>
-                        </SidebarMenuItem>
-                    ))}
-                </SidebarMenu>
-            )}
-        </>
-    );
-}
-
-/* ============================================================
-   ===========  HELPER ACTIVE MENU  ============================
-=============================================================== */
-
-function menuActive(title: string, active: string) {
-    return cn("hover:bg-primary/5 hover:text-primary", {
-        "bg-primary/5 text-primary border-l border-primary":
-            active.startsWith(title),
-    });
 }

@@ -2,35 +2,40 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
+// Hapus 'Laravel\Sanctum\HasApiTokens'
+use Illuminate\Database\Eloquent\Concerns\HasUuids; // <--- WAJIB ADA
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-// 🔥 WAJIB: Impor HasOne untuk relasi HakAkses
 use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, HasUuids, Notifiable;
+    // Gunakan trait HasUuids agar ID tergenerate otomatis
+    use HasFactory, Notifiable, HasUuids; 
 
     /**
      * The attributes that are mass assignable.
      *
-     * @var list<string>
+     * @var array<int, string>
      */
     protected $fillable = [
-        'id', // Diperlukan untuk factory/UUID
         'name',
         'email',
         'password',
     ];
 
+    // =================================================================
+    // 🔥 PERBAIKAN UTAMA: KONFIGURASI UUID
+    // Tanpa ini, relasi ke m_hak_akses akan SELALU GAGAL (Return kosong)
+    // =================================================================
+    protected $keyType = 'string'; // Memberitahu Laravel ID adalah String
+    public $incrementing = false;  // Mematikan auto-increment angka
+    // =================================================================
+
     /**
      * The attributes that should be hidden for serialization.
      *
-     * @var list<string>
+     * @var array<int, string>
      */
     protected $hidden = [
         'password',
@@ -38,36 +43,18 @@ class User extends Authenticatable
     ];
 
     /**
-     * Get the attributes that should be cast.
+     * The attributes that should be cast.
      *
-     * @return array<string, string>
+     * @var array<string, string>
      */
-    protected function casts(): array
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
+    ];
+
+    // ✅ JEMBATAN KE DATA HAK AKSES
+    public function hakAkses()
     {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
-    }
-
-    /**
-     * Relasi ke Model HakAkses (Asumsi 1:1)
-     */
-    // Di file app/Models/User.php
-
-public function hakAkses()
-{
-    // Sesuaikan 'user_id' dan 'id' dengan struktur tabel database Anda
-    return $this->hasMany(HakAksesModel::class, 'user_id', 'id');
-}
-
-    /**
-     * Accessor untuk mendapatkan peran (akses) user
-     * Ini yang kemungkinan dipanggil oleh middleware CheckRole.
-     */
-    public function getAksesAttribute(): string
-    {
-        // Memuat relasi hakAkses dan mengembalikan nilai 'akses', atau string kosong
-        return $this->hakAkses->akses ?? '';
+        return $this->hasMany(HakAksesModel::class, 'user_id', 'id');
     }
 }
